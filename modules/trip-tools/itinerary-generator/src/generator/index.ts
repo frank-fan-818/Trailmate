@@ -1,10 +1,39 @@
-import type { ItineraryRequest, ItineraryPlan } from '../types'
+import type { ItineraryRequest, ItineraryPlan, ItineraryItem } from '../types'
+
+interface FlightInfo {
+  flightNumber: string
+  depCity: string
+  arrCity: string
+  depTime: string
+  arrTime: string
+  price: number
+  airline: string
+}
+
+interface HotelInfo {
+  name: string
+  address: string
+  price: number
+  star: number
+  checkin: string
+  checkout: string
+  facilities: string[]
+}
+
+interface AttractionInfo {
+  name: string
+  address: string
+  price: number
+  duration: string
+  tags: string[]
+  position: { lat: number; lng: number }
+}
 
 export function generatePlans(
   request: ItineraryRequest,
-  flights: any[] = [],
-  hotels: any[] = [],
-  attractions: any[] = []
+  flights: FlightInfo[] = [],
+  hotels: HotelInfo[] = [],
+  attractions: AttractionInfo[] = []
 ): ItineraryPlan[] {
   return [
     generateFamilyPlan(request, flights, hotels, attractions),
