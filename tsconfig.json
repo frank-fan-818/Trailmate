@@ -13,5 +13,5 @@
       "@trailmate/shared/*": ["./shared/*"]
     }
   },
-  "include": ["core/**/*", "modules/**/*", "shared/**/*"]
+  "include": ["core/**/*", "modules/**/*", "shared/**/*", "adapters/**/*", "platforms/**/*"]
 }

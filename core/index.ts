@@ -48,6 +48,7 @@ export class Core implements ICore {
   }
 }
 
+export * from './interfaces/core.interface'
 export * from './interfaces/plugin.interface'
 export * from './interfaces/event.types'
 export * from './interfaces/service.interface'
