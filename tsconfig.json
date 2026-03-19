@@ -8,10 +8,11 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "baseUrl": ".",
+    "types": ["vite/client"],
     "paths": {
       "@trailmate/core": ["./core/index.ts"],
       "@trailmate/shared/*": ["./shared/*"]
     }
   },
-  "include": ["core/**/*", "modules/**/*", "shared/**/*", "adapters/**/*", "platforms/**/*"]
+  "include": ["core/**/*", "modules/**/*", "shared/**/*", "adapters/**/*", "platforms/**/*", "*.d.ts"]
 }
