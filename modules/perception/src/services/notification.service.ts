@@ -1,4 +1,5 @@
 import type PerceptionModule from '../../index'
+import { GlobalEvent } from '@trailmate/core'
 import type { Notification, NotificationLevel } from '../types'
 
 // 存储用户通知：userId -> Notification[]
@@ -35,7 +36,7 @@ export async function pushNotification(this: PerceptionModule, params: {
   userNotifications.set(userId, notifications)
 
   // 发布通知推送事件
-  await this.core?.eventBus.emit('NOTIFICATION_PUSHED', notification)
+  await this.core?.eventBus.emit(GlobalEvent.NOTIFICATION_PUSHED, notification)
 
   console.log(`🔔 用户${userId}收到通知：${content}`)
 
@@ -85,7 +86,7 @@ export async function markNotificationAsRead(this: PerceptionModule, params: {
   userNotifications.set(userId, notifications)
 
   // 发布通知更新事件
-  await this.core?.eventBus.emit('NOTIFICATION_UPDATED', notification)
+  await this.core?.eventBus.emit(GlobalEvent.NOTIFICATION_UPDATED, notification)
 
   return true
 }

@@ -1,4 +1,5 @@
 import type PerceptionModule from '../../index'
+import { GlobalEvent } from '@trailmate/core'
 import type { ItineraryPlan } from '../../../trip-tools/itinerary-generator/src/types'
 import type { TimelineNode, TimelineNodeStatus, TimelineNodeType } from '../types'
 import { TimelineNodeStatus as Status } from '../types'
@@ -92,8 +93,8 @@ export async function generateTimeline(this: PerceptionModule, userId: string, p
   // 保存时间线
   planTimelines.set(plan.id, timeline)
 
-  // 发布时间线更新事件
-  await this.core?.eventBus.emit('TIMELINE_UPDATED', {
+  // 发布时间线更新事件（这里正确使用传入的userId参数
+  await this.core?.eventBus.emit(GlobalEvent.TIMELINE_UPDATED, {
     userId,
     planId: plan.id,
     timeline
@@ -134,7 +135,7 @@ export async function updateNodeStatus(this: PerceptionModule, params: {
   planTimelines.set(planId, timeline)
 
   // 发布时间线更新事件
-  await this.core?.eventBus.emit('TIMELINE_UPDATED', {
+  await this.core?.eventBus.emit(GlobalEvent.TIMELINE_UPDATED, {
     userId,
     planId,
     timeline
@@ -187,7 +188,7 @@ export async function insertCustomNode(this: PerceptionModule, params: {
   planTimelines.set(planId, timeline)
 
   // 发布时间线更新事件
-  await this.core?.eventBus.emit('TIMELINE_UPDATED', {
+  await this.core?.eventBus.emit(GlobalEvent.TIMELINE_UPDATED, {
     userId,
     planId,
     timeline
@@ -243,7 +244,7 @@ async function updateTimelineStatuses(this: PerceptionModule, userId: string): P
     this.setContext(userId, context)
 
     // 发布时间线更新事件
-    await this.core?.eventBus.emit('TIMELINE_UPDATED', {
+    await this.core?.eventBus.emit(GlobalEvent.TIMELINE_UPDATED, {
       userId,
       planId: context.planId,
       timeline
