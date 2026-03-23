@@ -10,6 +10,9 @@ export enum GlobalEvent {
 
   // 情境感知类事件
   LOCATION_CHANGED = 'perception:location_changed',
+  NOTIFICATION_PUSHED = 'perception:notification_pushed',
+  NOTIFICATION_UPDATED = 'perception:notification_updated',
+  TIMELINE_UPDATED = 'perception:timeline_updated',
   ALERT_TRIGGERED = 'perception:alert_triggered',
 
   // 社交类事件

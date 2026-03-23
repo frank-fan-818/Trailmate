@@ -3,9 +3,10 @@ import { GlobalEvent } from '@trailmate/core'
 import type { PerceptionContext } from './src/types'
 import { handlePlanGenerated, handlePlanUpdated } from './src/event-handlers/plan-event.handler'
 import { handleLocationChanged } from './src/event-handlers/location-event.handler'
-import { getTimeline, updateNodeStatus } from './src/services/timeline.service'
+import { getTimeline, updateNodeStatus, insertCustomNode, stopTimelineScheduler } from './src/services/timeline.service'
 import { simulateLocation, getCurrentLocation, toggleAutoSimulate } from './src/services/location.service'
 import { getNotifications, markNotificationAsRead } from './src/services/notification.service'
+import { stopRuleScheduler, runRulesByType, addCustomRule, removeCustomRule, getAllRules } from './src/services/rule-engine.service'
 
 export default class PerceptionModule implements IPlugin {
   pluginId = 'perception-core'
@@ -28,7 +29,7 @@ export default class PerceptionModule implements IPlugin {
     // 订阅核心事件
     core.eventBus.on(GlobalEvent.PLAN_GENERATED, this.boundHandlers.handlePlanGenerated)
     core.eventBus.on(GlobalEvent.PLAN_UPDATED, this.boundHandlers.handlePlanUpdated)
-    core.eventBus.on('LOCATION_CHANGED', this.boundHandlers.handleLocationChanged)
+    core.eventBus.on(GlobalEvent.LOCATION_CHANGED, this.boundHandlers.handleLocationChanged)
 
     // 注册对外服务
     core.service.register('perception.getTimeline', getTimeline.bind(this))
@@ -37,6 +38,12 @@ export default class PerceptionModule implements IPlugin {
     core.service.register('perception.toggleAutoSimulate', toggleAutoSimulate.bind(this))
     core.service.register('perception.getNotifications', getNotifications.bind(this))
     core.service.register('perception.markNotificationAsRead', markNotificationAsRead.bind(this))
+    core.service.register('perception.runRulesByType', runRulesByType.bind(this))
+    core.service.register('perception.addCustomRule', addCustomRule.bind(this))
+    core.service.register('perception.removeCustomRule', removeCustomRule.bind(this))
+    core.service.register('perception.getAllRules', getAllRules.bind(this))
+    core.service.register('perception.updateNodeStatus', updateNodeStatus.bind(this))
+    core.service.register('perception.insertCustomNode', insertCustomNode.bind(this))
   }
 
   onMount(core: ICore) {
@@ -46,7 +53,16 @@ export default class PerceptionModule implements IPlugin {
   onUnmount(core: ICore) {
     core.eventBus.off(GlobalEvent.PLAN_GENERATED, this.boundHandlers.handlePlanGenerated)
     core.eventBus.off(GlobalEvent.PLAN_UPDATED, this.boundHandlers.handlePlanUpdated)
-    core.eventBus.off('LOCATION_CHANGED', this.boundHandlers.handleLocationChanged)
+    core.eventBus.off(GlobalEvent.LOCATION_CHANGED, this.boundHandlers.handleLocationChanged)
+
+    // 停止所有用户的调度器
+    this.contexts.forEach((_, userId) => {
+      stopRuleScheduler(userId)
+      stopTimelineScheduler(userId)
+      // 停止自动位置模拟
+      toggleAutoSimulate.call(this, { userId, enabled: false })
+    })
+
     console.log('🛑 情境感知核心模块已卸载')
   }
 
