@@ -4,20 +4,20 @@
     <header class="h-16 bg-white border-b border-gray-200 px-8 flex items-center justify-between fixed top-0 left-0 right-0 z-20">
       <button
         @click="$emit('back')"
-        class="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
+        class="flex items-center gap-2 h-full px-2 text-gray-600 hover:text-gray-900 transition-colors"
       >
-        <span>←</span>
+        <span class="text-xl">←</span>
         <span>返回</span>
       </button>
 
-      <h1 class="text-xl font-bold text-gray-900">智能行程规划</h1>
+      <h1 class="text-xl font-bold text-gray-900 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">智能行程规划</h1>
 
-      <div class="flex items-center gap-2">
+      <div class="flex items-center gap-2 h-full px-2">
         <button
           @click="startNewChat"
-          class="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+          class="flex items-center gap-2 px-4 py-2 h-full text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
         >
-          <span>➕</span>
+          <span class="text-xl">➕</span>
           <span class="hidden sm:inline">新对话</span>
         </button>
         <button
