@@ -1,0 +1,25 @@
+{
+    "name": "trailmate",
+    "version": "1.0.0",
+    "type": "module",
+    "scripts": {
+        "dev:web": "vite platforms/web",
+        "build:web": "vite build platforms/web",
+        "build:core": "tsc -p core/tsconfig.json"
+    },
+    "dependencies": {
+        "@supabase/supabase-js": "^2.99.2",
+        "eventemitter3": "^5.0.4",
+        "marked": "^15.0.0",
+        "vue": "^3.4.0"
+    },
+    "devDependencies": {
+        "@vitejs/plugin-vue": "^5.0.0",
+        "autoprefixer": "^10.4.0",
+        "dotenv": "^17.3.1",
+        "tailwindcss": "^3.4.0",
+        "typescript": "^5.3.0",
+        "vite": "^6.0.0",
+        "vitest": "^4.1.0"
+    }
+}
