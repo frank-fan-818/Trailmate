@@ -9,7 +9,10 @@
     },
     "dependencies": {
         "@supabase/supabase-js": "^2.99.2",
+        "autoprefixer": "^10.4.27",
         "eventemitter3": "^5.0.4",
+        "marked": "^17.0.5",
+        "tailwindcss": "^3.4.19",
         "vue": "^3.4.0"
     },
     "devDependencies": {
