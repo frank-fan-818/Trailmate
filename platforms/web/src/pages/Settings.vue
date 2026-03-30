@@ -321,7 +321,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
+import { useSettings } from '../stores/settings'
+
+const { settings, saveSettings } = useSettings()
 
 const emit = defineEmits<{
   (e: 'back'): void
@@ -331,24 +334,10 @@ const travelTypes = ['休闲', '文化', '冒险', '美食', '购物', '自然']
 const transportTypes = ['飞机', '高铁', '自驾', '大巴']
 const accommodationTypes = ['酒店', '民宿', '青旅', '度假村']
 
-const settings = ref({
-  nickname: '旅行者',
-  bio: '',
-  budget: [3000, 10000],
-  travelTypes: ['休闲'],
-  transports: ['飞机'],
-  accommodations: ['酒店'],
-  notifications: {
-    itinerary: true,
-    context: true,
-    matching: true
-  },
-  darkMode: false,
-  language: 'zh',
-  privacy: {
-    visibleInMatching: true
-  }
-})
+// 监听设置变化，自动保存
+watch(settings, () => {
+  saveSettings()
+}, { deep: true })
 
 const toggleTravelType = (type: string) => {
   const index = settings.value.travelTypes.indexOf(type)

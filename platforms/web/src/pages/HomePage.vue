@@ -42,9 +42,7 @@
       <div class="max-w-4xl mx-auto text-center space-y-12">
         <!-- Logo -->
         <div class="flex justify-center mb-8">
-          <div class="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-xl">
-            <span class="text-white text-2xl font-bold">伴</span>
-          </div>
+          <img src="/logo.jpg" alt="伴旅" class="w-16 h-16 rounded-2xl shadow-xl object-cover" />
         </div>
 
         <!-- 标题 -->

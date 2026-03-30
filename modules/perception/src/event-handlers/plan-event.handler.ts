@@ -33,7 +33,7 @@ export async function handlePlanGenerated(this: PerceptionModule, data: {
   this.setContext(userId, context)
 
   // 生成初始时间线
-  await generateTimeline(userId, primaryPlan)
+  await generateTimeline.call(this, userId, primaryPlan)
 
   // 启动规则调度器
   await startRuleScheduler.call(this, userId)
@@ -62,7 +62,7 @@ export async function handlePlanUpdated(this: PerceptionModule, data: {
   this.setContext(userId, context)
 
   // 重新生成时间线
-  await generateTimeline(userId, plan)
+  await generateTimeline.call(this, userId, plan)
 
   console.log(`✅ 用户${userId}行程更新，时间线已同步`)
 }
