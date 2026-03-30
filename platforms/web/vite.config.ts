@@ -18,6 +18,11 @@ export default defineConfig({
         target: 'https://api.minimax.chat/v1',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api\/minimax/, '')
+      },
+      '/api/baidumap': {
+        target: 'http://api.map.baidu.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/baidumap/, '')
       }
     }
   }
