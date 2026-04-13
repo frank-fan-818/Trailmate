@@ -44,15 +44,39 @@
 
   /* Vercel 风格按钮 */
   .vercel-button-primary {
-    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-black text-white rounded text-body-sm font-medium transition-all duration-200 hover:bg-geist-700 hover:shadow-md active:scale-[0.98];
+    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-black text-white rounded text-sm font-medium transition-all duration-200;
+  }
+
+  .vercel-button-primary:hover {
+    @apply bg-geist-700 shadow-md;
+  }
+
+  .vercel-button-primary:active {
+    transform: scale(0.98);
   }
 
   .vercel-button-secondary {
-    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-white text-black rounded border border-geist-200 text-body-sm font-medium transition-all duration-200 hover:border-geist-400 hover:bg-geist-100 active:scale-[0.98];
+    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-white text-black rounded border border-geist-200 text-sm font-medium transition-all duration-200;
+  }
+
+  .vercel-button-secondary:hover {
+    @apply border-geist-400 bg-geist-100;
+  }
+
+  .vercel-button-secondary:active {
+    transform: scale(0.98);
   }
 
   .vercel-button-ghost {
-    @apply inline-flex items-center justify-center gap-2 px-4 py-2 bg-transparent text-black rounded text-body-sm font-medium transition-all duration-200 hover:bg-geist-100 active:scale-[0.98];
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2 bg-transparent text-black rounded text-sm font-medium transition-all duration-200;
+  }
+
+  .vercel-button-ghost:hover {
+    @apply bg-geist-100;
+  }
+
+  .vercel-button-ghost:active {
+    transform: scale(0.98);
   }
 
   /* Vercel 风格卡片 */
@@ -61,17 +85,25 @@
   }
 
   .vercel-card-hover {
-    @apply bg-white rounded border border-geist-200 transition-all duration-200 hover:border-geist-400;
+    @apply bg-white rounded border border-geist-200 transition-all duration-200;
+  }
+
+  .vercel-card-hover:hover {
+    @apply border-geist-400;
   }
 
   /* Vercel 风格输入框 */
   .vercel-input {
-    @apply w-full px-4 py-2.5 bg-white rounded text-black placeholder-geist-400 border border-geist-200 transition-all duration-200 focus:border-black focus:ring-1 focus:ring-black;
+    @apply w-full px-4 py-2.5 bg-white rounded text-black placeholder-geist-400 border border-geist-200 transition-all duration-200;
+  }
+
+  .vercel-input:focus {
+    @apply border-black ring-1 ring-black;
   }
 
   /* Vercel 风格徽章 */
   .vercel-badge {
-    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-caption font-medium border;
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border;
   }
 
   .vercel-badge-blue {
@@ -92,7 +124,9 @@
 
   /* Vercel 风格链接 */
   .vercel-link {
-    @apply text-vercel-blue hover:underline underline-offset-4 transition-colors duration-150;
+    @apply text-vercel-blue transition-colors duration-150;
+    text-decoration: underline;
+    text-underline-offset: 4px;
   }
 
   /* Vercel 风格分隔线 */
@@ -102,11 +136,11 @@
 
   /* 代码块样式 */
   .vercel-code {
-    @apply font-mono text-code bg-geist-100 px-1.5 py-0.5 rounded text-geist-700;
+    @apply font-mono text-sm bg-geist-100 px-1.5 py-0.5 rounded text-geist-700;
   }
 
   .vercel-code-block {
-    @apply font-mono text-code bg-geist-100 p-4 rounded border border-geist-200 overflow-x-auto;
+    @apply font-mono text-sm bg-geist-100 p-4 rounded border border-geist-200 overflow-x-auto;
   }
 }
 
