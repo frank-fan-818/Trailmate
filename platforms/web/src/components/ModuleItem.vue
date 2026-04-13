@@ -1,33 +1,33 @@
 <template>
-  <div class="flex items-start gap-3">
-    <!-- 状态图标 -->
+  <div class="flex items-start gap-4 p-4 rounded-apple-lg hover:bg-gray-50 transition-colors duration-200">
+    <!-- 状态图标 - Apple 风格 -->
     <div 
-      class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+      class="w-10 h-10 rounded-apple flex items-center justify-center flex-shrink-0"
       :class="[
-        status === 'done' ? 'bg-green-100' : 
-        status === 'in_progress' ? 'bg-blue-100' : 'bg-gray-100'
+        status === 'done' ? 'bg-apple-green/10' : 
+        status === 'in_progress' ? 'bg-apple-blue/10' : 'bg-gray-100'
       ]"
     >
-      <span class="text-sm">
-        {{ status === 'done' ? '✅' : status === 'in_progress' ? '🔄' : '⏳' }}
+      <span class="text-lg">
+        {{ status === 'done' ? '✓' : status === 'in_progress' ? '◐' : '○' }}
       </span>
     </div>
     
     <!-- 内容 -->
-    <div class="flex-1">
-      <div class="flex items-center gap-2 mb-0.5">
-        <h4 class="font-medium text-gray-900">{{ name }}</h4>
+    <div class="flex-1 min-w-0">
+      <div class="flex items-center gap-3 mb-1">
+        <h4 class="text-body font-semibold text-gray-600 truncate">{{ name }}</h4>
         <span 
-          class="text-xs px-2 py-0.5 rounded-full font-medium"
+          class="apple-badge flex-shrink-0"
           :class="[
-            status === 'done' ? 'bg-green-100 text-green-700' :
-            status === 'in_progress' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700'
+            status === 'done' ? 'apple-badge-green' :
+            status === 'in_progress' ? 'apple-badge-blue' : 'bg-gray-100 text-gray-500'
           ]"
         >
           {{ statusText }}
         </span>
       </div>
-      <p class="text-sm text-gray-500">{{ description }}</p>
+      <p class="text-subhead text-gray-400">{{ description }}</p>
     </div>
   </div>
 </template>
