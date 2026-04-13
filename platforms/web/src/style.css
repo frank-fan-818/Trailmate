@@ -44,11 +44,22 @@
 
   /* Vercel 风格按钮 */
   .vercel-button-primary {
-    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-black text-white rounded text-sm font-medium transition-all duration-200;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.625rem 1.25rem;
+    background-color: #000000;
+    color: #ffffff;
+    border-radius: 0.25rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
   }
 
   .vercel-button-primary:hover {
-    @apply bg-geist-700 shadow-md;
+    background-color: #333333;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
   }
 
   .vercel-button-primary:active {
@@ -56,11 +67,23 @@
   }
 
   .vercel-button-secondary {
-    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-white text-black rounded border border-geist-200 text-sm font-medium transition-all duration-200;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.625rem 1.25rem;
+    background-color: #ffffff;
+    color: #000000;
+    border-radius: 0.25rem;
+    border: 1px solid #eaeaea;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
   }
 
   .vercel-button-secondary:hover {
-    @apply border-geist-400 bg-geist-100;
+    border-color: #888888;
+    background-color: #fafafa;
   }
 
   .vercel-button-secondary:active {
@@ -68,11 +91,21 @@
   }
 
   .vercel-button-ghost {
-    @apply inline-flex items-center justify-center gap-2 px-4 py-2 bg-transparent text-black rounded text-sm font-medium transition-all duration-200;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background-color: transparent;
+    color: #000000;
+    border-radius: 0.25rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
   }
 
   .vercel-button-ghost:hover {
-    @apply bg-geist-100;
+    background-color: #fafafa;
   }
 
   .vercel-button-ghost:active {
@@ -81,66 +114,112 @@
 
   /* Vercel 风格卡片 */
   .vercel-card {
-    @apply bg-white rounded border border-geist-200 transition-all duration-200;
+    background-color: #ffffff;
+    border-radius: 0.25rem;
+    border: 1px solid #eaeaea;
+    transition: all 0.2s ease;
   }
 
   .vercel-card-hover {
-    @apply bg-white rounded border border-geist-200 transition-all duration-200;
+    background-color: #ffffff;
+    border-radius: 0.25rem;
+    border: 1px solid #eaeaea;
+    transition: all 0.2s ease;
   }
 
   .vercel-card-hover:hover {
-    @apply border-geist-400;
+    border-color: #888888;
   }
 
   /* Vercel 风格输入框 */
   .vercel-input {
-    @apply w-full px-4 py-2.5 bg-white rounded text-black placeholder-geist-400 border border-geist-200 transition-all duration-200;
+    width: 100%;
+    padding: 0.625rem 1rem;
+    background-color: #ffffff;
+    border-radius: 0.25rem;
+    color: #000000;
+    border: 1px solid #eaeaea;
+    transition: all 0.2s ease;
+  }
+
+  .vercel-input::placeholder {
+    color: #888888;
   }
 
   .vercel-input:focus {
-    @apply border-black ring-1 ring-black;
+    border-color: #000000;
+    box-shadow: 0 0 0 1px #000000;
+    outline: none;
   }
 
   /* Vercel 风格徽章 */
   .vercel-badge {
-    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border;
+    display: inline-flex;
+    align-items: center;
+    padding: 0.125rem 0.625rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    border-width: 1px;
+    border-style: solid;
   }
 
   .vercel-badge-blue {
-    @apply vercel-badge bg-blue-50 text-vercel-blue border-blue-200;
+    background-color: rgba(0, 112, 243, 0.1);
+    color: #0070f3;
+    border-color: rgba(0, 112, 243, 0.2);
   }
 
   .vercel-badge-green {
-    @apply vercel-badge bg-green-50 text-vercel-green border-green-200;
+    background-color: rgba(34, 197, 94, 0.1);
+    color: #22c55e;
+    border-color: rgba(34, 197, 94, 0.2);
   }
 
   .vercel-badge-purple {
-    @apply vercel-badge bg-purple-50 text-vercel-purple border-purple-200;
+    background-color: rgba(248, 28, 229, 0.1);
+    color: #f81ce5;
+    border-color: rgba(248, 28, 229, 0.2);
   }
 
   .vercel-badge-gray {
-    @apply vercel-badge bg-geist-100 text-geist-500 border-geist-200;
+    background-color: #fafafa;
+    color: #666666;
+    border-color: #eaeaea;
   }
 
   /* Vercel 风格链接 */
   .vercel-link {
-    @apply text-vercel-blue transition-colors duration-150;
+    color: #0070f3;
+    transition: color 0.15s ease;
     text-decoration: underline;
     text-underline-offset: 4px;
   }
 
   /* Vercel 风格分隔线 */
   .vercel-divider {
-    @apply h-px bg-geist-200;
+    height: 1px;
+    background-color: #eaeaea;
   }
 
   /* 代码块样式 */
   .vercel-code {
-    @apply font-mono text-sm bg-geist-100 px-1.5 py-0.5 rounded text-geist-700;
+    font-family: 'Geist Mono', 'SF Mono', Monaco, Inconsolata, monospace;
+    font-size: 0.875rem;
+    background-color: #fafafa;
+    padding: 0.125rem 0.375rem;
+    border-radius: 0.25rem;
+    color: #333333;
   }
 
   .vercel-code-block {
-    @apply font-mono text-sm bg-geist-100 p-4 rounded border border-geist-200 overflow-x-auto;
+    font-family: 'Geist Mono', 'SF Mono', Monaco, Inconsolata, monospace;
+    font-size: 0.875rem;
+    background-color: #fafafa;
+    padding: 1rem;
+    border-radius: 0.25rem;
+    border: 1px solid #eaeaea;
+    overflow-x: auto;
   }
 }
 
@@ -148,7 +227,10 @@
 
   /* 渐变文字 */
   .text-gradient-vercel {
-    @apply bg-gradient-to-r from-vercel-blue to-vercel-purple bg-clip-text text-transparent;
+    background: linear-gradient(to right, #0070f3, #7928ca);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
   }
 
   /* 网格背景 */
