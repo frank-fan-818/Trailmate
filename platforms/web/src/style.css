@@ -16,18 +16,18 @@
   }
 
   body {
-    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 
-                 'Helvetica Neue', Helvetica, Arial, 'PingFang SC', 
+    font-family: 'Geist Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI',
+                 'Roboto', 'Helvetica Neue', 'Arial', 'PingFang SC',
                  'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
-    background-color: #f5f5f7;
-    color: #1d1d1f;
-    line-height: 1.47059;
+    background-color: #ffffff;
+    color: #000000;
+    line-height: 1.6;
     font-weight: 400;
-    letter-spacing: -0.022em;
   }
 
   ::selection {
-    background-color: rgba(0, 122, 255, 0.2);
+    background-color: #0070f3;
+    color: #ffffff;
   }
 
   :focus {
@@ -35,115 +35,141 @@
   }
 
   :focus-visible {
-    outline: 2px solid #007AFF;
+    outline: 2px solid #0070f3;
     outline-offset: 2px;
   }
 }
 
 @layer components {
-  .apple-button {
-    @apply inline-flex items-center justify-center px-6 py-3 
-           bg-apple-blue text-white rounded-apple font-medium
-           transition-all duration-200 ease-apple
-           hover:brightness-110 active:scale-[0.98]
-           focus-visible:ring-2 focus-visible:ring-apple-blue focus-visible:ring-offset-2;
+  /* Vercel 风格按钮 */
+  .vercel-button-primary {
+    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5
+           bg-foreground text-background rounded
+           text-body-sm font-medium
+           transition-all duration-200
+           hover:bg-geist-700 hover:shadow-md
+           active:scale-[0.98];
   }
 
-  .apple-button-secondary {
-    @apply inline-flex items-center justify-center px-6 py-3
-           bg-white text-gray-600 rounded-apple font-medium
-           border border-gray-200
-           transition-all duration-200 ease-apple
-           hover:bg-gray-50 active:scale-[0.98]
-           focus-visible:ring-2 focus-visible:ring-gray-400 focus-visible:ring-offset-2;
+  .vercel-button-secondary {
+    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5
+           bg-white text-foreground rounded
+           border border-geist-200
+           text-body-sm font-medium
+           transition-all duration-200
+           hover:border-geist-400 hover:bg-geist-100
+           active:scale-[0.98];
   }
 
-  .apple-button-dark {
-    @apply inline-flex items-center justify-center px-6 py-3
-           bg-gray-600 text-white rounded-apple font-medium
-           transition-all duration-200 ease-apple
-           hover:bg-gray-700 active:scale-[0.98]
-           focus-visible:ring-2 focus-visible:ring-gray-600 focus-visible:ring-offset-2;
+  .vercel-button-ghost {
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2
+           bg-transparent text-foreground rounded
+           text-body-sm font-medium
+           transition-all duration-200
+           hover:bg-geist-100
+           active:scale-[0.98];
   }
 
-  .apple-card {
-    @apply bg-white rounded-apple-lg shadow-apple
-           transition-all duration-200 ease-apple;
+  /* Vercel 风格卡片 */
+  .vercel-card {
+    @apply bg-white rounded border border-geist-200
+           transition-all duration-200;
   }
 
-  .apple-card-hover {
-    @apply bg-white rounded-apple-lg shadow-apple
-           transition-all duration-200 ease-apple
-           hover:shadow-apple-md hover:-translate-y-0.5;
+  .vercel-card-hover {
+    @apply bg-white rounded border border-geist-200
+           transition-all duration-200
+           hover:border-geist-400;
   }
 
-  .apple-input {
-    @apply w-full px-4 py-3 bg-gray-100 rounded-apple-sm
-           text-gray-600 placeholder-gray-400
-           border border-transparent
-           transition-all duration-200 ease-apple
-           focus:bg-white focus:border-apple-blue focus:ring-1 focus:ring-apple-blue;
+  /* Vercel 风格输入框 */
+  .vercel-input {
+    @apply w-full px-4 py-2.5 bg-white rounded
+           text-foreground placeholder-geist-400
+           border border-geist-200
+           transition-all duration-200
+           focus:border-foreground focus:ring-1 focus:ring-foreground;
   }
 
-  .apple-badge {
-    @apply inline-flex items-center px-3 py-1 
-           rounded-full text-footnote font-medium;
+  /* Vercel 风格徽章 */
+  .vercel-badge {
+    @apply inline-flex items-center px-2.5 py-0.5 
+           rounded-full text-caption font-medium
+           border;
   }
 
-  .apple-badge-blue {
-    @apply apple-badge bg-blue-50 text-apple-blue;
+  .vercel-badge-blue {
+    @apply vercel-badge bg-blue-50 text-vercel-blue border-blue-200;
   }
 
-  .apple-badge-green {
-    @apply apple-badge bg-green-50 text-apple-green;
+  .vercel-badge-green {
+    @apply vercel-badge bg-green-50 text-vercel-green border-green-200;
   }
 
-  .apple-badge-orange {
-    @apply apple-badge bg-orange-50 text-apple-orange;
+  .vercel-badge-purple {
+    @apply vercel-badge bg-purple-50 text-vercel-purple border-purple-200;
   }
 
-  .apple-badge-red {
-    @apply apple-badge bg-red-50 text-apple-red;
+  .vercel-badge-gray {
+    @apply vercel-badge bg-geist-100 text-geist-500 border-geist-200;
   }
 
-  .apple-badge-purple {
-    @apply apple-badge bg-purple-50 text-apple-purple;
-  }
-
-  .apple-link {
-    @apply text-apple-blue hover:underline underline-offset-2
+  /* Vercel 风格链接 */
+  .vercel-link {
+    @apply text-vercel-blue hover:underline underline-offset-4
            transition-colors duration-150;
   }
 
-  .apple-divider {
-    @apply h-px bg-gray-200;
+  /* Vercel 风格分隔线 */
+  .vercel-divider {
+    @apply h-px bg-geist-200;
   }
 
-  .apple-glass {
-    @apply bg-white/80 backdrop-blur-xl;
+  /* 代码块样式 */
+  .vercel-code {
+    @apply font-mono text-code bg-geist-100 
+           px-1.5 py-0.5 rounded
+           text-geist-700;
+  }
+
+  .vercel-code-block {
+    @apply font-mono text-code bg-geist-100 
+           p-4 rounded border border-geist-200
+           overflow-x-auto;
   }
 }
 
 @layer utilities {
-  .text-gradient-apple {
-    @apply bg-gradient-to-r from-apple-blue to-apple-purple 
+  /* 渐变文字 */
+  .text-gradient-vercel {
+    @apply bg-gradient-to-r from-vercel-blue to-vercel-purple 
            bg-clip-text text-transparent;
   }
 
-  .animate-float {
-    animation: float 6s ease-in-out infinite;
+  /* 网格背景 */
+  .bg-grid {
+    background-size: 40px 40px;
   }
 
-  .animate-float-delay-1 {
-    animation: float 6s ease-in-out infinite;
-    animation-delay: 1s;
+  .bg-grid-pattern {
+    background-image: 
+      linear-gradient(to right, #eaeaea 1px, transparent 1px),
+      linear-gradient(to bottom, #eaeaea 1px, transparent 1px);
   }
 
-  .animate-float-delay-2 {
-    animation: float 6s ease-in-out infinite;
-    animation-delay: 2s;
+  /* 微光动画 */
+  .animate-shimmer {
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.4) 50%,
+      transparent 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 2s infinite;
   }
 
+  /* 隐藏滚动条 */
   .scrollbar-hide {
     -ms-overflow-style: none;
     scrollbar-width: none;
@@ -154,23 +180,22 @@
   }
 }
 
-@keyframes float {
-  0%, 100% {
-    transform: translateY(0) rotate(0deg);
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
   }
-  50% {
-    transform: translateY(-20px) rotate(2deg);
+  100% {
+    background-position: 200% 0;
   }
 }
 
+/* 减少动画 */
 @media (prefers-reduced-motion: reduce) {
-  .animate-float,
-  .animate-float-delay-1,
-  .animate-float-delay-2,
   .animate-fade-in,
   .animate-slide-up,
   .animate-scale-in,
-  .animate-apple-bounce {
+  .animate-pulse,
+  .animate-shimmer {
     animation: none;
   }
 }
