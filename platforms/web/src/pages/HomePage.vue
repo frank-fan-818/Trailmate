@@ -1,102 +1,91 @@
 <template>
-  <div class="min-h-screen bg-gray-50 relative overflow-hidden">
-    <!-- 背景网格 -->
+  <div class="min-h-screen bg-gray-100 relative overflow-hidden">
     <div 
       class="absolute inset-0"
-      style="background-image: radial-gradient(#e5e7eb 1px, transparent 1px); background-size: 20px 20px;"
+      style="background-image: radial-gradient(#d2d2d7 1px, transparent 1px); background-size: 24px 24px;"
     />
     
-    <!-- 浮动图片装饰（仅桌面端显示） -->
     <div class="hidden lg:block absolute inset-0 pointer-events-none">
-      <!-- 左上角浮动卡片 -->
-      <div class="absolute top-16 left-10 w-60 h-40 rounded-xl shadow-xl overflow-hidden float-animation bg-white p-2">
-        <div class="w-full h-full bg-gradient-to-br from-purple-100 to-blue-100 rounded-lg flex items-center justify-center">
-          <span class="text-lg font-bold text-purple-700">行程规划</span>
+      <div class="absolute top-20 left-12 w-64 h-44 rounded-apple-xl shadow-apple-lg overflow-hidden animate-float bg-white p-3">
+        <div class="w-full h-full bg-gradient-to-br from-apple-blue/10 to-apple-purple/10 rounded-apple-lg flex items-center justify-center">
+          <span class="text-title3 font-semibold text-apple-blue">行程规划</span>
         </div>
       </div>
       
-      <!-- 右上角浮动卡片 -->
-      <div class="absolute top-20 right-16 w-48 h-32 rounded-xl shadow-xl overflow-hidden float-animation float-animation-delay-1 bg-white p-2">
-        <div class="w-full h-full bg-gradient-to-br from-green-100 to-yellow-100 rounded-lg flex items-center justify-center">
-          <span class="text-lg font-bold text-green-700">情境感知</span>
+      <div class="absolute top-24 right-20 w-52 h-36 rounded-apple-xl shadow-apple-lg overflow-hidden animate-float-delay-1 bg-white p-3">
+        <div class="w-full h-full bg-gradient-to-br from-apple-green/10 to-apple-teal/10 rounded-apple-lg flex items-center justify-center">
+          <span class="text-title3 font-semibold text-apple-green">情境感知</span>
         </div>
       </div>
       
-      <!-- 左下角浮动卡片 -->
-      <div class="absolute bottom-24 left-16 w-52 h-36 rounded-xl shadow-xl overflow-hidden float-animation float-animation-delay-2 bg-white p-2">
-        <div class="w-full h-full bg-gradient-to-br from-orange-100 to-red-100 rounded-lg flex items-center justify-center">
-          <span class="text-lg font-bold text-orange-700">旅伴匹配</span>
+      <div class="absolute bottom-28 left-20 w-56 h-40 rounded-apple-xl shadow-apple-lg overflow-hidden animate-float-delay-2 bg-white p-3">
+        <div class="w-full h-full bg-gradient-to-br from-apple-orange/10 to-apple-red/10 rounded-apple-lg flex items-center justify-center">
+          <span class="text-title3 font-semibold text-apple-orange">旅伴匹配</span>
         </div>
       </div>
       
-      <!-- 右下角浮动卡片 -->
-      <div class="absolute bottom-32 right-10 w-40 h-40 rounded-full shadow-xl overflow-hidden float-animation bg-white p-3">
-        <div class="w-full h-full bg-gradient-to-br from-blue-100 to-cyan-100 rounded-full flex items-center justify-center">
-          <span class="text-lg font-bold text-blue-700 text-center">AI<br>智能</span>
+      <div class="absolute bottom-36 right-12 w-44 h-44 rounded-full shadow-apple-lg overflow-hidden animate-float bg-white p-4">
+        <div class="w-full h-full bg-gradient-to-br from-apple-purple/10 to-apple-pink/10 rounded-full flex items-center justify-center">
+          <span class="text-title3 font-semibold text-apple-purple text-center">AI<br>智能</span>
         </div>
       </div>
     </div>
 
-    <!-- 内容区 -->
-    <div class="relative container mx-auto px-4 pt-24 pb-32">
-      <div class="max-w-4xl mx-auto text-center space-y-12">
-        <!-- Logo -->
-        <div class="flex justify-center mb-8">
-          <img src="/logo.jpg" alt="伴旅" class="w-16 h-16 rounded-2xl shadow-xl object-cover" />
+    <div class="relative container mx-auto px-6 pt-28 pb-36">
+      <div class="max-w-5xl mx-auto text-center space-y-14">
+        <div class="flex justify-center mb-10">
+          <img src="/logo.jpg" alt="伴旅" class="w-20 h-20 rounded-apple-xl shadow-apple-lg object-cover" />
         </div>
 
-        <!-- 标题 -->
-        <div class="space-y-6">
-          <h1 class="font-bold text-gray-900 leading-tight lg:leading-normal text-5xl lg:text-6xl">
+        <div class="space-y-8">
+          <h1 class="font-semibold text-gray-600 leading-tight tracking-tight text-display">
             伴旅，让每一次旅行
             <br>
-            <span class="bg-gradient-to-r from-blue-600 to-purple-600 text-transparent bg-clip-text">
+            <span class="text-gradient-apple">
               都恰到好处
             </span>
           </h1>
           
-          <p class="text-gray-600 text-xl lg:text-2xl max-w-2xl mx-auto">
+          <p class="text-gray-400 text-title2 max-w-2xl mx-auto font-normal">
             AI 智能规划行程，发现旅途中的美好，解决旅行所有痛点
           </p>
         </div>
 
-        <!-- 功能特性 -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-16">
-          <div class="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow">
-            <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
-              <span class="text-blue-600 text-xl">✨</span>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mt-20">
+          <div class="apple-card-hover p-8">
+            <div class="w-14 h-14 bg-apple-blue/10 rounded-apple flex items-center justify-center mb-5">
+              <span class="text-apple-blue text-2xl">✨</span>
             </div>
-            <h3 class="text-lg font-bold text-gray-900 mb-2">智能行程规划</h3>
-            <p class="text-gray-600">AI 驱动，输入目的地一键生成多套行程方案</p>
+            <h3 class="text-title3 font-semibold text-gray-600 mb-3">智能行程规划</h3>
+            <p class="text-callout text-gray-400">AI 驱动，输入目的地一键生成多套行程方案</p>
           </div>
           
-          <div class="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow">
-            <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-4">
-              <span class="text-green-600 text-xl">⏰</span>
+          <div class="apple-card-hover p-8">
+            <div class="w-14 h-14 bg-apple-green/10 rounded-apple flex items-center justify-center mb-5">
+              <span class="text-apple-green text-2xl">⏰</span>
             </div>
-            <h3 class="text-lg font-bold text-gray-900 mb-2">情境感知服务</h3>
-            <p class="text-gray-600">实时感知环境，主动推送旅行提示和建议</p>
+            <h3 class="text-title3 font-semibold text-gray-600 mb-3">情境感知服务</h3>
+            <p class="text-callout text-gray-400">实时感知环境，主动推送旅行提示和建议</p>
           </div>
           
-          <div class="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow">
-            <div class="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center mb-4">
-              <span class="text-orange-600 text-xl">👥</span>
+          <div class="apple-card-hover p-8">
+            <div class="w-14 h-14 bg-apple-orange/10 rounded-apple flex items-center justify-center mb-5">
+              <span class="text-apple-orange text-2xl">👥</span>
             </div>
-            <h3 class="text-lg font-bold text-gray-900 mb-2">旅伴匹配系统</h3>
-            <p class="text-gray-600">智能匹配兴趣相投的旅行伙伴，告别独自旅行</p>
+            <h3 class="text-title3 font-semibold text-gray-600 mb-3">旅伴匹配系统</h3>
+            <p class="text-callout text-gray-400">智能匹配兴趣相投的旅行伙伴，告别独自旅行</p>
           </div>
         </div>
 
-        <!-- 行动按钮 -->
-        <div class="flex flex-col sm:flex-row items-center justify-center gap-4 mt-12">
+        <div class="flex flex-col sm:flex-row items-center justify-center gap-5 mt-16">
           <button 
             @click="$emit('start')"
-            class="px-8 py-4 bg-black text-white rounded-xl font-medium text-lg hover:bg-gray-800 transition-colors shadow-lg"
+            class="apple-button-dark px-10 py-4 text-headline"
           >
             立即开始
           </button>
           
-          <button class="px-8 py-4 bg-white text-gray-800 rounded-xl font-medium text-lg hover:bg-gray-50 transition-colors shadow-md border border-gray-200">
+          <button class="apple-button-secondary px-10 py-4 text-headline">
             了解更多
           </button>
         </div>
@@ -112,7 +101,6 @@ const emit = defineEmits<{
 </script>
 
 <style scoped>
-/* 移动端隐藏浮动动画 */
 @media (max-width: 1023px) {
   .lg\\:block {
     display: none;

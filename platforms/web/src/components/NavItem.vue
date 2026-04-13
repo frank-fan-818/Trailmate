@@ -1,15 +1,15 @@
 <template>
   <button
-    class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors text-left"
+    class="w-full flex items-center gap-3.5 px-4 py-3 rounded-apple transition-all duration-200 text-left"
     :class="[
       active
-        ? 'bg-blue-50 text-blue-600 font-medium'
-        : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+        ? 'bg-apple-blue/10 text-apple-blue font-medium'
+        : 'text-gray-500 hover:bg-gray-100 hover:text-gray-600'
     ]"
     @click="$emit('click')"
   >
-    <span class="text-lg">{{ icon }}</span>
-    <span>{{ title }}</span>
+    <span class="text-xl">{{ icon }}</span>
+    <span class="text-subhead">{{ title }}</span>
   </button>
 </template>
 
