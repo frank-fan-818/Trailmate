@@ -1,215 +1,162 @@
 <template>
-  <div class="min-h-screen bg-gray-50 flex">
-    <!-- 左侧侧边栏 -->
-    <aside class="w-64 bg-white border-r border-gray-200 flex flex-col h-screen sticky top-0">
-      <!-- Logo -->
-      <div class="p-6 border-b border-gray-100">
-        <div class="flex items-center gap-3">
-          <img src="/logo.jpg" alt="伴旅" class="w-10 h-10 rounded-xl shadow object-cover" />
-          <span class="text-xl font-bold text-gray-900">伴旅</span>
+  <div class="min-h-screen">
+    <!-- 背景 -->
+    <div class="fixed top-0 left-0 w-full h-screen -z-10">
+      <div class="absolute inset-0 bg-gradient-to-b from-blue-400/30 to-orange-300/30"></div>
+      <div class="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1506973035872-a4ec16b8e8d9?auto=format&fit=crop&w=1920&q=80')] bg-cover bg-center opacity-30"></div>
+    </div>
+
+    <!-- 导航栏 -->
+    <header class="fixed top-0 w-full z-50 py-6 transition-all duration-300 bg-white/85 backdrop-blur-md shadow-md text-gray-900">
+      <div class="max-w-[1100px] mx-auto px-8 flex justify-between items-center">
+        <div class="flex items-center gap-3 -ml-4">
+          <img src="/logo.jpg" alt="Trailmate" class="w-10 h-10 rounded-lg object-cover" />
+          <span class="text-xl font-bold">Trailmate<span class="text-primary">.</span></span>
+        </div>
+        <div class="flex gap-8 font-semibold text-sm">
+          <button class="text-gray-700 hover:text-primary transition-colors">概览</button>
+          <button @click="$emit('startPlanning')" class="text-gray-700 hover:text-primary transition-colors">行程规划</button>
+          <button class="text-gray-700 hover:text-primary transition-colors">我的行程</button>
+          <button class="text-gray-700 hover:text-primary transition-colors">伴友社区</button>
+        </div>
+        <div class="flex items-center gap-4">
+          <button @click="$emit('openSettings')" class="text-gray-700 hover:text-primary transition-colors">设置</button>
+          <button class="text-gray-700 hover:text-primary transition-colors">帮助</button>
         </div>
       </div>
-
-      <!-- 导航菜单 -->
-      <nav class="flex-1 p-4 space-y-1 overflow-y-auto">
-        <div class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3 px-3">
-          主菜单
-        </div>
-        
-        <NavItem 
-          icon="🏠" 
-          title="概览"
-          active
-        />
-        <NavItem 
-          icon="✈️" 
-          title="行程规划"
-          @click="$emit('startPlanning')"
-        />
-        <NavItem 
-          icon="📅" 
-          title="我的行程"
-        />
-        <NavItem 
-          icon="🔔" 
-          title="行程提醒"
-        />
-        <NavItem 
-          icon="👥" 
-          title="旅伴匹配"
-        />
-
-        <div class="text-xs font-semibold text-gray-500 uppercase tracking-wider mt-8 mb-3 px-3">
-          系统
-        </div>
-
-        <NavItem 
-          icon="⚙️" 
-          title="设置"
-          @click="$emit('openSettings')"
-        />
-        <NavItem 
-          icon="❓" 
-          title="帮助与反馈"
-        />
-      </nav>
-
-      <!-- 用户信息 -->
-      <div class="p-4 border-t border-gray-100">
-        <div class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer">
-          <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-            <span class="text-blue-600 font-medium">游</span>
-          </div>
-          <div class="flex-1 text-left">
-            <div class="text-sm font-medium text-gray-900">旅行者</div>
-            <div class="text-xs text-gray-500">Personal</div>
-          </div>
-        </div>
-      </div>
-    </aside>
+    </header>
 
     <!-- 主内容区 -->
-    <main class="flex-1 min-h-screen">
-      <!-- 顶部导航栏 -->
-      <header class="h-16 bg-white border-b border-gray-200 sticky top-0 z-10 px-8 flex items-center justify-between">
-        <div class="flex items-center gap-2 text-sm text-gray-500">
-          <span>Pages</span>
-          <span>/</span>
-          <span class="text-gray-900 font-medium">概览</span>
-        </div>
-        
-        <div class="flex items-center gap-4">
-          <!-- 状态指示器 -->
-          <div class="flex items-center gap-2 px-3 py-1 bg-green-50 rounded-full">
-            <span class="w-2 h-2 bg-green-500 rounded-full"></span>
-            <span class="text-sm text-green-700 font-medium">系统正常</span>
+    <div class="max-w-[1100px] mx-auto px-8 py-32">
+      <!-- 欢迎区域 -->
+      <section class="text-center mb-24">
+        <h1 class="text-4xl lg:text-5xl font-extrabold text-gray-900 mb-6">欢迎回来，旅行者</h1>
+        <p class="text-lg text-gray-600 max-w-2xl mx-auto">让我们一起探索世界的美好，创造难忘的旅行记忆</p>
+      </section>
+
+      <!-- 快速操作卡片 -->
+      <section class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-24">
+        <div class="bg-white rounded-md shadow-sm border border-gray-200 p-8 hover:shadow-md transition-shadow hover:-translate-y-1 transition-transform">
+          <div class="w-14 h-14 bg-gradient-to-br from-blue-500 to-orange-400 rounded-md flex items-center justify-center mb-6 text-white">
+            <span class="text-2xl">✈️</span>
           </div>
-          
-          <!-- 快捷按钮 -->
-          <button class="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-            <span class="text-lg">🔔</span>
-          </button>
-          <button class="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-            <span class="text-lg">🌙</span>
+          <h3 class="text-xl font-bold text-gray-900 mb-3">开始规划</h3>
+          <p class="text-gray-600 mb-6">定制你的专属旅行剧本</p>
+          <button 
+            @click="$emit('startPlanning')"
+            class="w-full py-3 bg-primary text-white rounded-md font-semibold hover:bg-primary/90 transition-colors"
+          >
+            立即开始
           </button>
         </div>
-      </header>
 
-      <!-- 内容区域 -->
-      <div class="p-8">
-        <!-- 通知横幅 -->
-        <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-8">
-          <p class="text-blue-800">
-            <span class="font-medium">提示：</span>
-            您可以在左侧选择「行程规划」开始您的第一次智能旅行规划体验！
-          </p>
+        <div class="bg-white rounded-md shadow-sm border border-gray-200 p-8 hover:shadow-md transition-shadow hover:-translate-y-1 transition-transform">
+          <div class="w-14 h-14 bg-gradient-to-br from-blue-500 to-orange-400 rounded-md flex items-center justify-center mb-6 text-white">
+            <span class="text-2xl">📅</span>
+          </div>
+          <h3 class="text-xl font-bold text-gray-900 mb-3">我的行程</h3>
+          <p class="text-gray-600 mb-6">查看和管理你的旅行计划</p>
+          <button class="w-full py-3 bg-primary text-white rounded-md font-semibold hover:bg-primary/90 transition-colors">
+            查看行程
+          </button>
         </div>
 
-        <!-- 欢迎卡片 -->
-        <div class="bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl p-8 mb-8 shadow-sm">
-          <div class="flex justify-between items-start mb-6">
-            <div>
-              <h2 class="text-4xl font-bold text-gray-900 mb-2">欢迎使用伴旅</h2>
-              <p class="text-gray-600">让每一次旅行都恰到好处</p>
-            </div>
-            <button 
-              @click="$emit('startPlanning')"
-              class="px-5 py-3 bg-black text-white rounded-xl font-medium hover:bg-gray-800 transition-colors"
-            >
-              开始规划
-            </button>
+        <div class="bg-white rounded-md shadow-sm border border-gray-200 p-8 hover:shadow-md transition-shadow hover:-translate-y-1 transition-transform">
+          <div class="w-14 h-14 bg-gradient-to-br from-blue-500 to-orange-400 rounded-md flex items-center justify-center mb-6 text-white">
+            <span class="text-2xl">👥</span>
           </div>
-          
-          <div class="space-y-3">
-            <div class="flex items-center gap-3 text-sm text-gray-600">
-              <span class="text-xl">✨</span>
-              <span>AI 智能规划，一键生成多套行程方案</span>
+          <h3 class="text-xl font-bold text-gray-900 mb-3">旅伴匹配</h3>
+          <p class="text-gray-600 mb-6">找到志同道合的旅行伙伴</p>
+          <button class="w-full py-3 bg-primary text-white rounded-md font-semibold hover:bg-primary/90 transition-colors">
+            寻找旅伴
+          </button>
+        </div>
+      </section>
+
+      <!-- 旅行灵感 -->
+      <section class="mb-24">
+        <h2 class="text-2xl font-bold text-gray-900 mb-8">旅行灵感</h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div class="rounded-md overflow-hidden border border-gray-200 shadow-sm aspect-[4/3] group relative">
+            <img 
+              src="/海边日落.jpg" 
+              alt="海边日落" 
+              class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+            />
+            <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-6">
+              <h3 class="text-white text-xl font-bold mb-2">海边日落之旅</h3>
+              <p class="text-white/90 text-sm">探索最美海岸线</p>
             </div>
-            <div class="flex items-center gap-3 text-sm text-gray-600">
-              <span class="text-xl">⏰</span>
-              <span>情境感知服务，实时推送旅行提示</span>
+          </div>
+
+          <div class="rounded-md overflow-hidden border border-gray-200 shadow-sm aspect-[4/3] group relative">
+            <img 
+              src="/山地险峰.jpg" 
+              alt="山景" 
+              class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+            />
+            <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-6">
+              <h3 class="text-white text-xl font-bold mb-2">山地探险</h3>
+              <p class="text-white/90 text-sm">征服壮丽山峰</p>
             </div>
-            <div class="flex items-center gap-3 text-sm text-gray-600">
-              <span class="text-xl">👥</span>
-              <span>旅伴匹配系统，找到合适的旅行伙伴</span>
+          </div>
+
+          <div class="rounded-md overflow-hidden border border-gray-200 shadow-sm aspect-[4/3] group relative">
+            <img 
+              src="/现代城市.jpg" 
+              alt="城市探索" 
+              class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+            />
+            <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-6">
+              <h3 class="text-white text-xl font-bold mb-2">城市探索</h3>
+              <p class="text-white/90 text-sm">发现都市魅力</p>
             </div>
           </div>
         </div>
+      </section>
 
-        <!-- 功能概览卡片 -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-          <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <h3 class="text-lg font-bold text-gray-900 mb-6">🎯 核心功能</h3>
-            
-            <div class="space-y-4">
-              <div class="flex items-start gap-3">
-                <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <span class="text-xl">✈️</span>
-                </div>
-                <div class="flex-1">
-                  <h4 class="font-medium text-gray-900">智能行程规划</h4>
-                  <p class="text-sm text-gray-500">AI 驱动，一键生成多套行程方案</p>
-                </div>
+      <!-- 旅行提示 -->
+      <section>
+        <h2 class="text-2xl font-bold text-gray-900 mb-8">旅行提示</h2>
+        <div class="bg-white rounded-md shadow-sm border border-gray-200 p-8">
+          <div class="space-y-6">
+            <div class="flex items-start gap-4">
+              <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-orange-400 rounded-md flex items-center justify-center flex-shrink-0 text-white">
+                <span class="text-xl">🌤️</span>
               </div>
-              
-              <div class="flex items-start gap-3">
-                <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <span class="text-xl">⏰</span>
-                </div>
-                <div class="flex-1">
-                  <h4 class="font-medium text-gray-900">情境感知服务</h4>
-                  <p class="text-sm text-gray-500">实时感知环境，主动推送旅行提示</p>
-                </div>
-              </div>
-              
-              <div class="flex items-start gap-3">
-                <div class="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <span class="text-xl">👥</span>
-                </div>
-                <div class="flex-1">
-                  <h4 class="font-medium text-gray-900">旅伴匹配系统</h4>
-                  <p class="text-sm text-gray-500">智能匹配兴趣相投的旅行伙伴</p>
-                </div>
+              <div class="flex-1">
+                <h3 class="text-lg font-bold text-gray-900 mb-2">天气准备</h3>
+                <p class="text-gray-600">根据目的地的天气情况，提前准备合适的衣物和装备</p>
               </div>
             </div>
-          </div>
-          
-          <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <h3 class="text-lg font-bold text-gray-900 mb-6">📊 使用统计</h3>
-            
-            <div class="space-y-4">
-              <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <span class="text-sm text-gray-600">已生成行程</span>
-                <span class="text-lg font-bold text-gray-900">0</span>
+
+            <div class="flex items-start gap-4">
+              <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-orange-400 rounded-md flex items-center justify-center flex-shrink-0 text-white">
+                <span class="text-xl">🧳</span>
               </div>
-              
-              <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <span class="text-sm text-gray-600">已匹配旅伴</span>
-                <span class="text-lg font-bold text-gray-900">0</span>
+              <div class="flex-1">
+                <h3 class="text-lg font-bold text-gray-900 mb-2">行李打包</h3>
+                <p class="text-gray-600">合理打包行李，不要携带过多物品，确保旅行轻松愉快</p>
               </div>
-              
-              <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <span class="text-sm text-gray-600">收到提醒</span>
-                <span class="text-lg font-bold text-gray-900">0</span>
+            </div>
+
+            <div class="flex items-start gap-4">
+              <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-orange-400 rounded-md flex items-center justify-center flex-shrink-0 text-white">
+                <span class="text-xl">📱</span>
               </div>
-              
-              <div class="mt-4 p-4 bg-blue-50 rounded-lg">
-                <p class="text-sm text-blue-800">
-                  <span class="font-medium">开始使用：</span>
-                  点击左侧「行程规划」开始你的第一次智能旅行规划体验！
-                </p>
+              <div class="flex-1">
+                <h3 class="text-lg font-bold text-gray-900 mb-2">旅行应用</h3>
+                <p class="text-gray-600">下载必要的旅行应用，如地图、翻译、天气等</p>
               </div>
             </div>
           </div>
         </div>
-      </div>
-    </main>
+      </section>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import NavItem from '@/components/NavItem.vue'
-
 const emit = defineEmits<{
   (e: 'startPlanning'): void
   (e: 'openSettings'): void
@@ -217,10 +164,10 @@ const emit = defineEmits<{
 </script>
 
 <style scoped>
-/* 响应式调整，移动端隐藏侧边栏 */
-@media (max-width: 1023px) {
-  aside {
-    display: none;
+/* 响应式调整 */
+@media (max-width: 768px) {
+  .grid-cols-3 {
+    grid-template-columns: 1fr;
   }
 }
 </style>

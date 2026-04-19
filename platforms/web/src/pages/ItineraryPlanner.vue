@@ -1,32 +1,36 @@
 <template>
-  <div class="min-h-screen bg-gray-50">
+  <div class="min-h-screen bg-white">
     <!-- 顶部导航 -->
-    <header class="h-16 bg-white border-b border-gray-200 px-8 flex items-center justify-between fixed top-0 left-0 right-0 z-20">
-      <button
-        @click="$emit('back')"
-        class="flex items-center gap-2 h-full px-2 text-gray-600 hover:text-gray-900 transition-colors"
-      >
-        <span class="text-xl">←</span>
-        <span>返回</span>
-      </button>
+    <header class="fixed top-0 w-full z-50 py-6 transition-all duration-300 bg-white/85 backdrop-blur-md shadow-md text-gray-900">
+      <div class="max-w-[1100px] mx-auto px-8 flex justify-between items-center">
+        <div class="flex items-center gap-3">
+          <button
+            @click="$emit('back')"
+            class="flex items-center gap-2 px-2 text-gray-700 hover:text-primary transition-colors"
+          >
+            <span class="text-xl">←</span>
+            <span>返回</span>
+          </button>
+        </div>
 
-      <h1 class="text-xl font-bold text-gray-900 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">智能行程规划</h1>
+        <h1 class="text-xl font-bold text-gray-900">智能行程规划</h1>
 
-      <div class="flex items-center gap-2 h-full px-2">
-        <button
-          @click="startNewChat"
-          class="flex items-center gap-2 px-4 py-2 h-full text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
-        >
-          <span class="text-xl">➕</span>
-          <span class="hidden sm:inline">新对话</span>
-        </button>
-        <button
-          @click="showHistorySidebar = true"
-          class="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
-        >
-          <span>📋</span>
-          <span class="hidden sm:inline">历史记录</span>
-        </button>
+        <div class="flex items-center gap-6">
+          <button
+            @click="startNewChat"
+            class="flex items-center gap-2 px-4 py-2 text-gray-700 hover:text-primary transition-colors"
+          >
+            <span class="text-xl">➕</span>
+            <span class="hidden sm:inline">新对话</span>
+          </button>
+          <button
+            @click="showHistorySidebar = true"
+            class="flex items-center gap-2 px-4 py-2 text-gray-700 hover:text-primary transition-colors"
+          >
+            <span>📋</span>
+            <span class="hidden sm:inline">历史记录</span>
+          </button>
+        </div>
       </div>
     </header>
 
@@ -335,23 +339,23 @@
     </Teleport>
 
     <!-- 主内容区 -->
-    <div class="container mx-auto px-4 py-8 pt-24">
+    <div class="max-w-[1100px] mx-auto px-8 py-8 pt-24">
       <div class="max-w-4xl mx-auto">
         <!-- 输入区域 -->
-        <div class="bg-white rounded-xl shadow-md p-6 mb-6">
-          <h2 class="text-lg font-bold text-gray-900 mb-4">和AI对话规划行程</h2>
-          <div class="flex gap-2">
+        <div class="bg-white rounded-2xl shadow-lg p-8 mb-8 border border-gray-200">
+          <h2 class="text-xl font-bold text-gray-900 mb-6">和AI对话规划行程</h2>
+          <div class="flex gap-4">
             <input
               v-model="userInput"
               @keyup.enter="handleGenerate"
               placeholder="输入你的问题，例如：北京三日游怎么安排？"
-              class="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+              class="flex-1 px-6 py-4 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary"
               :disabled="isLoading"
             />
             <button
               @click="handleGenerate"
               :disabled="!userInput.trim() || isLoading"
-              class="px-8 py-3 bg-black text-white rounded-xl font-medium hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              class="px-8 py-4 bg-primary text-white rounded-xl font-semibold hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {{ isLoading ? '发送中' : '发送' }}
             </button>
@@ -367,16 +371,16 @@
             :class="message.role === 'user' ? 'justify-end' : 'justify-start'"
           >
             <!-- AI 头像 -->
-            <div v-if="message.role === 'assistant'" class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+            <div v-if="message.role === 'assistant'" class="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
               <span class="text-lg">🤖</span>
             </div>
             
             <!-- 消息内容 -->
             <div 
-              class="max-w-[80%] rounded-2xl p-4"
+              class="max-w-[80%] rounded-2xl p-6"
               :class="message.role === 'user' 
-                ? 'bg-black text-white rounded-tr-none' 
-                : 'bg-white shadow-sm rounded-tl-none ai-markdown'"
+                ? 'bg-primary text-white rounded-tr-none' 
+                : 'bg-white shadow-md rounded-tl-none border border-gray-100 ai-markdown'"
               v-html="message.role === 'assistant' ? renderAIResponse(message.content) : message.content"
               @click="handlePlaceClick"
             />
@@ -389,10 +393,10 @@
 
           <!-- 加载状态 -->
           <div v-if="isLoading" class="flex gap-4 justify-start">
-            <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+            <div class="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
               <span class="text-lg">🤖</span>
             </div>
-            <div class="bg-white shadow-sm rounded-2xl rounded-tl-none p-4">
+            <div class="bg-white shadow-md rounded-2xl rounded-tl-none p-6 border border-gray-100">
               <div class="flex items-center gap-2">
                 <span class="animate-pulse">思考中</span>
                 <span class="animate-bounce">...</span>
@@ -402,25 +406,25 @@
         </div>
 
         <!-- 行程方案展示区 -->
-        <div v-if="plans.length > 0" class="space-y-4">
-          <h2 class="text-lg font-bold text-gray-900 mb-4">生成的行程方案</h2>
+        <div v-if="plans.length > 0" class="space-y-6">
+          <h2 class="text-xl font-bold text-gray-900 mb-6">生成的行程方案</h2>
           
           <div
             v-for="plan in plans"
             :key="plan.id"
-            class="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition-shadow cursor-pointer"
+            class="bg-white rounded-2xl shadow-lg p-8 hover:shadow-xl transition-shadow cursor-pointer border border-gray-200 hover:-translate-y-2 transition-transform"
           >
-            <div class="flex justify-between items-start mb-4">
+            <div class="flex justify-between items-start mb-6">
               <div>
-                <h3 class="text-xl font-bold text-gray-900 mb-2">{{ plan.name }}</h3>
-                <p class="text-gray-600">{{ plan.description }}</p>
+                <h3 class="text-2xl font-bold text-gray-900 mb-3">{{ plan.name }}</h3>
+                <p class="text-gray-600 leading-relaxed">{{ plan.description }}</p>
               </div>
-              <span class="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">
+              <span class="px-4 py-2 bg-primary/10 text-primary rounded-full text-sm font-semibold">
                 {{ plan.days }}天行程
               </span>
             </div>
             
-            <div class="flex items-center gap-6 text-sm text-gray-600">
+            <div class="flex flex-wrap items-center gap-8 text-sm text-gray-600">
               <div class="flex items-center gap-2">
                 <span>💰</span>
                 <span>预计花费 ¥{{ plan.cost }}</span>
@@ -436,11 +440,11 @@
         <!-- 空状态 -->
         <div
           v-else-if="!isLoading"
-          class="bg-white rounded-xl shadow-md p-12 text-center"
+          class="bg-white rounded-2xl shadow-lg p-16 text-center border border-gray-200"
         >
-          <div class="text-6xl mb-4">🗺️</div>
-          <h3 class="text-xl font-bold text-gray-900 mb-2">开始你的智能旅行规划</h3>
-          <p class="text-gray-600">
+          <div class="text-6xl mb-6">🗺️</div>
+          <h3 class="text-2xl font-bold text-gray-900 mb-4">开始你的智能旅行规划</h3>
+          <p class="text-gray-600 leading-relaxed max-w-md mx-auto">
             在上方输入你的旅行计划，AI 将为你生成多套行程方案
           </p>
         </div>
