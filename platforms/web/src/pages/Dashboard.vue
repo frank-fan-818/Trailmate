@@ -79,7 +79,7 @@
         <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div class="rounded-md overflow-hidden border border-gray-200 shadow-sm aspect-[4/3] group relative">
             <img 
-              src="/海边日落.jpg" 
+              src="/beach-sunset.jpg" 
               alt="海边日落" 
               class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
             />
@@ -91,7 +91,7 @@
 
           <div class="rounded-md overflow-hidden border border-gray-200 shadow-sm aspect-[4/3] group relative">
             <img 
-              src="/山地险峰.jpg" 
+              src="/mountain-peak.jpg" 
               alt="山景" 
               class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
             />
@@ -103,7 +103,7 @@
 
           <div class="rounded-md overflow-hidden border border-gray-200 shadow-sm aspect-[4/3] group relative">
             <img 
-              src="/现代城市.jpg" 
+              src="/modern-city.jpg" 
               alt="城市探索" 
               class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
             />
