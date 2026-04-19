@@ -2,7 +2,7 @@
   <div class="min-h-screen bg-white">
     <!-- 顶部导航 -->
     <header class="fixed top-0 w-full z-50 py-6 transition-all duration-300 bg-white/85 backdrop-blur-md shadow-md text-gray-900">
-      <div class="max-w-[1100px] mx-auto px-8 flex justify-between items-center">
+      <div class="max-w-[1100px] mx-auto px-8 flex justify-between items-center relative">
         <div class="flex items-center gap-3">
           <button
             @click="$emit('back')"
@@ -13,7 +13,7 @@
           </button>
         </div>
 
-        <h1 class="text-xl font-bold text-gray-900">智能行程规划</h1>
+        <h1 class="text-xl font-bold text-gray-900 absolute left-1/2 -translate-x-1/2">智能行程规划</h1>
 
         <div class="flex items-center gap-6">
           <button
