@@ -1,4 +1,4 @@
-import type { IPlugin, ICore } from '@trailmate/core'
+import type { IPlugin, ICore } from '../../core'
 import { queryFlights } from './src/services/flight.service'
 import { queryHotels } from './src/services/hotel.service'
 import { queryAttractions } from './src/services/attraction.service'

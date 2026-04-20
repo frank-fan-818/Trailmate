@@ -1,23 +1,20 @@
-import type PerceptionModule from '../../index'
 import type { ItineraryPlan } from '../../../trip-tools/itinerary-generator/src/types'
-import { generateTimeline, startTimelineScheduler } from '../services/timeline.service'
+import type PerceptionModule from '../../index'
+import { pushNotification } from '../services/notification.service'
 import { startRuleScheduler } from '../services/rule-engine.service'
-import { PerceptionContext } from '../types'
+import { generateTimeline, startTimelineScheduler } from '../services/timeline.service'
+import type { PerceptionContext } from '../types'
 
-/**
- * 处理行程生成事件
- */
-export async function handlePlanGenerated(this: PerceptionModule, data: {
-  userId: string
-  plans: ItineraryPlan[]
-}) {
+export async function handlePlanGenerated(
+  this: PerceptionModule,
+  data: { userId: string; plans: ItineraryPlan[] }
+): Promise<void> {
   const { userId, plans } = data
-  if (!plans || plans.length === 0) return
-
-  // 默认使用第一个行程方案创建上下文
   const primaryPlan = plans[0]
+  if (!primaryPlan) {
+    return
+  }
 
-  // 创建情境感知上下文
   const context: PerceptionContext = {
     id: `ctx_${Date.now()}`,
     userId,
@@ -31,38 +28,42 @@ export async function handlePlanGenerated(this: PerceptionModule, data: {
   }
 
   this.setContext(userId, context)
-
-  // 生成初始时间线
   await generateTimeline.call(this, userId, primaryPlan)
-
-  // 启动规则调度器
   await startRuleScheduler.call(this, userId)
-
-  // 启动时间线状态更新调度器
   await startTimelineScheduler.call(this, userId)
-
-  console.log(`✅ 用户${userId}行程生成，情境感知上下文已创建，规则调度和时间线更新已启动`)
+  await pushNotification.call(this, {
+    userId,
+    planId: primaryPlan.id,
+    level: 'info',
+    content: 'Perception timeline is ready. You can now simulate location changes to trigger alerts.'
+  })
 }
 
-/**
- * 处理行程更新事件
- */
-export async function handlePlanUpdated(this: PerceptionModule, data: {
-  userId: string
-  plan: ItineraryPlan
-}) {
+export async function handlePlanUpdated(
+  this: PerceptionModule,
+  data: { userId: string; plan: ItineraryPlan }
+): Promise<void> {
   const { userId, plan } = data
+  const existingContext = this.getContext(userId)
 
-  const context = this.getContext(userId)
-  if (!context) return
+  this.setContext(userId, {
+    id: existingContext?.id ?? `ctx_${Date.now()}`,
+    userId,
+    planId: plan.id,
+    currentLocation: existingContext?.currentLocation,
+    currentDayIndex: existingContext?.currentDayIndex ?? 0,
+    currentProgress: existingContext?.currentProgress ?? 0,
+    travelMode: existingContext?.travelMode ?? 'driving',
+    isAutoSimulate: existingContext?.isAutoSimulate ?? false,
+    createdAt: existingContext?.createdAt ?? Date.now(),
+    updatedAt: Date.now()
+  })
 
-  // 更新上下文关联的行程ID
-  context.planId = plan.id
-  context.updatedAt = Date.now()
-  this.setContext(userId, context)
-
-  // 重新生成时间线
   await generateTimeline.call(this, userId, plan)
-
-  console.log(`✅ 用户${userId}行程更新，时间线已同步`)
+  await pushNotification.call(this, {
+    userId,
+    planId: plan.id,
+    level: 'info',
+    content: 'Timeline refreshed after the latest itinerary update.'
+  })
 }

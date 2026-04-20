@@ -6,9 +6,11 @@ export interface ItineraryRequest {
   createTime: number
 }
 
+export type ItineraryItemType = 'flight' | 'hotel' | 'attraction' | 'meal' | 'transport'
+
 export interface ItineraryItem {
   id: string
-  type: 'flight' | 'hotel' | 'attraction' | 'food' | 'traffic'
+  type: ItineraryItemType
   name: string
   address?: string
   startTime: string
@@ -16,6 +18,7 @@ export interface ItineraryItem {
   cost: number
   description: string
   position?: { lat: number; lng: number }
+  tags?: string[]
 }
 
 export interface ItineraryDay {

@@ -1,65 +1,79 @@
-import { describe, test, expect } from 'vitest'
+import { describe, expect, test } from 'vitest'
 import { generatePlans } from '../src/generator'
 import type { ItineraryRequest } from '../src/types'
 
-describe('行程生成器单元测试', () => {
-  const mockRequest: ItineraryRequest = {
-    id: 'test_req_001',
-    userId: 'user_123',
-    content: '带孩子去青岛玩4天，要沙滩、人少',
+describe('itinerary generator', () => {
+  const request: ItineraryRequest = {
+    id: 'test-request',
+    userId: 'user-123',
+    content: 'Plan a family trip to Qingdao',
     createTime: Date.now()
   }
 
-  test('应生成至少2套不同侧重点的行程方案', () => {
-    const plans = generatePlans(mockRequest)
-    expect(plans.length).toBe(2)
-    expect(plans[0].tags).toContain('亲子')
-    expect(plans[0].tags).toContain('少步行')
-    expect(plans[1].tags).toContain('探索')
-    expect(plans[1].tags).toContain('打卡')
+  test('generates two distinct plan variants', () => {
+    const plans = generatePlans(request)
+
+    expect(plans).toHaveLength(2)
     expect(plans[0].name).not.toBe(plans[1].name)
+    expect(plans[0].tags).toContain('family')
+    expect(plans[1].tags).toContain('explore')
   })
 
-  test('生成的行程时间逻辑应自洽，无时间冲突', () => {
-    const plans = generatePlans(mockRequest)
-    plans.forEach(plan => {
-      plan.days.forEach(day => {
-        for (let i = 1; i < day.items.length; i++) {
-          const prevEnd = timeToMinutes(day.items[i - 1].endTime)
-          const currStart = timeToMinutes(day.items[i].startTime)
-          expect(currStart).toBeGreaterThanOrEqual(prevEnd)
+  test('keeps day schedules chronological without overlaps', () => {
+    const plans = generatePlans(request)
+
+    plans.forEach((plan) => {
+      plan.days.forEach((day) => {
+        for (let index = 1; index < day.items.length; index += 1) {
+          const previousEnd = timeToMinutes(day.items[index - 1].endTime)
+          const currentStart = timeToMinutes(day.items[index].startTime)
+          expect(currentStart).toBeGreaterThanOrEqual(previousEnd)
         }
       })
     })
   })
 
-  test('行程总花费计算应准确', () => {
-    const plans = generatePlans(mockRequest)
-    plans.forEach(plan => {
-      const calculatedCost = plan.days.reduce((total, day) => {
-        return total + day.items.reduce((dayTotal, item) => dayTotal + item.cost, 0)
-      }, 0)
-      expect(plan.totalCost).toBeGreaterThanOrEqual(calculatedCost)
+  test('uses timeline-compatible item types', () => {
+    const plans = generatePlans(request)
+    const validTypes = new Set(['flight', 'hotel', 'attraction', 'meal', 'transport'])
+
+    plans.forEach((plan) => {
+      plan.days.forEach((day) => {
+        day.items.forEach((item) => {
+          expect(validTypes.has(item.type)).toBe(true)
+        })
+      })
     })
   })
 
-  test('亲子方案应包含适合儿童的景点', () => {
-    const plans = generatePlans(mockRequest)
-    const familyPlan = plans.find(p => p.tags.includes('亲子'))
+  test('keeps total cost in sync with item sums', () => {
+    const plans = generatePlans(request)
+
+    plans.forEach((plan) => {
+      const calculatedCost = plan.days.reduce((planTotal, day) => {
+        return planTotal + day.items.reduce((dayTotal, item) => dayTotal + item.cost, 0)
+      }, 0)
+
+      expect(plan.totalCost).toBe(calculatedCost)
+    })
+  })
+
+  test('family plan keeps beach or ocean highlights', () => {
+    const familyPlan = generatePlans(request).find((plan) => plan.tags.includes('family'))
+
     expect(familyPlan).toBeDefined()
-    const hasKidFriendlyAttraction = familyPlan?.days.some(day =>
-      day.items.some(item =>
-        item.type === 'attraction' && (item.name.includes('海洋') || item.name.includes('沙滩'))
+    expect(
+      familyPlan?.days.some((day) =>
+        day.items.some((item) =>
+          item.type === 'attraction' &&
+          (item.name.toLowerCase().includes('beach') || item.name.toLowerCase().includes('ocean'))
+        )
       )
-    )
-    expect(hasKidFriendlyAttraction).toBe(true)
+    ).toBe(true)
   })
 })
 
-/**
- * 时间字符串转分钟数，用于比较
- */
-function timeToMinutes(timeStr: string): number {
-  const [hour, minute] = timeStr.split(':').map(Number)
-  return hour * 60 + minute
+function timeToMinutes(value: string): number {
+  const [hours, minutes] = value.split(':').map(Number)
+  return hours * 60 + minutes
 }

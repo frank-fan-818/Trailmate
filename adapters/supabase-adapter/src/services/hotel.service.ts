@@ -1,5 +1,17 @@
 import { getSupabaseClient } from '../client'
-import type { Hotel } from '../../mock-adapter/types'
+import type { Hotel } from '../../../mock-adapter/types'
+
+interface HotelRow {
+  id: string
+  name: string
+  star_level: 1 | 2 | 3 | 4 | 5
+  address: string
+  price: number
+  rating: number
+  review_count: number
+  distance_from_center: number
+  remaining_rooms: number
+}
 
 export async function queryHotels(params: { 
   city: string 
@@ -24,7 +36,9 @@ export async function queryHotels(params: {
     throw error
   }
 
-  return data?.map(item => ({
+  const rows = (data ?? []) as HotelRow[]
+
+  return rows.map(item => ({
     id: item.id,
     name: item.name,
     starLevel: item.star_level,
@@ -34,5 +48,5 @@ export async function queryHotels(params: {
     reviewCount: item.review_count,
     distanceFromCityCenter: item.distance_from_center,
     remainingRooms: item.remaining_rooms
-  })) || []
+  }))
 }

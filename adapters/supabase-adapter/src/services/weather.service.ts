@@ -1,5 +1,15 @@
 import { getSupabaseClient } from '../client'
-import type { Weather } from '../../mock-adapter/types'
+import type { Weather } from '../../../mock-adapter/types'
+
+interface WeatherRow {
+  date: string
+  city: string
+  condition: Weather['condition']
+  temp_min: number
+  temp_max: number
+  wind_level: number
+  air_quality: Weather['airQuality']
+}
 
 export async function queryWeather(params: { 
   city: string 
@@ -24,7 +34,9 @@ export async function queryWeather(params: {
     throw error
   }
 
-  return data?.map(item => ({
+  const rows = (data ?? []) as WeatherRow[]
+
+  return rows.map(item => ({
     date: item.date,
     city: item.city,
     condition: item.condition,
@@ -32,5 +44,5 @@ export async function queryWeather(params: {
     temperatureMax: item.temp_max,
     windLevel: item.wind_level,
     airQuality: item.air_quality
-  })) || []
+  }))
 }

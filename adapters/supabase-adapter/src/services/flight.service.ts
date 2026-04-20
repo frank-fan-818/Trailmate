@@ -1,5 +1,18 @@
 import { getSupabaseClient } from '../client'
-import type { Flight } from '../../mock-adapter/types'
+import type { Flight } from '../../../mock-adapter/types'
+
+interface FlightRow {
+  id: string
+  flight_no: string
+  dep_city: string
+  arr_city: string
+  dep_time: string
+  arr_time: string
+  airline: string
+  price: number
+  discount: number
+  remaining_seats: number
+}
 
 export async function queryFlights(params: { 
   depCity: string 
@@ -24,7 +37,9 @@ export async function queryFlights(params: {
     throw error
   }
 
-  return data?.map(item => ({
+  const rows = (data ?? []) as FlightRow[]
+
+  return rows.map(item => ({
     id: item.id,
     flightNo: item.flight_no,
     depCity: item.dep_city,
@@ -35,5 +50,5 @@ export async function queryFlights(params: {
     price: item.price,
     discount: item.discount,
     remainingSeats: item.remaining_seats
-  })) || []
+  }))
 }

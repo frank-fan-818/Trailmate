@@ -1,4 +1,4 @@
-import type { IPlugin, ICore } from '@trailmate/core'
+import type { IPlugin, ICore } from '../../core'
 import { initSupabaseClient } from './src/client'
 import { queryFlights } from './src/services/flight.service'
 import { queryHotels } from './src/services/hotel.service'

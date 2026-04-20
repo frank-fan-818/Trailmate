@@ -1,152 +1,189 @@
-import type { IPlugin, ICore, GlobalEvent } from '@trailmate/core'
-import type { ItineraryRequest, ItineraryPlan } from './src/types'
+import { GlobalEvent, type ICore, type IPlugin } from '../../../core'
 import { generatePlans } from './src/generator'
+import type { ItineraryDay, ItineraryItem, ItineraryPlan, ItineraryRequest } from './src/types'
+
+interface PlanRequestPayload {
+  userId: string
+  content: string
+  imageUrl?: string
+}
+
+interface AdjustByTextParams {
+  userId: string
+  planId: string
+  instruction: string
+}
+
+interface AdjustByDragParams {
+  userId: string
+  planId: string
+  updatedItems: Record<number, ItineraryItem[]>
+}
 
 export default class ItineraryGeneratorModule implements IPlugin {
   pluginId = 'trip-itinerary-generator'
-  pluginName = '行程规划引擎模块'
-  version = '1.0.0'
-  // 演示版暂不依赖配置模块，后续开发完成后再恢复
-  dependencies = []
+  pluginName = 'Itinerary Generator'
+  version = '1.1.0'
+  dependencies: string[] = []
 
-  private core: ICore | null = null
+  public core: ICore | null = null
+
+  private readonly boundPlanRequestHandler = this.handlePlanRequest.bind(this)
 
   onInstall(core: ICore) {
     this.core = core
 
-    // 注册对外服务
     core.service.register('itinerary.generate', this.generate.bind(this))
     core.service.register('itinerary.adjustByText', this.adjustByText.bind(this))
     core.service.register('itinerary.adjustByDrag', this.adjustByDrag.bind(this))
     core.service.register('itinerary.getPlan', this.getPlan.bind(this))
 
-    // 订阅行程请求事件
-    core.eventBus.on(GlobalEvent.PLAN_REQUEST, this.handlePlanRequest.bind(this))
+    core.eventBus.on(GlobalEvent.PLAN_REQUEST, this.boundPlanRequestHandler)
   }
 
-  onMount(core: ICore) {
-    console.log('✅ 行程规划引擎模块启动成功')
+  onMount(): void {
+    console.log('[trailmate] itinerary generator mounted')
   }
 
-  onUnmount(core: ICore) {
-    core.eventBus.off(GlobalEvent.PLAN_REQUEST, this.handlePlanRequest)
-    console.log('🛑 行程规划引擎模块已卸载')
+  onUnmount(core: ICore): void {
+    core.eventBus.off(GlobalEvent.PLAN_REQUEST, this.boundPlanRequestHandler)
+    console.log('[trailmate] itinerary generator unmounted')
   }
 
-  /**
-   * 处理行程生成请求
-   */
-  private async handlePlanRequest(data: { userId: string; content: string; imageUrl?: string }) {
-    const request: ItineraryRequest = {
+  private async handlePlanRequest(data: PlanRequestPayload): Promise<void> {
+    await this.generate({
       id: `req_${Date.now()}`,
       userId: data.userId,
       content: data.content,
       imageUrl: data.imageUrl,
       createTime: Date.now()
-    }
-
-    const plans = await this.generate(request)
-
-    // 保存到全局状态，其他模块自动感知
-    this.core?.state.set('current.plans', plans)
-    // 保存单条行程缓存
-    plans.forEach(plan => {
-      this.core?.state.set(`plan.${plan.id}`, plan)
     })
-
-    // 发布生成完成事件
-    await this.core?.eventBus.emit(GlobalEvent.PLAN_GENERATED, { plans })
   }
 
-  /**
-   * 生成多套行程方案
-   */
   async generate(request: ItineraryRequest): Promise<ItineraryPlan[]> {
-    // 并行调用各基础服务获取数据，core为空时降级返回空数组
-    const [flights, hotels, attractions] = await Promise.allSettled([
-      this.core?.service.call('flight.query', {
-        depCity: '北京',
-        arrCity: '青岛',
+    const core = this.ensureCore()
+    const [flights, hotels, attractions] = await Promise.all([
+      this.queryService<any[]>('flight.query', {
+        depCity: 'Beijing',
+        arrCity: 'Qingdao',
         date: '2026-05-01'
-      }).catch(() => []) ?? Promise.resolve([]),
-      this.core?.service.call('hotel.query', {
-        city: '青岛',
+      }),
+      this.queryService<any[]>('hotel.query', {
+        city: 'Qingdao',
         checkin: '2026-05-01',
         checkout: '2026-05-05'
-      }).catch(() => []) ?? Promise.resolve([]),
-      this.core?.service.call('attraction.query', {
-        city: '青岛'
-      }).catch(() => []) ?? Promise.resolve([])
+      }),
+      this.queryService<any[]>('attraction.query', {
+        city: 'Qingdao'
+      })
     ])
 
-    return generatePlans(
-      request,
-      flights.status === 'fulfilled' ? flights.value : [],
-      hotels.status === 'fulfilled' ? hotels.value : [],
-      attractions.status === 'fulfilled' ? attractions.value : []
-    )
+    const plans = generatePlans(request, flights, hotels, attractions)
+
+    core.state.set('current.userId', request.userId)
+    core.state.set('current.plans', plans)
+    core.state.set('current.selectedPlanId', plans[0]?.id ?? null)
+    plans.forEach((plan) => {
+      core.state.set(`plan.${plan.id}`, plan)
+    })
+
+    await core.eventBus.emit(GlobalEvent.PLAN_GENERATED, {
+      userId: request.userId,
+      plans
+    })
+
+    return plans
   }
 
-  /**
-   * 根据文本指令调整行程
-   */
-  async adjustByText(planId: string, instruction: string): Promise<ItineraryPlan> {
-    const plan = this.core?.state.get<ItineraryPlan>(`plan.${planId}`)
+  async adjustByText(params: AdjustByTextParams): Promise<ItineraryPlan> {
+    const core = this.ensureCore()
+    const plan = core.state.get<ItineraryPlan>(`plan.${params.planId}`)
     if (!plan) {
-      throw new Error('行程不存在')
+      throw new Error(`Plan ${params.planId} was not found`)
     }
 
-    // 演示版调整逻辑：简单的指令解析
-    const adjustedPlan = JSON.parse(JSON.stringify(plan)) as ItineraryPlan
+    const adjustedPlan = clonePlan(plan)
+    const instruction = params.instruction.toLowerCase()
 
-    if (instruction.includes('下午空出来') || instruction.includes('下午自由活动')) {
-      adjustedPlan.days.forEach(day => {
-        day.items = day.items.filter(item => {
-          const hour = parseInt(item.startTime.split(':')[0])
-          return hour < 12 || hour >= 19
+    if (instruction.includes('free afternoon') || instruction.includes('afternoon')) {
+      adjustedPlan.days = adjustedPlan.days.map((day) => ({
+        ...day,
+        items: day.items.filter((item) => {
+          const startHour = Number(item.startTime.split(':')[0] ?? '0')
+          return startHour < 12 || startHour >= 18
         })
-      })
+      }))
     }
 
-    if (instruction.includes('减少步行') || instruction.includes('少走路')) {
-      adjustedPlan.tags = [...adjustedPlan.tags.filter(t => t !== '多步行'), '少步行']
+    if (instruction.includes('less walking') || instruction.includes('relaxed')) {
+      adjustedPlan.tags = Array.from(new Set([...adjustedPlan.tags.filter((tag) => tag !== 'explore'), 'low-walking']))
     }
 
-    // 更新状态并发布事件
-    this.core?.state.set(`plan.${planId}`, adjustedPlan)
-    await this.core?.eventBus.emit(GlobalEvent.PLAN_UPDATED, { plan: adjustedPlan })
+    core.state.set(`plan.${params.planId}`, adjustedPlan)
+    await core.eventBus.emit(GlobalEvent.PLAN_UPDATED, {
+      userId: params.userId,
+      plan: adjustedPlan
+    })
 
     return adjustedPlan
   }
 
-  /**
-   * 拖拽调整行程
-   */
-  async adjustByDrag(planId: string, updatedItems: Record<number, any[]>): Promise<ItineraryPlan> {
-    const plan = this.core?.state.get<ItineraryPlan>(`plan.${planId}`)
+  async adjustByDrag(params: AdjustByDragParams): Promise<ItineraryPlan> {
+    const core = this.ensureCore()
+    const plan = core.state.get<ItineraryPlan>(`plan.${params.planId}`)
     if (!plan) {
-      throw new Error('行程不存在')
+      throw new Error(`Plan ${params.planId} was not found`)
     }
 
-    const adjustedPlan = JSON.parse(JSON.stringify(plan)) as ItineraryPlan
-
-    Object.entries(updatedItems).forEach(([dayIndex, items]) => {
-      const day = adjustedPlan.days[parseInt(dayIndex)]
-      if (day) {
-        day.items = items
+    const adjustedPlan = clonePlan(plan)
+    Object.entries(params.updatedItems).forEach(([dayIndex, items]) => {
+      const targetDay = adjustedPlan.days[Number(dayIndex)]
+      if (targetDay) {
+        targetDay.items = items
       }
     })
 
-    this.core?.state.set(`plan.${planId}`, adjustedPlan)
-    await this.core?.eventBus.emit(GlobalEvent.PLAN_UPDATED, { plan: adjustedPlan })
+    adjustedPlan.totalCost = adjustedPlan.days.reduce((sum, day) => {
+      return sum + day.items.reduce((daySum, item) => daySum + item.cost, 0)
+    }, 0)
+
+    core.state.set(`plan.${params.planId}`, adjustedPlan)
+    await core.eventBus.emit(GlobalEvent.PLAN_UPDATED, {
+      userId: params.userId,
+      plan: adjustedPlan
+    })
 
     return adjustedPlan
   }
 
-  /**
-   * 获取行程详情
-   */
   async getPlan(planId: string): Promise<ItineraryPlan | null> {
-    return this.core?.state.get<ItineraryPlan>(`plan.${planId}`) || null
+    return this.ensureCore().state.get<ItineraryPlan>(`plan.${planId}`) ?? null
+  }
+
+  private async queryService<T>(serviceName: string, params: Record<string, unknown>): Promise<T> {
+    try {
+      return await this.ensureCore().service.call<T>(serviceName, params)
+    } catch {
+      return [] as T
+    }
+  }
+
+  private ensureCore(): ICore {
+    if (!this.core) {
+      throw new Error('Itinerary generator has not been installed')
+    }
+
+    return this.core
+  }
+}
+
+function clonePlan(plan: ItineraryPlan): ItineraryPlan {
+  return {
+    ...plan,
+    tags: [...plan.tags],
+    days: plan.days.map((day) => ({
+      ...day,
+      items: day.items.map((item) => ({ ...item }))
+    }))
   }
 }

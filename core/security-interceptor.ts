@@ -10,20 +10,31 @@ interface SecurityRule {
 export class SecurityInterceptor {
   private rules: SecurityRule[] = [
     {
-      eventPattern: /^social\..*(request|publish)$/,
+      eventPattern: /^social:.*(?::request|:publish)$/,
       check: async (core, data) => {
-        const isVerified = await core.service.call('user.realname.isVerified', { userId: data.userId })
-        return isVerified
+        try {
+          return await core.service.call<boolean>('user.realname.isVerified', {
+            userId: data.userId
+          })
+        } catch {
+          return false
+        }
       },
-      errorMessage: '请先完成实名认证后再使用社交功能'
+      errorMessage: 'Please complete identity verification before using social features.'
     },
     {
-      eventPattern: /^location\..*/,
+      eventPattern: /^perception:location_changed$/,
       check: async (core, data) => {
-        const hasPermission = await core.service.call('user.permission.check', { permission: 'location' })
-        return hasPermission
+        try {
+          return await core.service.call<boolean>('user.permission.check', {
+            permission: 'location',
+            userId: data.userId
+          })
+        } catch {
+          return false
+        }
       },
-      errorMessage: '请先开启位置权限'
+      errorMessage: 'Please grant location access before using perception features.'
     }
   ]
 
@@ -34,10 +45,11 @@ export class SecurityInterceptor {
       if (rule.eventPattern.test(event as string)) {
         const pass = await rule.check(this.core, data, event)
         if (!pass) {
-          return { pass: false, message: rule.errorMessage || '安全校验未通过' }
+          return { pass: false, message: rule.errorMessage ?? 'Security validation failed' }
         }
       }
     }
+
     return { pass: true }
   }
 

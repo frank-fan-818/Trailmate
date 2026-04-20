@@ -1,5 +1,18 @@
 import { getSupabaseClient } from '../client'
-import type { Attraction } from '../../mock-adapter/types'
+import type { Attraction } from '../../../mock-adapter/types'
+
+interface AttractionRow {
+  id: string
+  name: string
+  address: string
+  ticket_price: number
+  open_time: string
+  close_time: string
+  rating: number
+  review_count: number
+  visit_time: number
+  tags: string[]
+}
 
 export async function queryAttractions(params: { 
   city: string 
@@ -22,7 +35,9 @@ export async function queryAttractions(params: {
     throw error
   }
 
-  return data?.map(item => ({
+  const rows = (data ?? []) as AttractionRow[]
+
+  return rows.map(item => ({
     id: item.id,
     name: item.name,
     address: item.address,
@@ -33,5 +48,5 @@ export async function queryAttractions(params: {
     reviewCount: item.review_count,
     estimatedVisitTime: item.visit_time,
     tags: item.tags
-  })) || []
+  }))
 }

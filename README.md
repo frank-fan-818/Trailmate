@@ -301,3 +301,13 @@ chore: 构建/工程配置更新
 ### 仓库地址
 Gitee仓库：https://gitee.com/zeming-fan/trailmate
 
+---
+## 2026-04-20 Progress Update
+
+- Added a real web bootstrap path so the app now starts `Core`, installs adapters and modules, and provides a shared service facade to Vue pages.
+- Rewired the planner page to call project services instead of talking to MiniMax directly. The hard-coded browser API key path was removed from the planner flow.
+- Normalized itinerary item types to `flight | hotel | attraction | meal | transport`, fixed timeline compatibility, and repaired itinerary schedule conflicts so generator tests are green again.
+- Rebuilt the perception MVP flow around stable contracts: itinerary generation now stores plans, emits payloads with `userId`, creates timeline data, and publishes initial notifications.
+- Updated security event matching to the real event naming scheme and made the event bus await async subscribers so cross-module flows complete before the UI reads their results.
+- Added automated coverage for generator integrity, perception integration, and security interception.
+
