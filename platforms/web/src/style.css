@@ -2,287 +2,103 @@
 @tailwind components;
 @tailwind utilities;
 
-@layer base {
-  * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-  }
+:root {
+  /* 品牌主色 */
+  --color-primary: #FF6B4A;
+  --color-primary-hover: #E55A3D;
+  --color-primary-active: #D04A2D;
+  --color-primary-10: rgba(255, 107, 74, 0.1);
+  
+  --color-secondary: #8B7355;
+  --color-secondary-hover: #9B8365;
+  --color-secondary-active: #7B6345;
+  
+  --color-accent: #C4956A;
+  --color-accent-hover: #D4A57A;
+  --color-accent-active: #B4855A;
+  
+  /* 中性色 */
+  --color-neutral-50: #F7F5F2;
+  --color-neutral-100: #E8E4DF;
+  --color-neutral-200: #D1D5DB;
+  --color-neutral-500: #6B7280;
+  --color-neutral-700: #374151;
+  --color-neutral-900: #1A1A1A;
+  
+  /* 语义色 */
+  --color-success: #2D5A4A;
+  --color-warning: #C4956A;
+  --color-error: #8B3A3A;
+  --color-error-10: rgba(139,58,58,0.1);
+  
+  /* 字体 */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  --font-mono: 'Geist Mono', 'SF Mono', Monaco, monospace;
+  
+  /* 字号 */
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.25rem;
+  --text-xl: 1.5rem;
+  --text-2xl: 2rem;
+  
+  /* 间距 */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+  
+  /* 布局 */
+  --container-max: 80rem;
+  --grid-gap: var(--space-4);
+  --section-padding-y: var(--space-12);
+  
+  /* 阴影 */
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.1);
+  
+  /* 过渡 */
+  --transition-fast: 0.15s ease;
+  --transition-normal: 0.2s ease-in-out;
+}
 
-  html {
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    text-rendering: optimizeLegibility;
-  }
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
 
-  body {
-    font-family: 'Geist Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI',
-      'Roboto', 'Helvetica Neue', 'Arial', 'PingFang SC',
-      'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
-    background-color: #ffffff;
-    color: #000000;
-    line-height: 1.6;
-    font-weight: 400;
-  }
-
-  ::selection {
-    background-color: #0070f3;
-    color: #ffffff;
-  }
-
-  :focus {
-    outline: none;
-  }
-
-  :focus-visible {
-    outline: 2px solid #0070f3;
-    outline-offset: 2px;
-  }
+body {
+  font-family: var(--font-sans);
+  background-color: var(--color-neutral-50);
+  color: var(--color-neutral-700);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 @layer components {
-
-  /* Vercel 风格按钮 */
-  .vercel-button-primary {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    padding: 0.625rem 1.25rem;
-    background-color: #000000;
-    color: #ffffff;
-    border-radius: 0.25rem;
-    font-size: 0.875rem;
-    font-weight: 500;
-    transition: all 0.2s ease;
+  /* 按钮样式 */
+  .btn-primary {
+    @apply bg-primary text-white rounded-md font-medium transition-colors hover:bg-primary-hover active:bg-primary-active shadow-sm;
   }
-
-  .vercel-button-primary:hover {
-    background-color: #333333;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  
+  .btn-secondary {
+    @apply bg-white text-neutral-700 rounded-md font-medium transition-colors hover:bg-neutral-50 active:bg-neutral-100 shadow-sm border border-neutral-200;
   }
-
-  .vercel-button-primary:active {
-    transform: scale(0.98);
+  
+  /* 卡片样式 */
+  .card {
+    @apply bg-white rounded-md shadow-sm border border-neutral-100;
   }
-
-  .vercel-button-secondary {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    padding: 0.625rem 1.25rem;
-    background-color: #ffffff;
-    color: #000000;
-    border-radius: 0.25rem;
-    border: 1px solid #eaeaea;
-    font-size: 0.875rem;
-    font-weight: 500;
-    transition: all 0.2s ease;
-  }
-
-  .vercel-button-secondary:hover {
-    border-color: #888888;
-    background-color: #fafafa;
-  }
-
-  .vercel-button-secondary:active {
-    transform: scale(0.98);
-  }
-
-  .vercel-button-ghost {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    padding: 0.5rem 1rem;
-    background-color: transparent;
-    color: #000000;
-    border-radius: 0.25rem;
-    font-size: 0.875rem;
-    font-weight: 500;
-    transition: all 0.2s ease;
-  }
-
-  .vercel-button-ghost:hover {
-    background-color: #fafafa;
-  }
-
-  .vercel-button-ghost:active {
-    transform: scale(0.98);
-  }
-
-  /* Vercel 风格卡片 */
-  .vercel-card {
-    background-color: #ffffff;
-    border-radius: 0.25rem;
-    border: 1px solid #eaeaea;
-    transition: all 0.2s ease;
-  }
-
-  .vercel-card-hover {
-    background-color: #ffffff;
-    border-radius: 0.25rem;
-    border: 1px solid #eaeaea;
-    transition: all 0.2s ease;
-  }
-
-  .vercel-card-hover:hover {
-    border-color: #888888;
-  }
-
-  /* Vercel 风格输入框 */
-  .vercel-input {
-    width: 100%;
-    padding: 0.625rem 1rem;
-    background-color: #ffffff;
-    border-radius: 0.25rem;
-    color: #000000;
-    border: 1px solid #eaeaea;
-    transition: all 0.2s ease;
-  }
-
-  .vercel-input::placeholder {
-    color: #888888;
-  }
-
-  .vercel-input:focus {
-    border-color: #000000;
-    box-shadow: 0 0 0 1px #000000;
-    outline: none;
-  }
-
-  /* Vercel 风格徽章 */
-  .vercel-badge {
-    display: inline-flex;
-    align-items: center;
-    padding: 0.125rem 0.625rem;
-    border-radius: 9999px;
-    font-size: 0.75rem;
-    font-weight: 500;
-    border-width: 1px;
-    border-style: solid;
-  }
-
-  .vercel-badge-blue {
-    background-color: rgba(0, 112, 243, 0.1);
-    color: #0070f3;
-    border-color: rgba(0, 112, 243, 0.2);
-  }
-
-  .vercel-badge-green {
-    background-color: rgba(34, 197, 94, 0.1);
-    color: #22c55e;
-    border-color: rgba(34, 197, 94, 0.2);
-  }
-
-  .vercel-badge-purple {
-    background-color: rgba(248, 28, 229, 0.1);
-    color: #f81ce5;
-    border-color: rgba(248, 28, 229, 0.2);
-  }
-
-  .vercel-badge-gray {
-    background-color: #fafafa;
-    color: #666666;
-    border-color: #eaeaea;
-  }
-
-  /* Vercel 风格链接 */
-  .vercel-link {
-    color: #0070f3;
-    transition: color 0.15s ease;
-    text-decoration: underline;
-    text-underline-offset: 4px;
-  }
-
-  /* Vercel 风格分隔线 */
-  .vercel-divider {
-    height: 1px;
-    background-color: #eaeaea;
-  }
-
-  /* 代码块样式 */
-  .vercel-code {
-    font-family: 'Geist Mono', 'SF Mono', Monaco, Inconsolata, monospace;
-    font-size: 0.875rem;
-    background-color: #fafafa;
-    padding: 0.125rem 0.375rem;
-    border-radius: 0.25rem;
-    color: #333333;
-  }
-
-  .vercel-code-block {
-    font-family: 'Geist Mono', 'SF Mono', Monaco, Inconsolata, monospace;
-    font-size: 0.875rem;
-    background-color: #fafafa;
-    padding: 1rem;
-    border-radius: 0.25rem;
-    border: 1px solid #eaeaea;
-    overflow-x: auto;
-  }
-}
-
-@layer utilities {
-
-  /* 渐变文字 */
-  .text-gradient-vercel {
-    background: linear-gradient(to right, #0070f3, #7928ca);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-  }
-
-  /* 网格背景 */
-  .bg-grid {
-    background-size: 40px 40px;
-  }
-
-  .bg-grid-pattern {
-    background-image:
-      linear-gradient(to right, #eaeaea 1px, transparent 1px),
-      linear-gradient(to bottom, #eaeaea 1px, transparent 1px);
-  }
-
-  /* 微光动画 */
-  .animate-shimmer {
-    background: linear-gradient(90deg,
-        transparent 0%,
-        rgba(255, 255, 255, 0.4) 50%,
-        transparent 100%);
-    background-size: 200% 100%;
-    animation: shimmer 2s infinite;
-  }
-
-  /* 隐藏滚动条 */
-  .scrollbar-hide {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
-
-  .scrollbar-hide::-webkit-scrollbar {
-    display: none;
-  }
-}
-
-@keyframes shimmer {
-  0% {
-    background-position: -200% 0;
-  }
-
-  100% {
-    background-position: 200% 0;
-  }
-}
-
-/* 减少动画 */
-@media (prefers-reduced-motion: reduce) {
-
-  .animate-fade-in,
-  .animate-slide-up,
-  .animate-scale-in,
-  .animate-pulse,
-  .animate-shimmer {
-    animation: none;
+  
+  /* 容器 */
+  .container {
+    @apply max-w-[80rem] mx-auto px-4;
   }
 }
