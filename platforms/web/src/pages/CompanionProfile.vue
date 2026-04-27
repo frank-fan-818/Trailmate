@@ -117,10 +117,10 @@
       </div>
 
       <div class="mt-4 flex gap-3">
-        <button @click="handleSendMessage" class="flex-1 py-3 bg-white border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors">
+        <button @click="$emit('openChat', profile.id, profile.name)" class="flex-1 py-3 bg-white border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors">
           💬 发消息
         </button>
-        <button @click="handleTeamUp" class="flex-1 py-3 bg-primary text-white font-medium rounded-lg hover:bg-primary/90 transition-colors">
+        <button @click="$emit('openTeamRequest', profile.id)" class="flex-1 py-3 bg-primary text-white font-medium rounded-lg hover:bg-primary/90 transition-colors">
           🤝 发起组队
         </button>
       </div>
@@ -133,6 +133,8 @@ import { ref } from 'vue'
 
 defineEmits<{
   (e: 'back'): void
+  (e: 'openChat', id: string, name: string): void
+  (e: 'openTeamRequest', id: string): void
 }>()
 
 const props = defineProps<{
@@ -220,16 +222,40 @@ const mockProfile: Record<string, CompanionProfile> = {
     creditLevel: '钻石',
     totalTrips: 15,
     completionRate: 95
+  },
+  '5': {
+    id: '5',
+    name: '刘德华',
+    bio: '背包客，已经走过30多个国家。喜欢深度游而非打卡式旅行。善于规划行程，可以照顾同行伙伴。',
+    destination: '泰国清迈',
+    travelDays: 8,
+    departureDate: '2周后出发',
+    budgetRange: [3000, 8000],
+    travelTypes: ['自然', '探险', '人文'],
+    transports: ['飞机', '大巴', '摩托'],
+    accommodations: ['青旅', '民宿'],
+    creditScore: '4.8',
+    creditLevel: '黄金',
+    totalTrips: 30,
+    completionRate: 98
+  },
+  '6': {
+    id: '6',
+    name: '赵小雨',
+    bio: '学生党，预算有限但热情满满。第一次独自旅行，希望找到有经验的伙伴带一带。很好相处，不矫情。',
+    destination: '厦门鼓浪屿',
+    travelDays: 3,
+    departureDate: '下周出发',
+    budgetRange: [1000, 3000],
+    travelTypes: ['休闲', '美食', '拍照'],
+    transports: ['高铁', '公交'],
+    accommodations: ['青旅'],
+    creditScore: '4.6',
+    creditLevel: '白银',
+    totalTrips: 2,
+    completionRate: 80
   }
 }
 
 const profile = ref<CompanionProfile>(mockProfile[props.companionId] || mockProfile['1'])
-
-const handleSendMessage = () => {
-  alert(`正在发送消息给 ${profile.value.name}...`)
-}
-
-const handleTeamUp = () => {
-  alert(`已向 ${profile.value.name} 发起组队请求！`)
-}
 </script>
