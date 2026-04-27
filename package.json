@@ -3,7 +3,9 @@
     "version": "1.0.0",
     "type": "module",
     "scripts": {
+        "dev": "npm run dev:web",
         "dev:web": "vite platforms/web",
+        "build": "npm run build:web",
         "build:web": "vite build platforms/web",
         "build:core": "tsc -p core/tsconfig.json"
     },

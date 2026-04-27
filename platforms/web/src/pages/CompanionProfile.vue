@@ -124,12 +124,131 @@
           🤝 发起组队
         </button>
       </div>
+
+      <div class="mt-6 bg-white rounded-lg border border-gray-200 overflow-hidden">
+        <div class="p-4 border-b border-gray-100 flex items-center justify-between">
+          <h3 class="font-bold text-gray-900 flex items-center gap-2">
+            <span>🤖</span> AI 匹配分析
+          </h3>
+          <button
+            v-if="!aiAnalysis && !isAnalyzing"
+            @click="analyzeWithAI"
+            class="px-4 py-2 bg-primary/10 text-primary text-sm font-medium rounded-lg hover:bg-primary/20 transition-colors"
+          >
+            开始分析
+          </button>
+          <button
+            v-if="aiAnalysis && !isAnalyzing"
+            @click="analyzeWithAI"
+            class="px-4 py-2 bg-gray-100 text-gray-600 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors"
+          >
+            重新分析
+          </button>
+        </div>
+
+        <div class="p-4">
+          <div v-if="isAnalyzing" class="text-center py-8">
+            <div class="text-4xl mb-4 animate-pulse">🔮</div>
+            <p class="text-gray-500">AI 正在分析匹配度...</p>
+            <p class="text-sm text-gray-400 mt-2">请稍候</p>
+          </div>
+
+          <div v-else-if="aiAnalysis" class="space-y-4">
+            <div class="flex items-center gap-4 mb-6">
+              <div class="text-center">
+                <div class="text-4xl font-bold text-primary">{{ aiAnalysis.matchScore }}%</div>
+                <div class="text-sm text-gray-500">匹配度</div>
+              </div>
+              <div class="flex-1">
+                <div class="flex items-center gap-2 mb-2">
+                  <span class="text-sm text-gray-500">推荐指数</span>
+                  <div class="flex gap-1">
+                    <span v-for="i in 5" :key="i" :class="i <= aiAnalysis.recommendScore ? 'text-yellow-400' : 'text-gray-300'">⭐</span>
+                  </div>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-2">
+                  <div
+                    class="bg-primary h-2 rounded-full transition-all"
+                    :style="{ width: aiAnalysis.matchScore + '%' }"
+                  ></div>
+                </div>
+              </div>
+            </div>
+
+            <div v-if="aiAnalysis.matchReasons.length > 0">
+              <h4 class="text-sm font-medium text-gray-900 mb-2 flex items-center gap-2">
+                <span class="text-green-500">✓</span> 匹配亮点
+              </h4>
+              <div class="space-y-2">
+                <div
+                  v-for="(reason, idx) in aiAnalysis.matchReasons"
+                  :key="idx"
+                  class="px-3 py-2 bg-green-50 text-green-700 text-sm rounded-lg"
+                >
+                  {{ reason }}
+                </div>
+              </div>
+            </div>
+
+            <div v-if="aiAnalysis.travelCompatibility.length > 0">
+              <h4 class="text-sm font-medium text-gray-900 mb-2 flex items-center gap-2">
+                <span class="text-blue-500">●</span> 旅行契合度
+              </h4>
+              <div class="space-y-2">
+                <div
+                  v-for="(compat, idx) in aiAnalysis.travelCompatibility"
+                  :key="idx"
+                  class="px-3 py-2 bg-blue-50 text-blue-700 text-sm rounded-lg"
+                >
+                  {{ compat }}
+                </div>
+              </div>
+            </div>
+
+            <div v-if="aiAnalysis.potentialIssues.length > 0">
+              <h4 class="text-sm font-medium text-gray-900 mb-2 flex items-center gap-2">
+                <span class="text-orange-500">!</span> 注意事项
+              </h4>
+              <div class="space-y-2">
+                <div
+                  v-for="(issue, idx) in aiAnalysis.potentialIssues"
+                  :key="idx"
+                  class="px-3 py-2 bg-orange-50 text-orange-700 text-sm rounded-lg"
+                >
+                  {{ issue }}
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <h4 class="text-sm font-medium text-gray-900 mb-2 flex items-center gap-2">
+                <span class="text-purple-500">💬</span> 破冰话题推荐
+              </h4>
+              <div class="space-y-2">
+                <div
+                  v-for="(topic, idx) in aiAnalysis.icebreakers"
+                  :key="idx"
+                  class="px-3 py-2 bg-purple-50 text-purple-700 text-sm rounded-lg"
+                >
+                  {{ topic }}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div v-else class="text-center py-8">
+            <div class="text-4xl mb-4">🔮</div>
+            <p class="text-gray-500">点击按钮获取 AI 匹配分析</p>
+            <p class="text-sm text-gray-400 mt-2">了解你们的目的地、性格、旅行偏好匹配程度</p>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 
 defineEmits<{
   (e: 'back'): void
@@ -154,8 +273,37 @@ interface CompanionProfile {
   accommodations: string[]
   creditScore: string
   creditLevel: string
+  creditBadge: 'diamond' | 'gold' | 'silver'
   totalTrips: number
   completionRate: number
+  personalityType: 'planner' | 'spontaneous'
+  wakeTime: string
+  sleepTime: string
+  gender: '男' | '女' | '保密'
+  age: number
+  matchScore?: number
+}
+
+interface AIAnalysis {
+  matchScore: number
+  matchReasons: string[]
+  potentialIssues: string[]
+  icebreakers: string[]
+  travelCompatibility: string[]
+  recommendScore: number
+}
+
+const isAnalyzing = ref(false)
+const aiAnalysis = ref<AIAnalysis | null>(null)
+
+const currentUserProfile = {
+  destination: '云南大理',
+  travelDays: 5,
+  budgetType: 'medium',
+  personalityType: 'spontaneous',
+  travelTypes: ['休闲', '美食', '摄影'],
+  wakeTime: '08:00',
+  sleepTime: '23:00'
 }
 
 const mockProfile: Record<string, CompanionProfile> = {
@@ -172,8 +320,15 @@ const mockProfile: Record<string, CompanionProfile> = {
     accommodations: ['民宿', '酒店'],
     creditScore: '4.9',
     creditLevel: '黄金',
+    creditBadge: 'gold',
     totalTrips: 12,
-    completionRate: 92
+    completionRate: 92,
+    personalityType: 'planner',
+    wakeTime: '07:00',
+    sleepTime: '22:00',
+    gender: '女',
+    age: 26,
+    matchScore: 78
   },
   '2': {
     id: '2',
@@ -188,8 +343,15 @@ const mockProfile: Record<string, CompanionProfile> = {
     accommodations: ['青旅', '民宿'],
     creditScore: '4.7',
     creditLevel: '白银',
+    creditBadge: 'silver',
     totalTrips: 8,
-    completionRate: 88
+    completionRate: 88,
+    personalityType: 'spontaneous',
+    wakeTime: '09:00',
+    sleepTime: '00:00',
+    gender: '男',
+    age: 32,
+    matchScore: 50
   },
   '3': {
     id: '3',
@@ -204,8 +366,15 @@ const mockProfile: Record<string, CompanionProfile> = {
     accommodations: ['酒店'],
     creditScore: '4.8',
     creditLevel: '黄金',
+    creditBadge: 'gold',
     totalTrips: 5,
-    completionRate: 100
+    completionRate: 100,
+    personalityType: 'planner',
+    wakeTime: '06:30',
+    sleepTime: '21:30',
+    gender: '男',
+    age: 58,
+    matchScore: 50
   },
   '4': {
     id: '4',
@@ -220,8 +389,15 @@ const mockProfile: Record<string, CompanionProfile> = {
     accommodations: ['酒店', '民宿'],
     creditScore: '5.0',
     creditLevel: '钻石',
+    creditBadge: 'diamond',
     totalTrips: 15,
-    completionRate: 95
+    completionRate: 95,
+    personalityType: 'spontaneous',
+    wakeTime: '10:00',
+    sleepTime: '00:00',
+    gender: '女',
+    age: 27,
+    matchScore: 50
   },
   '5': {
     id: '5',
@@ -236,8 +412,15 @@ const mockProfile: Record<string, CompanionProfile> = {
     accommodations: ['青旅', '民宿'],
     creditScore: '4.8',
     creditLevel: '黄金',
+    creditBadge: 'gold',
     totalTrips: 30,
-    completionRate: 98
+    completionRate: 98,
+    personalityType: 'planner',
+    wakeTime: '07:00',
+    sleepTime: '22:00',
+    gender: '男',
+    age: 35,
+    matchScore: 50
   },
   '6': {
     id: '6',
@@ -252,10 +435,245 @@ const mockProfile: Record<string, CompanionProfile> = {
     accommodations: ['青旅'],
     creditScore: '4.6',
     creditLevel: '白银',
+    creditBadge: 'silver',
     totalTrips: 2,
-    completionRate: 80
+    completionRate: 80,
+    personalityType: 'spontaneous',
+    wakeTime: '09:00',
+    sleepTime: '23:00',
+    gender: '女',
+    age: 22,
+    matchScore: 50
+  },
+  '7': {
+    id: '7',
+    name: '孙海',
+    bio: '程序员一枚，利用年假旅行。喜欢自然风光，摄影和爬山是最大的爱好。希望找到体力好的伙伴一起徒步。',
+    destination: '云南大理',
+    travelDays: 6,
+    departureDate: '5天后出发',
+    budgetRange: [4000, 8000],
+    travelTypes: ['自然', '摄影', '徒步'],
+    transports: ['高铁', '包车'],
+    accommodations: ['民宿'],
+    creditScore: '4.8',
+    creditLevel: '黄金',
+    creditBadge: 'gold',
+    totalTrips: 10,
+    completionRate: 90,
+    personalityType: 'planner',
+    wakeTime: '06:00',
+    sleepTime: '22:00',
+    gender: '男',
+    age: 30,
+    matchScore: 88
+  },
+  '11': {
+    id: '11',
+    name: '黄大伟',
+    bio: '健身教练，体能超级好。旅行中也每天锻炼。喜欢挑战性的活动，徒步、攀岩、潜水都在行。',
+    destination: '云南大理',
+    travelDays: 5,
+    departureDate: '下周出发',
+    budgetRange: [3000, 7000],
+    travelTypes: ['冒险', '运动', '自然'],
+    transports: ['高铁', '包车'],
+    accommodations: ['民宿', '露营'],
+    creditScore: '4.6',
+    creditLevel: '白银',
+    creditBadge: 'silver',
+    totalTrips: 6,
+    completionRate: 85,
+    personalityType: 'planner',
+    wakeTime: '06:00',
+    sleepTime: '22:00',
+    gender: '男',
+    age: 28,
+    matchScore: 85
+  },
+  '12': {
+    id: '12',
+    name: '许晴',
+    bio: '时尚杂志编辑，对美有极致追求。旅行中不停拍照，品味独特。喜欢小众有设计感的地方，不喜欢大众景点。',
+    destination: '云南大理',
+    travelDays: 4,
+    departureDate: '下周出发',
+    budgetRange: [6000, 12000],
+    travelTypes: ['休闲', '摄影', '艺术'],
+    transports: ['高铁', '包车'],
+    accommodations: ['精品酒店'],
+    creditScore: '4.8',
+    creditLevel: '黄金',
+    creditBadge: 'gold',
+    totalTrips: 20,
+    completionRate: 95,
+    personalityType: 'spontaneous',
+    wakeTime: '10:00',
+    sleepTime: '00:00',
+    gender: '女',
+    age: 25,
+    matchScore: 82
+  },
+  '14': {
+    id: '14',
+    name: '丁一',
+    bio: '自由插画师，在线接单边旅行边工作。喜欢有故事感的地方，安静的小镇、古老的村落是心头好。',
+    destination: '云南大理',
+    travelDays: 10,
+    departureDate: '随时出发',
+    budgetRange: [2000, 5000],
+    travelTypes: ['艺术', '小众', '慢节奏'],
+    transports: ['高铁', '大巴'],
+    accommodations: ['民宿'],
+    creditScore: '4.9',
+    creditLevel: '黄金',
+    creditBadge: 'gold',
+    totalTrips: 18,
+    completionRate: 94,
+    personalityType: 'spontaneous',
+    wakeTime: '09:30',
+    sleepTime: '23:30',
+    gender: '保密',
+    age: 27,
+    matchScore: 75
+  },
+  '20': {
+    id: '20',
+    name: '薛之谦',
+    bio: '音乐人，经常各地演出顺便旅行。喜欢livehouse和音乐节，有演出机会都会去看看。随性而为型选手。',
+    destination: '云南大理',
+    travelDays: 3,
+    departureDate: '随时出发',
+    budgetRange: [1500, 4000],
+    travelTypes: ['音乐', '社交', '夜生活'],
+    transports: ['高铁', '飞机'],
+    accommodations: ['青旅', '民宿'],
+    creditScore: '4.7',
+    creditLevel: '白银',
+    creditBadge: 'silver',
+    totalTrips: 14,
+    completionRate: 90,
+    personalityType: 'spontaneous',
+    wakeTime: '10:00',
+    sleepTime: '02:00',
+    gender: '男',
+    age: 36,
+    matchScore: 70
   }
 }
 
 const profile = ref<CompanionProfile>(mockProfile[props.companionId] || mockProfile['1'])
+
+const generateAIAnalysis = async (p: CompanionProfile): Promise<AIAnalysis> => {
+  const reasons: string[] = []
+  const issues: string[] = []
+  const compatibilities: string[] = []
+  const icebreakers: string[] = []
+
+  let score = 50
+
+  if (p.destination === currentUserProfile.destination) {
+    score += 20
+    reasons.push(`📍 目的地一致：${p.destination}`)
+  }
+
+  if (p.travelTypes.some(t => currentUserProfile.travelTypes.includes(t))) {
+    const overlap = p.travelTypes.filter(t => currentUserProfile.travelTypes.includes(t))
+    score += overlap.length * 5
+    compatibilities.push(`🎯 旅行偏好契合：都喜欢「${overlap.join('、')}」`)
+  }
+
+  if (p.personalityType === currentUserProfile.personalityType) {
+    score += 8
+    compatibilities.push(`🧠 性格相近：都是${p.personalityType === 'planner' ? '计划型' : '随性型'}`)
+  } else {
+    issues.push(`⚠️ 性格差异：TA是${p.personalityType === 'planner' ? '计划型' : '随性型'}，你是${currentUserProfile.personalityType === 'planner' ? '计划型' : '随性型'}`)
+  }
+
+  const wakeDiff = Math.abs(parseInt(p.wakeTime.split(':')[0]) - parseInt(currentUserProfile.wakeTime.split(':')[0]))
+  if (wakeDiff > 2) {
+    issues.push(`⏰ 作息差异：TA习惯${p.wakeTime}起床，你习惯${currentUserProfile.wakeTime}起床`)
+  } else if (wakeDiff <= 1) {
+    compatibilities.push(`⏰ 作息相近：起床时间差不多`)
+  }
+
+  const sleepDiff = Math.abs(parseInt(p.sleepTime.split(':')[0]) - parseInt(currentUserProfile.sleepTime.split(':')[0]))
+  if (sleepDiff > 2) {
+    issues.push(`🌙 睡眠习惯：TA习惯${p.sleepTime}睡觉，你习惯${currentUserProfile.sleepTime}睡觉`)
+  }
+
+  if (p.creditBadge === 'diamond') {
+    score += 5
+    reasons.push(`💎 信用优秀：钻石会员，历史组队${p.totalTrips}次`)
+  } else if (p.creditBadge === 'gold') {
+    score += 3
+    reasons.push(`⭐ 信用良好：黄金会员，完成率${p.completionRate}%`)
+  }
+
+  if (p.totalTrips >= 10) {
+    score += 3
+    reasons.push(`✈️ 旅行经验丰富：已去过${p.totalTrips}个目的地`)
+  }
+
+  if (p.completionRate >= 90) {
+    score += 3
+    reasons.push(`🎯 组队记录良好：完成率${p.completionRate}%`)
+  }
+
+  if (p.gender !== '保密') {
+    icebreakers.push(`你是${p.gender}吗？我看到你也想去${p.destination}！`)
+  }
+
+  if (p.travelTypes.includes('摄影') && currentUserProfile.travelTypes.includes('摄影')) {
+    icebreakers.push('看到你喜欢摄影！这次去大理打算拍些什么题材？')
+  }
+
+  if (p.travelTypes.includes('美食')) {
+    icebreakers.push('听说大理有很多特色美食，你有什么推荐的吗？')
+  }
+
+  if (p.personalityType === 'spontaneous') {
+    icebreakers.push('我看到你喜欢随性旅行，有没有临时发现的好地方想分享？')
+  }
+
+  const finalScore = Math.min(score, 98)
+
+  return {
+    matchScore: finalScore,
+    matchReasons: reasons.length > 0 ? reasons : ['💡 目的地相同，可以考虑结伴'],
+    potentialIssues: issues,
+    icebreakers: icebreakers.length > 0 ? icebreakers : ['你好！看到你的行程刚好和我一样，要不组队一起？'],
+    travelCompatibility: compatibilities.length > 0 ? compatibilities : ['📍 目的地重叠，可以拼车拼房'],
+    recommendScore: finalScore >= 80 ? 5 : finalScore >= 60 ? 4 : 3
+  }
+}
+
+const analyzeWithAI = async () => {
+  isAnalyzing.value = true
+  aiAnalysis.value = null
+
+  await new Promise(resolve => setTimeout(resolve, 1500))
+
+  aiAnalysis.value = await generateAIAnalysis(profile.value)
+  isAnalyzing.value = false
+}
+
+const getMatchScoreClass = (score: number) => {
+  if (score >= 80) return 'text-green-600 bg-green-50'
+  if (score >= 60) return 'text-orange-600 bg-orange-50'
+  return 'text-gray-600 bg-gray-50'
+}
+
+onMounted(() => {
+  if (profile.value.matchScore) {
+    aiAnalysis.value = {
+      matchScore: profile.value.matchScore,
+      matchReasons: [],
+      potentialIssues: [],
+      icebreakers: [],
+      travelCompatibility: [],
+      recommendScore: profile.value.matchScore >= 80 ? 5 : 4
+    }
+  }
+})
 </script>

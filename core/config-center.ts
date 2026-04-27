@@ -14,7 +14,13 @@ export class ConfigCenter {
 
   constructor(defaultConfig: Partial<AppConfig> = {}) {
     const env = this.loadEnv()
-    const mergedConfig = { ...env, ...defaultConfig } as AppConfig
+    const mergedConfig = {
+      NODE_ENV: 'development',
+      USE_MOCK: true,
+      API_BASE_URL: 'https://api.trailmate.example.com',
+      ...env,
+      ...defaultConfig
+    } as AppConfig
     this.validateConfig(mergedConfig)
 
     Object.entries(mergedConfig).forEach(([key, value]) => {
@@ -29,13 +35,10 @@ export class ConfigCenter {
   private loadEnv(): Partial<AppConfig> {
     let env: Record<string, any> = {}
 
-    // Node.js环境：直接读取已加载的process.env
-    if (typeof process !== 'undefined' && process.env) {
+    if (typeof import.meta !== 'undefined' && 'env' in import.meta) {
+      env = (import.meta as any).env as Record<string, any>
+    } else if (typeof process !== 'undefined' && process.env) {
       env = process.env
-    }
-    // 浏览器环境：Vite自动注入import.meta.env
-    else if (typeof import.meta !== 'undefined' && 'env' in import.meta) {
-      env = import.meta.env as Record<string, any>
     }
 
     // 统一去除VITE_前缀，自动转换类型

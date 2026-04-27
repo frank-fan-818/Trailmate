@@ -1,7 +1,9 @@
-import { ref, shallowRef, onUnmounted } from 'vue'
+import { ref, shallowRef, onUnmounted, InjectionKey } from 'vue'
 import type { Core } from '@trailmate/core'
 import type PerceptionModule from '@trailmate/perception'
 import type { Notification, TimelineNode, LocationInfo } from '@trailmate/perception'
+
+export const TRAILMATE_KEY: InjectionKey<UseTrailmateCoreReturn> = Symbol('trailmate')
 
 export interface UseTrailmateCoreOptions {
   userId?: string
@@ -152,10 +154,10 @@ export function useTrailmateCore(options: UseTrailmateCoreOptions = {}): UseTrai
   const startRealLocationWatcher = async (onUpdate: (loc: LocationInfo) => void): Promise<() => void> => {
     if (!initializedCore) {
       console.warn('Core未初始化')
-      return () => {}
+      return () => { }
     }
     const stopFn = await initializedCore.service.call<() => void>('perception.startRealLocationWatcher', userId, onUpdate)
-    return stopFn || (() => {})
+    return stopFn || (() => { })
   }
 
   const stopRealLocationWatcher = async (): Promise<void> => {
@@ -185,5 +187,24 @@ export function useTrailmateCore(options: UseTrailmateCoreOptions = {}): UseTrai
     getRealLocation,
     startRealLocationWatcher,
     stopRealLocationWatcher
+  }
+}
+
+export async function initializeTrailmate(): Promise<{
+  core: Core
+  module: PerceptionModule
+}> {
+  const { Core } = await import('@trailmate/core')
+  const { default: PerceptionPlugin } = await import('@trailmate/perception')
+
+  const coreInstance = new Core()
+  const perceptionModule = new PerceptionPlugin()
+
+  await coreInstance.pluginManager.install(perceptionModule)
+  await coreInstance.pluginManager.mount()
+
+  return {
+    core: coreInstance,
+    module: perceptionModule
   }
 }
