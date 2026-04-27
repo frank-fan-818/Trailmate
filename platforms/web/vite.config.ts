@@ -7,7 +7,9 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
-      '@trailmate/core': path.resolve(__dirname, '../../core')
+      '@trailmate/core': path.resolve(__dirname, '../../core'),
+      '@trailmate/perception': path.resolve(__dirname, '../../modules/perception'),
+      '@trailmate/modules': path.resolve(__dirname, '../../modules')
     }
   },
   server: {

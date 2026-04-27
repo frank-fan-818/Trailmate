@@ -1,10 +1,11 @@
 import type { IPlugin, ICore } from '@trailmate/core'
 import { GlobalEvent } from '@trailmate/core'
 import type { PerceptionContext } from './src/types'
+export type { LocationInfo, TimelineNode, Notification, NotificationLevel, PerceptionContext } from './src/types'
 import { handlePlanGenerated, handlePlanUpdated } from './src/event-handlers/plan-event.handler'
 import { handleLocationChanged } from './src/event-handlers/location-event.handler'
 import { getTimeline, updateNodeStatus, insertCustomNode, stopTimelineScheduler } from './src/services/timeline.service'
-import { simulateLocation, getCurrentLocation, toggleAutoSimulate } from './src/services/location.service'
+import { simulateLocation, getCurrentLocation, toggleAutoSimulate, getRealLocation, startRealLocationWatcher, stopRealLocationWatcher } from './src/services/location.service'
 import { getNotifications, markNotificationAsRead } from './src/services/notification.service'
 import { stopRuleScheduler, runRulesByType, addCustomRule, removeCustomRule, getAllRules } from './src/services/rule-engine.service'
 
@@ -14,8 +15,8 @@ export default class PerceptionModule implements IPlugin {
   version = '1.0.0'
   dependencies = []
 
-  private core: ICore | null = null
-  private contexts: Map<string, PerceptionContext> = new Map() // userId -> context
+  protected core: ICore | null = null
+  protected contexts: Map<string, PerceptionContext> = new Map() // userId -> context
   // 保存绑定后的事件处理函数引用，保证订阅/取消订阅使用同一个实例
   private boundHandlers = {
     handlePlanGenerated: handlePlanGenerated.bind(this),
@@ -44,6 +45,9 @@ export default class PerceptionModule implements IPlugin {
     core.service.register('perception.getAllRules', getAllRules.bind(this))
     core.service.register('perception.updateNodeStatus', updateNodeStatus.bind(this))
     core.service.register('perception.insertCustomNode', insertCustomNode.bind(this))
+    core.service.register('perception.getRealLocation', getRealLocation.bind(this))
+    core.service.register('perception.startRealLocationWatcher', startRealLocationWatcher.bind(this))
+    core.service.register('perception.stopRealLocationWatcher', stopRealLocationWatcher.bind(this))
   }
 
   onMount(core: ICore) {

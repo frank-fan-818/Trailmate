@@ -1052,16 +1052,15 @@ interface Message {
 }
 const messages = ref<Message[]>([])
 
-// 调用 MiniMax API
-const callMiniMaxAPI = async (messagesHistory: Array<{role: 'user' | 'assistant', content: string}>) => {
-  // 直接使用API Key测试
-  const apiKey = 'sk-cp-AKJPm7S8lDxmEu4rABJ1Ypiwe-SrX-iicZfhBUR2mNvG64qLgS5O1GGtFosN1ECRx9e-T8lAMIZmfnZWhGlLShJmvrCKCBkPLWF_-HEvL624gURF_newOZQ'
+// 调用 OpenRouter API
+const callOpenRouterAPI = async (messagesHistory: Array<{role: 'user' | 'assistant', content: string}>) => {
+  const apiKey = 'OPENROUTER_KEY_PLACEHOLDER'
 
   if (!apiKey) {
-    throw new Error('MiniMax API Key 未配置')
+    throw new Error('OpenRouter API Key 未配置')
   }
 
-  console.log('开始调用MiniMax API...')
+  console.log('开始调用OpenRouter API...')
   console.log('历史消息:', messagesHistory)
 
   try {
@@ -1073,37 +1072,55 @@ const callMiniMaxAPI = async (messagesHistory: Array<{role: 'user' | 'assistant'
 - 偏好的住宿类型：${settings.value.accommodations.join('、') || '无特别偏好'}
 - 语言：${settings.value.language === 'zh' ? '中文' : '英文'}
 
-请严格按照用户偏好生成内容，输出格式使用Markdown。`
+请严格按照用户偏好生成内容。`
+
+      const isChinese = settings.value.language === 'zh'
+      const currentLanguage = isChinese ? 'Chinese' : 'English'
+      
+      const systemPrompt = isChinese 
+        ? `【重要】你必须用中文回复所有内容。
+
+你是伴旅智能旅行助手，擅长规划旅行行程。
+          
+【强制输出规则 - 必须严格遵守】：
+1. 所有景点、地标、酒店、餐厅等地点名称必须使用 [[地点名]] 格式包裹
+   - ✅ 正确：去 [[故宫]] 参观，住在 [[如家酒店]]
+   - ❌ 错误：去故宫参观，住在如家酒店
+2. 所有注意事项必须使用 【提示内容】 格式
+3. 不要使用其他格式来标注地点`
+        : `【Important】You must respond in English for all content.
+
+You are TrailMate, an intelligent travel assistant, expert at planning travel itineraries.
+          
+【Mandatory Output Rules】：
+1. All place names (attractions, landmarks, hotels, restaurants, etc.) must be wrapped in [[Place Name]] format
+   - ✅ Correct: Visit [[Forbidden City]], stay at [[Home Inn]]
+   - ❌ Wrong: Visit Forbidden City, stay at Home Inn
+2. All tips must use 【Tip Content】 format
+3. Do not use other formats for place names`
 
       const fullMessages = [
         {
+          role: 'system',
+          content: systemPrompt
+        },
+        {
           role: 'user',
-          content: `你是伴旅智能旅行助手，擅长规划旅行行程，回答用户旅行相关问题。请用简洁清晰的中文回复。
-
-重要格式规范：
-1. 当提到具体景点、地标、酒店、餐厅等地点时，必须使用 [[地点名]] 格式包裹
-   - 例如：故宫、颐和园、国家博物馆、如家酒店、全聚德烤鸭店
-   - 格式示例：行程第一站去 [[故宫]]，下午去 [[颐和园]]
-2. 当提到注意事项或温馨提示时，使用 【提示内容】 格式
-   - 格式示例：【建议提前预约门票】【注意防晒】【携带雨具】
-3. 其他内容正常用 Markdown 格式输出`
+          content: userPreference
         },
         ...messagesHistory
       ]
 
-    const response = await fetch('https://api.minimax.chat/v1/text/chatcompletion_v2', {
-      method: 'POST',
+    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
+        "Authorization": `Bearer ${apiKey}`,
+        "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        model: 'MiniMax-M2.7',
-        messages: fullMessages,
-        temperature: 0.7,
-        max_tokens: 1000,
-        stream: false,
-        top_p: 0.9
+        "model": "minimax/minimax-m2.5:free",
+        "messages": fullMessages,
+        "reasoning": {"enabled": true}
       })
     })
 
@@ -1118,29 +1135,16 @@ const callMiniMaxAPI = async (messagesHistory: Array<{role: 'user' | 'assistant'
     const data = await response.json()
     console.log('API响应数据:', data)
     
-    // 处理MiniMax响应格式（展开所有字段查看）
-    console.log('响应所有字段:', Object.keys(data))
-    console.log('完整响应:', JSON.stringify(data, null, 2))
-    
-    if (data.output && Array.isArray(data.output)) {
-      return data.output[0]?.text || '抱歉，我暂时无法回答这个问题'
-    } else if (data.choices && Array.isArray(data.choices)) {
-      return data.choices[0]?.message?.content || '抱歉，我暂时无法回答这个问题'
-    } else if (data.response) {
-      return data.response
-    } else if (data.reply) {
-      return data.reply
-    } else if (data.answer) {
-      return data.answer
-    } else if (data.content) {
-      return data.content
+    // 处理OpenRouter响应格式
+    if (data.choices && Array.isArray(data.choices)) {
+      const assistantMessage = data.choices[0]?.message
+      return assistantMessage?.content || '抱歉，我暂时无法回答这个问题'
     } else {
       console.error('无法解析API响应:', data)
-      // 尝试直接返回所有内容
       return JSON.stringify(data, null, 2)
     }
   } catch (error) {
-    console.error('调用MiniMax API失败:', error)
+    console.error('调用OpenRouter API失败:', error)
     const err = error as any
     const errorMsg = err.message || err.toString() || '未知错误'
     alert(`API调用失败: ${errorMsg}\n请检查网络连接`)
@@ -1179,7 +1183,7 @@ const handleGenerate = async () => {
 
     while (retryCount <= maxRetries) {
       try {
-        response = await callMiniMaxAPI(historyForApi)
+        response = await callOpenRouterAPI(historyForApi)
         break
       } catch (apiError) {
         retryCount++

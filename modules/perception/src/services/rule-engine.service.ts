@@ -260,26 +260,3 @@ export async function removeCustomRule(ruleId: string): Promise<void> {
 export async function getAllRules(): Promise<Rule[]> {
   return [...builtInRules, ...customRules]
 }
-    default:
-      break
-  }
-}
-
-/**
- * 添加自定义规则
- */
-export function addCustomRule(rule: Rule): void {
-  customRules.push(rule)
-}
-
-/**
- * 启用/禁用规则
- */
-export function toggleRule(ruleId: string, enabled: boolean): boolean {
-  const rule = [...builtInRules, ...customRules].find(r => r.id === ruleId)
-  if (rule) {
-    rule.enabled = enabled
-    return true
-  }
-  return false
-}

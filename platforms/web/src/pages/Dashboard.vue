@@ -16,6 +16,7 @@
         <div class="flex gap-8 font-semibold text-sm">
           <button class="text-gray-700 hover:text-primary transition-colors">概览</button>
           <button @click="$emit('startPlanning')" class="text-gray-700 hover:text-primary transition-colors">行程规划</button>
+          <button @click="$emit('openPerception')" class="text-gray-700 hover:text-primary transition-colors">情境感知</button>
           <button class="text-gray-700 hover:text-primary transition-colors">我的行程</button>
           <button class="text-gray-700 hover:text-primary transition-colors">伴友社区</button>
         </div>
