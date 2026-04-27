@@ -516,7 +516,7 @@ const openPlaceDrawer = async (placeName: string) => {
     activePlaceTab.value = 'detail'
 
     // 调用百度地图POI搜索API
-    const apiUrl = `/api/baidumap/place/v2/search?query=${encodeURIComponent(placeName)}&city=全国&ak=a4hhbJ1G59b1ef4itaT1TbIC4w3g3DCi&output=json&scope=2&page_size=1`
+    const apiUrl = `/api/baidumap/place/v2/search?query=${encodeURIComponent(placeName)}&city=全国&ak=${import.meta.env.VITE_BAIDU_MAP_AK}&output=json&scope=2&page_size=1`
     console.log('请求百度API:', apiUrl)
     const response = await fetch(apiUrl)
     const data = await response.json()
@@ -776,7 +776,7 @@ const loadWeatherInfo = async (placeName: string, city?: string) => {
       }
     }
     
-    const searchUrl = `/api/baidumap/weather/v1/?district=${encodeURIComponent(cityName)}&data_type=all&ak=a4hhbJ1G59b1ef4itaT1TbIC4w3g3DCi`
+    const searchUrl = `/api/baidumap/weather/v1/?district=${encodeURIComponent(cityName)}&data_type=all&ak=${import.meta.env.VITE_BAIDU_MAP_AK}`
     console.log('请求天气API:', searchUrl)
     
     const response = await fetch(searchUrl)
@@ -1054,7 +1054,7 @@ const messages = ref<Message[]>([])
 
 // 调用 OpenRouter API
 const callOpenRouterAPI = async (messagesHistory: Array<{role: 'user' | 'assistant', content: string}>) => {
-  const apiKey = 'OPENROUTER_KEY_PLACEHOLDER'
+  const apiKey = import.meta.env.VITE_OPENROUTER_API_KEY as string
 
   if (!apiKey) {
     throw new Error('OpenRouter API Key 未配置')
@@ -1111,7 +1111,7 @@ You are TrailMate, an intelligent travel assistant, expert at planning travel it
         ...messagesHistory
       ]
 
-    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+    const response = await fetch(import.meta.env.VITE_OPENROUTER_API_URL as string, {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${apiKey}`,

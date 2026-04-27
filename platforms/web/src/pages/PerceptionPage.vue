@@ -133,6 +133,14 @@
           </div>
 
           <p class="mt-3 text-sm text-gray-500 text-center">{{ locationStatus }}</p>
+
+          <div v-if="currentLocation && mapImageUrl" class="mt-4 rounded-xl overflow-hidden border border-gray-200">
+            <img
+              :src="mapImageUrl"
+              alt="当前位置地图"
+              class="w-full h-[500px] object-cover"
+            />
+          </div>
         </section>
 
         <!-- 右侧：通知列表 -->
@@ -229,7 +237,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, watch } from 'vue'
 import { useTrailmateCore } from '../composables/use-trailmate-core'
 import type { LocationInfo } from '@trailmate/perception'
 
@@ -291,6 +299,25 @@ const isGettingRealLocation = ref(false)
 const isWatchingLocation = ref(false)
 const currentLocation = ref<LocationInfo | null>(null)
 const stopWatcher = ref<(() => void) | null>(null)
+const mapImageUrl = ref<string>('')
+
+const fetchStaticMap = () => {
+  if (!currentLocation.value) {
+    mapImageUrl.value = ''
+    return
+  }
+  const ak = import.meta.env.VITE_BAIDU_MAP_AK as string
+  const { latitude, longitude } = currentLocation.value
+  console.log('fetchStaticMap使用坐标:', latitude, longitude)
+  const url = `https://api.map.baidu.com/staticimage/v2?ak=${ak}&mcode=666666&width=512&height=500&zoom=15&center=${longitude},${latitude}&markers=${longitude},${latitude}&markerStyles=0`
+  console.log('静态地图URL:', url)
+  mapImageUrl.value = url
+}
+
+watch(currentLocation, () => {
+  console.log('currentLocation变化:', currentLocation.value)
+  fetchStaticMap()
+})
 
 onMounted(async () => {
   await initialize()
