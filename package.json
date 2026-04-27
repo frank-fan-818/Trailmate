@@ -6,9 +6,8 @@
         "dev": "npm run dev:web",
         "dev:web": "vite platforms/web",
         "build": "npm run build:web",
-        "build:web": "chmod +x node_modules/.bin/vite 2>/dev/null; vite build platforms/web",
-        "build:core": "tsc -p core/tsconfig.json",
-        "postinstall": "chmod +x node_modules/.bin/vite 2>/dev/null || true"
+        "build:web": "npx --no vite build platforms/web",
+        "build:core": "tsc -p core/tsconfig.json"
     },
     "dependencies": {
         "@supabase/supabase-js": "^2.99.2",
