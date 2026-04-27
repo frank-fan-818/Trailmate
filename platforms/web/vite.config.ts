@@ -26,8 +26,9 @@ export default defineConfig({
         rewrite: (path) => path.replace(/^\/api\/minimax/, '')
       },
       '/api/baidumap': {
-        target: 'http://api.map.baidu.com',
+        target: 'https://api.map.baidu.com',
         changeOrigin: true,
+        secure: true,
         rewrite: (path) => path.replace(/^\/api\/baidumap/, '')
       }
     }

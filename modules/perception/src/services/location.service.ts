@@ -2,7 +2,7 @@ import type PerceptionModule from '../../index'
 import type { LocationInfo } from '../types'
 import { GlobalEvent } from '@trailmate/core'
 
-const BAIDU_MAP_AK = 'a4hhbJ1G59b1ef4itaT1TbIC4w3g3DCi'
+const BAIDU_MAP_AK = import.meta.env.VITE_BAIDU_MAP_AK as string
 
 const userLocations = new Map<string, LocationInfo>()
 const autoSimulateTimers = new Map<string, ReturnType<typeof setInterval>>()
