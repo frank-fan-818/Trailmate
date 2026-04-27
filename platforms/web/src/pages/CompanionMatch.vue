@@ -31,9 +31,9 @@
             </select>
             <select v-model="filters.credit" class="px-3 py-2 border border-gray-300 text-sm rounded focus:outline-none focus:border-primary">
               <option value="">全部信用</option>
-              <option value="diamond">钻石</option>
-              <option value="gold">黄金</option>
-              <option value="silver">白银</option>
+              <option value="钻石">钻石</option>
+              <option value="黄金">黄金</option>
+              <option value="白银">白银</option>
             </select>
             <select v-model="filters.departure" class="px-3 py-2 border border-gray-300 text-sm rounded focus:outline-none focus:border-primary">
               <option value="">全部时间</option>
@@ -81,9 +81,7 @@
               <div class="flex items-center justify-between mb-1">
                 <div class="flex items-center gap-2">
                   <h3 class="font-bold text-gray-900">{{ companion.name }}</h3>
-                  <span :class="getCreditBadgeClass(companion.creditLevel)" class="px-2 py-0.5 text-xs rounded">
-                    {{ companion.creditLevel }}
-                  </span>
+                  <span class="px-2 py-0.5 bg-yellow-100 text-yellow-700 text-xs rounded">{{ getCreditBadgeText(companion.creditLevel) }}</span>
                 </div>
                 <span class="text-sm text-gray-500">⭐ {{ companion.creditScore }}</span>
               </div>
@@ -201,7 +199,7 @@ interface Companion {
   overlapDays: number
   rating: number
   creditScore: string
-  creditLevel: 'diamond' | 'gold' | 'silver'
+  creditLevel: '钻石' | '黄金' | '白银'
   totalTrips: number
   interested: boolean
   sameday: boolean
@@ -231,7 +229,7 @@ const companions = ref<Companion[]>([
     overlapDays: 4,
     rating: 4.9,
     creditScore: '4.9',
-    creditLevel: 'gold',
+    creditLevel: '黄金',
     totalTrips: 12,
     interested: false,
     sameday: false
@@ -250,7 +248,7 @@ const companions = ref<Companion[]>([
     overlapDays: 3,
     rating: 4.7,
     creditScore: '4.7',
-    creditLevel: 'silver',
+    creditLevel: '白银',
     totalTrips: 8,
     interested: false,
     sameday: false
@@ -269,7 +267,7 @@ const companions = ref<Companion[]>([
     overlapDays: 2,
     rating: 4.8,
     creditScore: '4.8',
-    creditLevel: 'gold',
+    creditLevel: '黄金',
     totalTrips: 5,
     interested: false,
     sameday: true
@@ -288,7 +286,7 @@ const companions = ref<Companion[]>([
     overlapDays: 5,
     rating: 5.0,
     creditScore: '5.0',
-    creditLevel: 'diamond',
+    creditLevel: '钻石',
     totalTrips: 15,
     interested: false,
     sameday: false
@@ -344,11 +342,8 @@ const filteredList = computed(() => {
     if (filters.value.budget && c.budgetType !== filters.value.budget) {
       return false
     }
-    if (filters.value.credit) {
-      const creditOrder = { silver: 1, gold: 2, diamond: 3 }
-      if (creditOrder[c.creditLevel] < creditOrder[filters.value.credit as keyof typeof creditOrder]) {
-        return false
-      }
+    if (filters.value.credit && c.creditLevel !== filters.value.credit) {
+      return false
     }
     return true
   })
@@ -374,13 +369,26 @@ const teamForm = ref({
   splitType: 'aa'
 })
 
+const getCreditBadgeText = (level: string) => {
+  switch (level) {
+    case '钻石':
+      return '钻石'
+    case '黄金':
+      return '黄金'
+    case '白银':
+      return '白银'
+    default:
+      return '白银'
+  }
+}
+
 const getCreditBadgeClass = (level: string) => {
   switch (level) {
-    case 'diamond':
+    case '钻石':
       return 'bg-purple-100 text-purple-700'
-    case 'gold':
+    case '黄金':
       return 'bg-yellow-100 text-yellow-700'
-    case 'silver':
+    case '白银':
       return 'bg-gray-100 text-gray-600'
     default:
       return 'bg-gray-100 text-gray-600'

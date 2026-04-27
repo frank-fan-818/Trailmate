@@ -13,14 +13,14 @@
 
     <div class="max-w-2xl mx-auto px-4 py-6">
       <div class="bg-white rounded-lg border border-gray-200 overflow-hidden">
-        <div class="h-32 bg-gradient-to-r from-blue-500 to-orange-400"></div>
+        <div class="h-24 bg-gradient-to-r from-blue-500 to-orange-400"></div>
 
         <div class="px-6 pb-6">
-          <div class="flex items-end -mt-12 mb-4">
-            <div class="w-24 h-24 bg-white rounded-lg border-4 border-white shadow-md flex items-center justify-center text-4xl font-bold text-gray-700">
+          <div class="flex items-start gap-4 -mt-12 mb-4">
+            <div class="w-24 h-24 bg-white rounded-lg border-4 border-white shadow-md flex items-center justify-center text-4xl font-bold text-gray-700 flex-shrink-0">
               {{ profile.name.charAt(0) }}
             </div>
-            <div class="ml-4 mb-2">
+            <div class="pt-14">
               <h2 class="text-xl font-bold text-gray-900">{{ profile.name }}</h2>
               <div class="flex items-center gap-2 text-sm text-gray-500">
                 <span class="px-2 py-0.5 bg-yellow-100 text-yellow-700 rounded text-xs">{{ profile.creditLevel }}</span>
