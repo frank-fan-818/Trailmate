@@ -1,51 +1,14 @@
 import type PerceptionModule from '../../index'
+import type { Rule, LocationInfo, PerceptionContext } from '../types'
 import { pushNotification } from './notification.service'
-import { getTimelineSnapshot } from './timeline.service'
-import type { LocationInfo, PerceptionContext, Rule } from '../types'
 
+// 内置规则库
 const builtInRules: Rule[] = [
+  // 时间提醒规则：行程节点前30分钟提醒
   {
-    id: 'rule_location_arrival',
-    name: 'Location update acknowledgement',
-    description: 'Push a notification when a simulated location is received.',
-    condition: {
-      type: 'location',
-      params: {}
-    },
-    action: {
-      type: 'push_notification',
-      params: {
-        level: 'info',
-        content: 'Location updated. Review the next timeline stop and nearby reminders.'
-      }
-    },
-    enabled: true,
-    priority: 1
-  },
-  {
-    id: 'rule_location_safety',
-    name: 'Safety reminder',
-    description: 'Warn when the user simulates a location tagged as high-risk.',
-    condition: {
-      type: 'location',
-      params: {
-        areas: ['Border Area', 'High Risk Zone']
-      }
-    },
-    action: {
-      type: 'push_notification',
-      params: {
-        level: 'urgent',
-        content: 'You entered a special area. Review safety guidance before continuing.'
-      }
-    },
-    enabled: true,
-    priority: 5
-  },
-  {
-    id: 'rule_time_reminder',
-    name: 'Upcoming stop reminder',
-    description: 'Notify the user when the next stop is approaching.',
+    id: 'rule_time_remind',
+    name: '行程时间提醒',
+    description: '行程节点开始前30分钟发送提醒',
     condition: {
       type: 'time',
       params: {
@@ -56,62 +19,216 @@ const builtInRules: Rule[] = [
       type: 'push_notification',
       params: {
         level: 'info',
-        content: 'Your next itinerary stop starts soon.'
+        content: '您有一个行程即将开始，请做好准备'
+      }
+    },
+    enabled: true,
+    priority: 2
+  },
+  // 位置推荐规则：3公里内推荐景点
+  {
+    id: 'rule_location_attraction',
+    name: '附近景点推荐',
+    description: '当前位置3公里内有景点时推送推荐',
+    condition: {
+      type: 'location',
+      params: {
+        distance: 3000 // 3000米
+      }
+    },
+    action: {
+      type: 'push_notification',
+      params: {
+        level: 'info',
+        content: '发现您附近有不错的景点，要不要去看看？'
+      }
+    },
+    enabled: true,
+    priority: 1
+  },
+  // 天气预警规则：恶劣天气提醒
+  {
+    id: 'rule_weather_warning',
+    name: '恶劣天气预警',
+    description: '遇到恶劣天气时推送提醒',
+    condition: {
+      type: 'weather',
+      params: {
+        conditions: ['小雨', '中雨', '大雨', '雪']
+      }
+    },
+    action: {
+      type: 'push_notification',
+      params: {
+        level: 'warning',
+        content: '请注意天气变化，合理调整行程'
       }
     },
     enabled: true,
     priority: 3
+  },
+  // 高风险地区提示规则
+  {
+    id: 'rule_safety_remind',
+    name: '安全提醒',
+    description: '进入特殊地区时推送安全提示',
+    condition: {
+      type: 'location',
+      params: {
+        areas: ['边境地区', '高风险地区']
+      }
+    },
+    action: {
+      type: 'push_notification',
+      params: {
+        level: 'urgent',
+        content: '您已进入特殊地区，请注意人身财产安全'
+      }
+    },
+    enabled: true,
+    priority: 5
   }
 ]
 
+// 自定义规则库
 const customRules: Rule[] = []
-const ruleTimers = new Map<string, ReturnType<typeof setInterval>>()
-const executedRuleKeys = new Set<string>()
 
-export async function runRulesByType(
-  this: PerceptionModule,
-  type: string,
-  params: Record<string, any>
-): Promise<void> {
-  const rules = [...builtInRules, ...customRules]
-    .filter((rule) => rule.enabled && rule.condition.type === type)
-    .sort((left, right) => right.priority - left.priority)
+/**
+ * 根据规则类型执行匹配
+ */
+export async function runRulesByType(this: PerceptionModule, type: string, params: Record<string, any>): Promise<void> {
+  // 合并内置规则和自定义规则，按优先级排序
+  const allRules = [...builtInRules, ...customRules]
+    .filter(rule => rule.enabled && rule.condition.type === type)
+    .sort((a, b) => b.priority - a.priority)
 
-  for (const rule of rules) {
-    const matched = await matchRule.call(this, rule, params)
-    if (!matched) {
-      continue
+  for (const rule of allRules) {
+    const matched = await matchRule(rule, params)
+    if (matched) {
+      await executeRuleAction.call(this, rule, params)
     }
-
-    const executionKey = createExecutionKey(rule, params)
-    if (executedRuleKeys.has(executionKey)) {
-      continue
-    }
-
-    executedRuleKeys.add(executionKey)
-    await executeRuleAction.call(this, rule, params)
   }
 }
 
+/**
+ * 规则匹配逻辑
+ */
+async function matchRule(rule: Rule, params: Record<string, any>): Promise<boolean> {
+  const { type, params: conditionParams } = rule.condition
+
+  switch (type) {
+    case 'location':
+      return matchLocationRule(conditionParams, params)
+    case 'time':
+      return matchTimeRule(conditionParams, params)
+    case 'weather':
+      return matchWeatherRule(conditionParams, params)
+    case 'event':
+      return matchEventRule(conditionParams, params)
+    default:
+      return false
+  }
+}
+
+/**
+ * 位置规则匹配
+ */
+function matchLocationRule(conditionParams: Record<string, any>, params: Record<string, any>): boolean {
+  const { location } = params as { location: LocationInfo; context: PerceptionContext }
+  const { distance, areas } = conditionParams
+
+  // 距离匹配（简化实现，真实场景需要计算两点距离）
+  if (distance && Math.random() > 0.7) { // 模拟30%概率匹配到附近景点
+    return true
+  }
+
+  // 特殊地区匹配
+  if (areas && areas.includes(location.city)) {
+    return true
+  }
+
+  return false
+}
+
+/**
+ * 时间规则匹配
+ */
+function matchTimeRule(conditionParams: Record<string, any>, params: Record<string, any>): boolean {
+  const { beforeMinutes } = conditionParams
+  // 简化实现，真实场景需要计算当前时间与节点时间的差值
+  return Math.random() > 0.8 // 模拟20%概率匹配到即将开始的行程
+}
+
+/**
+ * 天气规则匹配
+ */
+function matchWeatherRule(conditionParams: Record<string, any>, params: Record<string, any>): boolean {
+  const { conditions } = conditionParams
+  const { weather } = params
+  return conditions.includes(weather?.condition)
+}
+
+/**
+ * 事件规则匹配
+ */
+function matchEventRule(conditionParams: Record<string, any>, params: Record<string, any>): boolean {
+  const { eventType } = conditionParams
+  return params.eventType === eventType
+}
+
+/**
+ * 执行规则动作
+ */
+async function executeRuleAction(this: PerceptionModule, rule: Rule, params: Record<string, any>): Promise<void> {
+  const { type, params: actionParams } = rule.action
+  const { userId, context } = params
+
+  switch (type) {
+    case 'push_notification':
+      await pushNotification.call(this, {
+        userId,
+        planId: context?.planId,
+        content: actionParams.content,
+        level: actionParams.level
+      })
+      break
+    case 'update_timeline':
+      // 待实现：更新时间线节点
+      break
+    case 'adjust_plan':
+      // 待实现：自动调整行程
+      break
+  }
+}
+
+// 定时任务定时器，userId -> timer
+const ruleTimers = new Map<string, ReturnType<typeof setInterval>>()
+
+/**
+ * 启动用户规则定时检查
+ */
 export async function startRuleScheduler(this: PerceptionModule, userId: string): Promise<void> {
+  // 停止现有定时器
   stopRuleScheduler(userId)
 
+  // 每分钟执行一次时间类规则检查
   const timer = setInterval(async () => {
     const context = this.getContext(userId)
-    if (!context) {
-      return
-    }
+    if (!context) return
 
     await runRulesByType.call(this, 'time', {
       userId,
       context,
       currentTime: Date.now()
     })
-  }, 60000)
+  }, 60000) // 1分钟
 
   ruleTimers.set(userId, timer)
 }
 
+/**
+ * 停止用户规则定时检查
+ */
 export function stopRuleScheduler(userId: string): void {
   const timer = ruleTimers.get(userId)
   if (timer) {
@@ -120,110 +237,26 @@ export function stopRuleScheduler(userId: string): void {
   }
 }
 
+/**
+ * 添加自定义规则
+ */
 export async function addCustomRule(rule: Rule): Promise<void> {
   customRules.push(rule)
 }
 
+/**
+ * 删除自定义规则
+ */
 export async function removeCustomRule(ruleId: string): Promise<void> {
-  const index = customRules.findIndex((rule) => rule.id === ruleId)
-  if (index >= 0) {
+  const index = customRules.findIndex(r => r.id === ruleId)
+  if (index > -1) {
     customRules.splice(index, 1)
   }
 }
 
+/**
+ * 获取所有规则
+ */
 export async function getAllRules(): Promise<Rule[]> {
   return [...builtInRules, ...customRules]
-}
-
-async function matchRule(
-  this: PerceptionModule,
-  rule: Rule,
-  params: Record<string, any>
-): Promise<boolean> {
-  switch (rule.condition.type) {
-    case 'location':
-      return matchLocationRule(rule.condition.params, params)
-    case 'time':
-      return matchTimeRule(rule.condition.params, params)
-    case 'weather':
-      return false
-    case 'event':
-      return Boolean(params.eventType && params.eventType === rule.condition.params.eventType)
-    default:
-      return false
-  }
-}
-
-function matchLocationRule(
-  conditionParams: Record<string, any>,
-  params: Record<string, any>
-): boolean {
-  const location = params.location as LocationInfo | undefined
-  if (!location) {
-    return false
-  }
-
-  const restrictedAreas = conditionParams.areas as string[] | undefined
-  if (!restrictedAreas || restrictedAreas.length === 0) {
-    return true
-  }
-
-  return restrictedAreas.includes(location.city)
-}
-
-function matchTimeRule(
-  conditionParams: Record<string, any>,
-  params: Record<string, any>
-): boolean {
-  const context = params.context as PerceptionContext | undefined
-  if (!context) {
-    return false
-  }
-
-  const timeline = getTimelineSnapshot(context.planId)
-  const nextNode = timeline.find((node) => node.status === 'not_started')
-  if (!nextNode) {
-    return false
-  }
-
-  const beforeMinutes = Number(conditionParams.beforeMinutes ?? 30)
-  const currentTime = new Date(params.currentTime ?? Date.now())
-  const currentMinutes = currentTime.getHours() * 60 + currentTime.getMinutes()
-  const nodeStartMinutes = timeToMinutes(nextNode.startTime)
-  const delta = nodeStartMinutes - currentMinutes
-
-  return delta >= 0 && delta <= beforeMinutes
-}
-
-async function executeRuleAction(
-  this: PerceptionModule,
-  rule: Rule,
-  params: Record<string, any>
-): Promise<void> {
-  const context = params.context as PerceptionContext | undefined
-  await pushNotification.call(this, {
-    userId: params.userId,
-    planId: context?.planId,
-    content: rule.action.params.content,
-    level: rule.action.params.level
-  })
-}
-
-function createExecutionKey(rule: Rule, params: Record<string, any>): string {
-  if (rule.condition.type === 'location') {
-    return `${params.userId}:${rule.id}:${params.location?.id ?? 'location'}`
-  }
-
-  if (rule.condition.type === 'time') {
-    const context = params.context as PerceptionContext | undefined
-    const nextNode = context ? getTimelineSnapshot(context.planId).find((node) => node.status === 'not_started') : undefined
-    return `${params.userId}:${rule.id}:${nextNode?.id ?? 'time'}`
-  }
-
-  return `${params.userId}:${rule.id}:${params.eventType ?? 'event'}`
-}
-
-function timeToMinutes(value: string): number {
-  const [hours, minutes] = value.split(':').map(Number)
-  return (Number.isFinite(hours) ? hours : 0) * 60 + (Number.isFinite(minutes) ? minutes : 0)
 }

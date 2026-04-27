@@ -1,174 +1,189 @@
-import { inject, type InjectionKey } from 'vue'
-import { Core, type ICore } from '@trailmate/core'
-import MockAdapterModule from '../../../../adapters/mock-adapter'
-import SupabaseAdapterModule from '../../../../adapters/supabase-adapter'
-import PerceptionModule from '../../../../modules/perception'
-import type {
-  Notification,
-  TimelineNode
-} from '../../../../modules/perception/src/types'
-import ItineraryGeneratorModule from '../../../../modules/trip-tools/itinerary-generator'
-import type {
-  ItineraryPlan,
-  ItineraryRequest
-} from '../../../../modules/trip-tools/itinerary-generator/src/types'
+import { ref, shallowRef, onUnmounted } from 'vue'
+import type { Core } from '@trailmate/core'
+import type PerceptionModule from '@trailmate/perception'
+import type { Notification, TimelineNode, LocationInfo } from '@trailmate/perception'
 
-interface PlannerSettingsSummary {
-  budget?: [number, number]
-  travelTypes?: string[]
-  transports?: string[]
-  accommodations?: string[]
-  language?: string
+export interface UseTrailmateCoreOptions {
+  userId?: string
 }
 
-interface GenerateItineraryInput {
-  userId: string
-  content: string
-  settings?: PlannerSettingsSummary
-}
-
-export interface TrailmateServices {
-  core: ICore
-  generateItinerary: (input: GenerateItineraryInput) => Promise<ItineraryPlan[]>
-  getTimeline: (params: { userId: string; planId: string }) => Promise<TimelineNode[]>
-  getNotifications: (params: {
-    userId: string
-    planId?: string
-    unreadOnly?: boolean
-  }) => Promise<Notification[]>
+export interface UseTrailmateCoreReturn {
+  isInitialized: Ref<boolean>
+  isLoading: Ref<boolean>
+  error: Ref<string | null>
+  initialize: () => Promise<void>
+  cleanup: () => void
+  getNotifications: (params?: { planId?: string; unreadOnly?: boolean }) => Promise<Notification[]>
+  markNotificationAsRead: (notificationId: string) => Promise<boolean>
+  getTimeline: (planId: string) => Promise<TimelineNode[]>
+  updateNodeStatus: (params: { planId: string; nodeId: string; status: string }) => Promise<boolean>
   simulateLocation: (params: {
-    userId: string
     latitude: number
     longitude: number
     city: string
     address: string
     travelMode?: 'walking' | 'driving' | 'public_transport'
-  }) => Promise<void>
-  markNotificationAsRead: (params: {
-    userId: string
-    notificationId: string
-  }) => Promise<boolean>
+  }) => Promise<LocationInfo>
+  getCurrentLocation: () => Promise<LocationInfo | null>
+  toggleAutoSimulate: (enabled: boolean, speed?: number) => Promise<boolean>
+  getRealLocation: () => Promise<LocationInfo | null>
+  startRealLocationWatcher: (onUpdate: (loc: LocationInfo) => void) => Promise<() => void>
+  stopRealLocationWatcher: () => Promise<void>
 }
 
-export const TRAILMATE_KEY: InjectionKey<TrailmateServices> = Symbol('trailmate-services')
+const DEMO_USER_ID = 'demo-user'
+let initializedCore: Core | null = null
+let initializedModule: PerceptionModule | null = null
 
-let servicesPromise: Promise<TrailmateServices> | null = null
+export function useTrailmateCore(options: UseTrailmateCoreOptions = {}): UseTrailmateCoreReturn {
+  const userId = options.userId || DEMO_USER_ID
+  const isInitialized = ref(false)
+  const isLoading = ref(false)
+  const error = ref<string | null>(null)
 
-export async function initializeTrailmate(): Promise<TrailmateServices> {
-  if (!servicesPromise) {
-    servicesPromise = createTrailmateServices()
+  const cleanup = () => {
+    initializedCore = null
+    initializedModule = null
+    isInitialized.value = false
   }
 
-  return servicesPromise
-}
+  const initialize = async () => {
+    if (initializedCore && initializedModule) {
+      isInitialized.value = true
+      return
+    }
 
-export function useTrailmateCore(): TrailmateServices {
-  const services = inject(TRAILMATE_KEY)
-  if (!services) {
-    throw new Error('Trailmate services were not provided at app bootstrap.')
+    isLoading.value = true
+    error.value = null
+
+    try {
+      const { Core } = await import('@trailmate/core')
+      const { default: PerceptionPlugin } = await import('@trailmate/perception')
+
+      const coreInstance = new Core()
+      const perceptionModule = new PerceptionPlugin()
+
+      await coreInstance.pluginManager.install(perceptionModule)
+      await coreInstance.pluginManager.mount()
+
+      initializedCore = coreInstance
+      initializedModule = perceptionModule
+      isInitialized.value = true
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : '初始化失败'
+      console.error('Trailmate Core初始化失败:', err)
+    } finally {
+      isLoading.value = false
+    }
   }
 
-  return services
-}
+  const getNotifications = async (params?: {
+    planId?: string
+    unreadOnly?: boolean
+  }): Promise<Notification[]> => {
+    if (!initializedCore) throw new Error('Core未初始化')
+    return await initializedCore.service.call<Notification[]>('perception.getNotifications', {
+      userId,
+      ...params
+    })
+  }
 
-async function createTrailmateServices(): Promise<TrailmateServices> {
-  const core = new Core({
-    NODE_ENV: normalizeNodeEnv(import.meta.env.VITE_NODE_ENV),
-    USE_MOCK: toBoolean(import.meta.env.VITE_USE_MOCK, true),
-    API_BASE_URL: import.meta.env.VITE_API_BASE_URL ?? '/api',
-    SUPABASE_URL: import.meta.env.VITE_SUPABASE_URL,
-    SUPABASE_ANON_KEY: import.meta.env.VITE_SUPABASE_ANON_KEY
+  const markNotificationAsRead = async (notificationId: string): Promise<boolean> => {
+    if (!initializedCore) throw new Error('Core未初始化')
+    return await initializedCore.service.call<boolean>('perception.markNotificationAsRead', {
+      userId,
+      notificationId
+    })
+  }
+
+  const getTimeline = async (planId: string): Promise<TimelineNode[]> => {
+    if (!initializedCore) throw new Error('Core未初始化')
+    return await initializedCore.service.call<TimelineNode[]>('perception.getTimeline', {
+      userId,
+      planId
+    })
+  }
+
+  const updateNodeStatus = async (params: {
+    planId: string
+    nodeId: string
+    status: string
+  }): Promise<boolean> => {
+    if (!initializedCore) throw new Error('Core未初始化')
+    return await initializedCore.service.call<boolean>('perception.updateNodeStatus', {
+      userId,
+      ...params
+    })
+  }
+
+  const simulateLocation = async (params: {
+    latitude: number
+    longitude: number
+    city: string
+    address: string
+    travelMode?: 'walking' | 'driving' | 'public_transport'
+  }): Promise<LocationInfo> => {
+    if (!initializedCore) throw new Error('Core未初始化')
+    return await initializedCore.service.call<LocationInfo>('perception.simulateLocation', {
+      userId,
+      ...params
+    })
+  }
+
+  const getCurrentLocation = async (): Promise<LocationInfo | null> => {
+    if (!initializedCore) throw new Error('Core未初始化')
+    return await initializedCore.service.call<LocationInfo | null>('perception.getCurrentLocation', userId)
+  }
+
+  const toggleAutoSimulate = async (enabled: boolean, speed?: number): Promise<boolean> => {
+    if (!initializedCore) throw new Error('Core未初始化')
+    return await initializedCore.service.call<boolean>('perception.toggleAutoSimulate', {
+      userId,
+      enabled,
+      speed
+    })
+  }
+
+  const getRealLocation = async (): Promise<LocationInfo | null> => {
+    if (!initializedCore) throw new Error('Core未初始化')
+    return await initializedCore.service.call<LocationInfo | null>('perception.getRealLocation', userId)
+  }
+
+  const startRealLocationWatcher = async (onUpdate: (loc: LocationInfo) => void): Promise<() => void> => {
+    if (!initializedCore) {
+      console.warn('Core未初始化')
+      return () => {}
+    }
+    const stopFn = await initializedCore.service.call<() => void>('perception.startRealLocationWatcher', userId, onUpdate)
+    return stopFn || (() => {})
+  }
+
+  const stopRealLocationWatcher = async (): Promise<void> => {
+    if (!initializedCore) {
+      console.warn('Core未初始化')
+      return
+    }
+    await initializedCore.service.call('perception.stopRealLocationWatcher', userId)
+  }
+
+  onUnmounted(() => {
   })
 
-  registerDemoSecurityServices(core)
-
-  await core.pluginManager.install(new MockAdapterModule())
-
-  if (!core.config.get('USE_MOCK', true) && hasSupabaseConfig(core)) {
-    try {
-      await core.pluginManager.install(new SupabaseAdapterModule())
-    } catch (error) {
-      console.warn('[trailmate] supabase adapter failed, continuing with mock adapter', error)
-    }
-  }
-
-  await core.pluginManager.install(new ItineraryGeneratorModule())
-  await core.pluginManager.install(new PerceptionModule())
-  await core.start()
-
   return {
-    core,
-    generateItinerary: async (input) => {
-      const request: ItineraryRequest = {
-        id: `request_${Date.now()}`,
-        userId: input.userId,
-        content: buildRequestContent(input.content, input.settings),
-        createTime: Date.now()
-      }
-
-      return core.service.call<ItineraryPlan[]>('itinerary.generate', request)
-    },
-    getTimeline: async (params) => {
-      return core.service.call<TimelineNode[]>('perception.getTimeline', params)
-    },
-    getNotifications: async (params) => {
-      return core.service.call<Notification[]>('perception.getNotifications', params)
-    },
-    simulateLocation: async (params) => {
-      await core.service.call('perception.simulateLocation', params)
-    },
-    markNotificationAsRead: async (params) => {
-      return core.service.call<boolean>('perception.markNotificationAsRead', params)
-    }
+    isInitialized,
+    isLoading,
+    error,
+    initialize,
+    cleanup,
+    getNotifications,
+    markNotificationAsRead,
+    getTimeline,
+    updateNodeStatus,
+    simulateLocation,
+    getCurrentLocation,
+    toggleAutoSimulate,
+    getRealLocation,
+    startRealLocationWatcher,
+    stopRealLocationWatcher
   }
-}
-
-function registerDemoSecurityServices(core: Core): void {
-  core.service.register('user.realname.isVerified', async () => true)
-  core.service.register('user.permission.check', async () => true)
-}
-
-function buildRequestContent(content: string, settings?: PlannerSettingsSummary): string {
-  if (!settings) {
-    return content
-  }
-
-  const lines = [
-    content.trim(),
-    settings.budget ? `Budget: ${settings.budget[0]}-${settings.budget[1]}` : '',
-    settings.travelTypes?.length ? `Travel style: ${settings.travelTypes.join(', ')}` : '',
-    settings.transports?.length ? `Transport: ${settings.transports.join(', ')}` : '',
-    settings.accommodations?.length ? `Accommodation: ${settings.accommodations.join(', ')}` : '',
-    settings.language ? `Language: ${settings.language}` : ''
-  ].filter(Boolean)
-
-  return lines.join('\n')
-}
-
-function hasSupabaseConfig(core: Core): boolean {
-  return Boolean(core.config.get('SUPABASE_URL') && core.config.get('SUPABASE_ANON_KEY'))
-}
-
-function normalizeNodeEnv(value: string | undefined): 'development' | 'demo' | 'production' {
-  if (value === 'demo' || value === 'production') {
-    return value
-  }
-
-  return 'development'
-}
-
-function toBoolean(value: string | boolean | undefined, fallback: boolean): boolean {
-  if (typeof value === 'boolean') {
-    return value
-  }
-
-  if (value === 'true') {
-    return true
-  }
-
-  if (value === 'false') {
-    return false
-  }
-
-  return fallback
 }
