@@ -33,7 +33,7 @@
         <div class="flex gap-8 font-semibold text-sm">
           <button @click="scrollToSection('feature')" :class="scrolled ? 'text-gray-700 hover:text-primary' : 'text-white'">发现剧本</button>
           <button @click="scrollToSection('feature')" :class="scrolled ? 'text-gray-700 hover:text-primary' : 'text-white'">智能核心</button>
-          <button @click="scrollToSection('community')" :class="scrolled ? 'text-gray-700 hover:text-primary' : 'text-white'">伴友社区</button>
+          <button @click="scrollToSection('feature')" :class="scrolled ? 'text-gray-700 hover:text-primary' : 'text-white'">伴友社区</button>
         </div>
       </div>
     </header>
@@ -104,7 +104,7 @@
             <p class="text-gray-500 leading-relaxed">
               在风景里，遇见同频的有趣伴友。基于多维性格画像与旅行习惯的智能撮合，让每一段路都有温暖回响。
             </p>
-            <button class="btn-main mt-8">
+            <button @click="$emit('start')" class="btn-main mt-8">
               寻找你的伴友
             </button>
           </div>

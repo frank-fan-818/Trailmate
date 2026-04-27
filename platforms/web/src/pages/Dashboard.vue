@@ -18,7 +18,7 @@
           <button @click="$emit('startPlanning')" class="text-gray-700 hover:text-primary transition-colors">行程规划</button>
           <button @click="$emit('openPerception')" class="text-gray-700 hover:text-primary transition-colors">情境感知</button>
           <button class="text-gray-700 hover:text-primary transition-colors">我的行程</button>
-          <button class="text-gray-700 hover:text-primary transition-colors">伴友社区</button>
+          <button @click="$emit('openCommunity')" class="text-gray-700 hover:text-primary transition-colors">伴友社区</button>
         </div>
         <div class="flex items-center gap-4">
           <button @click="$emit('openSettings')" class="text-gray-700 hover:text-primary transition-colors">设置</button>
@@ -68,7 +68,7 @@
           </div>
           <h3 class="text-xl font-bold text-gray-900 mb-3">旅伴匹配</h3>
           <p class="text-gray-600 mb-6">找到志同道合的旅行伙伴</p>
-          <button class="w-full py-3 bg-primary text-white rounded-md font-semibold hover:bg-primary/90 transition-colors">
+          <button @click="$emit('openCommunity')" class="w-full py-3 bg-primary text-white rounded-md font-semibold hover:bg-primary/90 transition-colors">
             寻找旅伴
           </button>
         </div>
@@ -161,6 +161,8 @@
 const emit = defineEmits<{
   (e: 'startPlanning'): void
   (e: 'openSettings'): void
+  (e: 'openPerception'): void
+  (e: 'openCommunity'): void
 }>()
 </script>
 
