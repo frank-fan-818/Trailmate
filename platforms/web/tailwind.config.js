@@ -7,8 +7,8 @@ const __dirname = path.dirname(__filename)
 /** @type {import('tailwindcss').Config} */
 export default {
   content: [
-    path.join(__dirname, 'index.html').replace(/\\/g, '/'),
-    path.join(__dirname, 'src/**/*.{vue,js,ts,jsx,tsx}').replace(/\\/g, '/')
+    './index.html',
+    './src/**/*.{vue,js,ts,jsx,tsx}'
   ],
   theme: {
     extend: {
