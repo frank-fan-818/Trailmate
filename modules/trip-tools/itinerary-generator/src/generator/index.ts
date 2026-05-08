@@ -1,4 +1,4 @@
-import type { Attraction, Flight, Hotel } from '../../../../../adapters/mock-adapter/types'
+import type { Attraction, Flight, Hotel } from '../../../../shared/types/travel.types'
 import type { ItineraryDay, ItineraryItem, ItineraryPlan, ItineraryRequest } from '../types'
 
 const DEFAULT_FAMILY_ATTRACTIONS = [

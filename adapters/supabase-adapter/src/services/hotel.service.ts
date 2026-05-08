@@ -1,5 +1,5 @@
 import { getSupabaseClient } from '../client'
-import type { Hotel } from '../../../mock-adapter/types'
+import type { Hotel } from '../../../../shared/types/travel.types'
 
 interface HotelRow {
   id: string

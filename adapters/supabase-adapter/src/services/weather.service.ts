@@ -1,5 +1,5 @@
 import { getSupabaseClient } from '../client'
-import type { Weather } from '../../../mock-adapter/types'
+import type { Weather } from '../../../../shared/types/travel.types'
 
 interface WeatherRow {
   date: string

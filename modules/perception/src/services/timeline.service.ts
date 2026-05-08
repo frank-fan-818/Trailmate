@@ -1,5 +1,5 @@
 import { GlobalEvent } from '../../../../core'
-import type { ItineraryItemType, ItineraryPlan } from '../../../trip-tools/itinerary-generator/src/types'
+import type { ItineraryItemType, ItineraryPlan } from '../../../../shared/types/itinerary.types'
 import type PerceptionModule from '../../index'
 import {
   TimelineNodeStatus,

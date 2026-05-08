@@ -1,5 +1,5 @@
 import { getSupabaseClient } from '../client'
-import type { Flight } from '../../../mock-adapter/types'
+import type { Flight } from '../../../../shared/types/travel.types'
 
 interface FlightRow {
   id: string

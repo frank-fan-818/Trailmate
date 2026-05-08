@@ -1,5 +1,5 @@
 import type { ItineraryPlan, ItineraryRequest } from '../types/index.js'
-import type { Flight, Hotel, Attraction } from '../../../../adapters/mock-adapter/types/index.js'
+import type { Flight, Hotel, Attraction } from '../../../../shared/types/travel.types'
 import {
   WorkflowEngine,
   WorkflowStatus,

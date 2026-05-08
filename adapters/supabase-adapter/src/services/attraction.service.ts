@@ -1,5 +1,5 @@
 import { getSupabaseClient } from '../client'
-import type { Attraction } from '../../../mock-adapter/types'
+import type { Attraction } from '../../../../shared/types/travel.types'
 
 interface AttractionRow {
   id: string

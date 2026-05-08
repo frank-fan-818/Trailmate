@@ -1,4 +1,4 @@
-import type { ItineraryPlan } from '../../../trip-tools/itinerary-generator/src/types'
+import type { ItineraryPlan } from '../../../../shared/types/itinerary.types'
 import type PerceptionModule from '../../index'
 import { pushNotification } from '../services/notification.service'
 import { startRuleScheduler } from '../services/rule-engine.service'

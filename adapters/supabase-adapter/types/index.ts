@@ -1,5 +1,5 @@
-// 复用Mock适配器的基础数据类型
-export type { Flight, Hotel, Attraction, Weather } from '../../mock-adapter/types'
+// 复用共享类型
+export type { Flight, Hotel, Attraction, Weather } from '../../../shared/types/travel.types'
 
 /**
  * Supabase查询分页参数
