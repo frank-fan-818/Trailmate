@@ -4,7 +4,7 @@ import {
   type WorkflowStepConfig,
   type WorkflowExecutionLog,
   type WorkflowTaskPersister
-} from '../../../../core/workflow-engine.js'
+} from '../../../../shared/workflow-engine'
 import type { UserProfile, CompanionFilters, MatchResult } from '../types/index'
 import { filterCompanions, getMockCompanions } from '../services/matching.service'
 

@@ -6,7 +6,7 @@ import {
   type WorkflowStepConfig,
   type WorkflowExecutionLog,
   type WorkflowTaskPersister
-} from '../../../../../core/workflow-engine.js'
+} from '../../../../shared/workflow-engine'
 import { WorkflowStep, type WorkflowTask, type ParsedIntent, type WorkflowContext } from './types.js'
 
 export { WorkflowStep, WorkflowStatus }

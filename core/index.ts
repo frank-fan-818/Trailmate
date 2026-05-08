@@ -53,4 +53,5 @@ export * from './interfaces/plugin.interface'
 export * from './interfaces/event.types'
 export * from './interfaces/service.interface'
 export * from './interfaces/state.interface'
-export * from './workflow-engine'
+
+// WorkflowEngine 已移至 shared/workflow-engine.ts
