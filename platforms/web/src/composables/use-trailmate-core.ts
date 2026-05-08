@@ -1,4 +1,4 @@
-import { ref, onUnmounted, type InjectionKey, type Ref } from 'vue'
+import { ref, type InjectionKey, type Ref } from 'vue'
 import type { Core } from '@trailmate/core'
 import type PerceptionModule from '@trailmate/perception'
 import type { Notification, TimelineNode, LocationInfo } from '@trailmate/perception'
@@ -36,6 +36,7 @@ export interface UseTrailmateCoreReturn {
 const DEMO_USER_ID = 'demo-user'
 let initializedCore: Core | null = null
 let initializedModule: PerceptionModule | null = null
+let initPromise: Promise<void> | null = null
 
 export function useTrailmateCore(options: UseTrailmateCoreOptions = {}): UseTrailmateCoreReturn {
   const userId = options.userId || DEMO_USER_ID
@@ -46,6 +47,7 @@ export function useTrailmateCore(options: UseTrailmateCoreOptions = {}): UseTrai
   const cleanup = () => {
     initializedCore = null
     initializedModule = null
+    initPromise = null
     isInitialized.value = false
   }
 
@@ -55,28 +57,40 @@ export function useTrailmateCore(options: UseTrailmateCoreOptions = {}): UseTrai
       return
     }
 
+    // 防止竞态：多个调用者共享同一个初始化Promise
+    if (initPromise) {
+      await initPromise
+      isInitialized.value = true
+      return
+    }
+
     isLoading.value = true
     error.value = null
 
-    try {
-      const { Core } = await import('@trailmate/core')
-      const { default: PerceptionPlugin } = await import('@trailmate/perception')
+    initPromise = (async () => {
+      try {
+        const { Core } = await import('@trailmate/core')
+        const { default: PerceptionPlugin } = await import('@trailmate/perception')
 
-      const coreInstance = new Core()
-      const perceptionModule = new PerceptionPlugin()
+        const coreInstance = new Core()
+        const perceptionModule = new PerceptionPlugin()
 
-      await coreInstance.pluginManager.install(perceptionModule)
-      await coreInstance.pluginManager.mount()
+        await coreInstance.pluginManager.install(perceptionModule)
+        await coreInstance.pluginManager.mount()
 
-      initializedCore = coreInstance
-      initializedModule = perceptionModule
-      isInitialized.value = true
-    } catch (err) {
-      error.value = err instanceof Error ? err.message : '初始化失败'
-      console.error('Trailmate Core初始化失败:', err)
-    } finally {
-      isLoading.value = false
-    }
+        initializedCore = coreInstance
+        initializedModule = perceptionModule
+        isInitialized.value = true
+      } catch (err) {
+        error.value = err instanceof Error ? err.message : '初始化失败'
+        console.error('Trailmate Core初始化失败:', err)
+        throw err
+      } finally {
+        isLoading.value = false
+      }
+    })()
+
+    await initPromise
   }
 
   const getNotifications = async (params?: {
@@ -167,9 +181,6 @@ export function useTrailmateCore(options: UseTrailmateCoreOptions = {}): UseTrai
     }
     await initializedCore.service.call('perception.stopRealLocationWatcher', userId)
   }
-
-  onUnmounted(() => {
-  })
 
   return {
     isInitialized,

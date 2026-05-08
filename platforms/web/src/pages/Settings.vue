@@ -191,13 +191,6 @@
           </div>
 
           <div class="divide-y divide-gray-200/50">
-            <div class="p-6 flex items-center justify-between">
-              <div>
-                <div class="text-base font-medium text-gray-600">深色模式</div>
-                <div class="text-sm text-gray-400 mt-0.5">切换深色主题</div>
-              </div>
-              <AppleToggle v-model="settings.darkMode" />
-            </div>
 
             <div class="p-6">
               <label class="block text-base font-medium text-gray-600 mb-3">语言</label>
@@ -263,13 +256,6 @@
           </div>
         </section>
 
-        <!-- 保存按钮 -->
-        <button
-          @click="handleSave"
-          class="bg-neutral-900 text-white rounded-lg font-medium hover:bg-neutral-700 transition-colors w-full text-xl font-semibold py-4"
-        >
-          保存设置
-        </button>
       </div>
     </div>
   </div>
@@ -323,7 +309,4 @@ const toggleAccommodation = (accommodation: string) => {
   }
 }
 
-const handleSave = () => {
-  alert('设置已保存！')
-}
 </script>

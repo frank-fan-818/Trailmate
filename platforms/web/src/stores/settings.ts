@@ -13,7 +13,6 @@ export interface UserSettings {
     context: boolean
     matching: boolean
   }
-  darkMode: boolean
   language: 'zh' | 'en'
   privacy: {
     visibleInMatching: boolean
@@ -33,7 +32,6 @@ const settings = ref<UserSettings>({
     context: true,
     matching: true
   },
-  darkMode: false,
   language: 'zh',
   privacy: {
     visibleInMatching: true
