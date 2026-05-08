@@ -4,9 +4,9 @@
     "type": "module",
     "scripts": {
         "dev": "npm run dev:web",
-        "dev:web": "node node_modules/vite/bin/vite.js platforms/web",
+        "dev:web": "node -e \"process.chdir('platforms/web');require('child_process').spawn('npx',['vite'],{stdio:'inherit',shell:true})\"",
         "build": "npm run build:web",
-        "build:web": "node node_modules/vite/bin/vite.js build platforms/web",
+        "build:web": "node -e \"process.chdir('platforms/web');require('child_process').spawn('npx',['vite','build'],{stdio:'inherit',shell:true})\"",
         "build:core": "tsc -p core/tsconfig.json"
     },
     "dependencies": {
