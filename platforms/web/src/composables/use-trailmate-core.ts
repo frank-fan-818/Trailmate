@@ -1,4 +1,4 @@
-import { ref, shallowRef, onUnmounted, InjectionKey } from 'vue'
+import { ref, onUnmounted, type InjectionKey, type Ref } from 'vue'
 import type { Core } from '@trailmate/core'
 import type PerceptionModule from '@trailmate/perception'
 import type { Notification, TimelineNode, LocationInfo } from '@trailmate/perception'

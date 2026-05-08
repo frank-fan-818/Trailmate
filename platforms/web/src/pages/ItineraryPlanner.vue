@@ -8,7 +8,7 @@
             @click="$emit('back')"
             class="flex items-center gap-2 px-2 text-gray-700 hover:text-primary transition-colors"
           >
-            <span class="text-xl">←</span>
+            <ArrowLeft :size="20" />
             <span>返回</span>
           </button>
         </div>
@@ -20,14 +20,14 @@
             @click="startNewChat"
             class="flex items-center gap-2 px-4 py-2 text-gray-700 hover:text-primary transition-colors"
           >
-            <span class="text-xl">➕</span>
+            <Plus :size="20" />
             <span class="hidden sm:inline">新对话</span>
           </button>
           <button
             @click="showHistorySidebar = true"
             class="flex items-center gap-2 px-4 py-2 text-gray-700 hover:text-primary transition-colors"
           >
-            <span>📋</span>
+            <ClipboardList :size="18" />
             <span class="hidden sm:inline">历史记录</span>
           </button>
         </div>
@@ -53,7 +53,7 @@
               @click="showHistorySidebar = false"
               class="p-2 hover:bg-gray-100 rounded-lg transition-colors"
             >
-              ✕
+              <X :size="20" />
             </button>
           </div>
 
@@ -73,7 +73,7 @@
               暂无历史对话
             </div>
             <div
-              v-for="(chat, index) in chatHistory"
+              v-for="chat in chatHistory"
               :key="chat.id"
               @click="loadChat(chat)"
               class="px-4 py-3 border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors"
@@ -111,7 +111,7 @@
               @click="closePlaceDrawer"
               class="p-2 hover:bg-white/50 rounded-lg transition-colors"
             >
-              ✕
+              <X :size="20" />
             </button>
           </div>
 
@@ -387,7 +387,7 @@
             
             <!-- 用户头像 -->
             <div v-if="message.role === 'user'" class="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0">
-              <span class="text-lg">👤</span>
+              <User :size="18" class="text-gray-500" />
             </div>
           </div>
 
@@ -426,11 +426,11 @@
             
             <div class="flex flex-wrap items-center gap-8 text-sm text-gray-600">
               <div class="flex items-center gap-2">
-                <span>💰</span>
+                <DollarSign :size="14" class="inline" />
                 <span>预计花费 ¥{{ plan.cost }}</span>
               </div>
               <div class="flex items-center gap-2">
-                <span>📍</span>
+                <MapPin :size="14" class="inline" />
                 <span>{{ plan.destinations.join('、') }}</span>
               </div>
             </div>
@@ -456,6 +456,7 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import { marked } from 'marked'
+import { ArrowLeft, Plus, ClipboardList, X, MapPin, DollarSign, User } from 'lucide-vue-next'
 import { useSettings } from '../stores/settings'
 
 const { settings } = useSettings()
@@ -906,12 +907,12 @@ const loadWeatherInfo = async (placeName: string, city?: string) => {
 const renderAIResponse = (content: string) => {
   // 1. 先处理自定义格式（这些格式优先级最高）
   // 处理 [[景点名]] 格式 -> 可点击的紫色标签
-  content = content.replace(/\[\[([^\]]+)\]\]/g, (match, placeName) => {
+  content = content.replace(/\[\[([^\]]+)\]\]/g, (_match, placeName) => {
     return `<span class="place-name" data-place="${placeName.trim()}">📍 ${placeName.trim()}</span>`
   })
 
   // 处理 【提示内容】 格式 -> 醒目的提示框
-  content = content.replace(/【([^】]+)】/g, (match, tipContent) => {
+  content = content.replace(/【([^】]+)】/g, (_match, tipContent) => {
     return `<span class="ai-tip">💡 ${tipContent}</span>`
   })
 
@@ -1075,7 +1076,6 @@ const callOpenRouterAPI = async (messagesHistory: Array<{role: 'user' | 'assista
 请严格按照用户偏好生成内容。`
 
       const isChinese = settings.value.language === 'zh'
-      const currentLanguage = isChinese ? 'Chinese' : 'English'
       
       const systemPrompt = isChinese 
         ? `【重要】你必须用中文回复所有内容。

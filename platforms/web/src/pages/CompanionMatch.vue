@@ -93,7 +93,7 @@
 
               <div class="flex items-center gap-3 text-sm text-gray-600 mb-2">
                 <span class="flex items-center gap-1">
-                  <span>📍</span> {{ companion.destination }}
+                  <MapPin :size="14" class="inline" /> {{ companion.destination }}
                 </span>
                 <span>{{ companion.departureInfo }}</span>
                 <span>{{ companion.travelDays }}天行程</span>
@@ -120,7 +120,7 @@
                   : 'border-gray-300 text-gray-700 hover:bg-gray-50'
               ]"
             >
-              {{ companion.interested ? '❤️ 已感兴趣' : '🤍 感兴趣' }}
+              <Heart :size="14" class="inline mr-1" :fill="companion.interested ? 'currentColor' : 'none'" /> {{ companion.interested ? '已感兴趣' : '感兴趣' }}
             </button>
             <button
               @click.stop="handleTeamRequest(companion.id)"
@@ -133,7 +133,7 @@
       </div>
 
       <div v-if="sortedList.length === 0" class="text-center py-16">
-        <div class="text-4xl mb-4">🔍</div>
+        <Search :size="36" class="mx-auto mb-4 text-gray-400" />
         <p class="text-gray-500">暂无符合条件的旅伴</p>
         <button @click="resetFilters" class="mt-4 px-4 py-2 border border-gray-300 text-gray-700 text-sm rounded hover:bg-gray-50">
           清空筛选条件
@@ -145,7 +145,7 @@
       <div class="bg-white w-full max-w-md mx-4">
         <div class="p-4 border-b border-gray-200 flex items-center justify-between">
           <h3 class="font-bold text-gray-900">发起组队</h3>
-          <button @click="showTeamModal = false" class="text-gray-500 hover:text-gray-700">✕</button>
+          <button @click="showTeamModal = false" class="text-gray-500 hover:text-gray-700"><X :size="20" /></button>
         </div>
         <div class="p-4 space-y-4">
           <div>
@@ -184,6 +184,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { MapPin, Heart, Search, X } from 'lucide-vue-next'
 
 const emit = defineEmits<{
   (e: 'back'): void
@@ -243,7 +244,7 @@ const calculateMatchScore = (companion: Companion): number => {
   if (companion.budgetType === currentUserProfile.budgetType) {
     score += 10
   } else if (
-    (companion.budgetType === 'medium' && currentUserProfile.budgetType !== 'medium') ||
+    (companion.budgetType as string === 'medium' && currentUserProfile.budgetType !== 'medium') ||
     (currentUserProfile.budgetType === 'medium')
   ) {
     score += 5
@@ -920,7 +921,7 @@ const companions = ref<Companion[]>([
     gender: '女',
     age: 45
   }
-].map(c => ({ ...c, matchScore: calculateMatchScore(c) })))
+].map(c => ({ ...c, matchScore: calculateMatchScore(c as Companion) } as Companion)))
 
 const filters = ref({
   keyword: '',
@@ -980,19 +981,6 @@ const getCreditBadgeText = (level: string) => {
       return '白银'
     default:
       return '白银'
-  }
-}
-
-const getCreditBadgeClass = (level: string) => {
-  switch (level) {
-    case '钻石':
-      return 'bg-purple-100 text-purple-700'
-    case '黄金':
-      return 'bg-yellow-100 text-yellow-700'
-    case '白银':
-      return 'bg-gray-100 text-gray-600'
-    default:
-      return 'bg-gray-100 text-gray-600'
   }
 }
 

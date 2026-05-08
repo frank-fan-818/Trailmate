@@ -82,7 +82,7 @@ export interface RuleCondition {
 }
 
 export interface RuleAction {
-  type: 'push_notification'
+  type: 'push_notification' | 'update_timeline' | 'adjust_plan'
   params: Record<string, any>
 }
 

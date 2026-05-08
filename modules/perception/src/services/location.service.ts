@@ -132,7 +132,7 @@ export async function toggleAutoSimulate(this: PerceptionModule, params: {
   enabled: boolean
   speed?: number // 模拟移动速度，单位km/h
 }): Promise<boolean> {
-  const { userId, enabled, speed = 60 } = params
+  const { userId, enabled, speed: _speed = 60 } = params
 
   if (!enabled) {
     // 停止自动模拟

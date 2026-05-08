@@ -37,8 +37,8 @@ export class ConfigCenter {
 
     if (typeof import.meta !== 'undefined' && 'env' in import.meta) {
       env = (import.meta as any).env as Record<string, any>
-    } else if (typeof process !== 'undefined' && process.env) {
-      env = process.env
+    } else if (typeof (globalThis as any).process !== 'undefined' && (globalThis as any).process?.env) {
+      env = (globalThis as any).process.env
     }
 
     // 统一去除VITE_前缀，自动转换类型

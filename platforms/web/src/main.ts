@@ -1,11 +1,12 @@
 import { createApp } from 'vue'
 import App from './App.vue'
 import './style.css'
-import { initializeTrailmate, TRAILMATE_KEY } from './composables/use-trailmate-core'
+import { TRAILMATE_KEY, useTrailmateCore } from './composables/use-trailmate-core'
 
 async function bootstrap(): Promise<void> {
   const app = createApp(App)
-  const services = await initializeTrailmate()
+  const services = useTrailmateCore()
+  await services.initialize()
 
   app.provide(TRAILMATE_KEY, services)
   app.mount('#app')

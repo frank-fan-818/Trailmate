@@ -57,7 +57,7 @@
       <div class="bg-white w-full max-w-md mx-4">
         <div class="p-4 border-b border-gray-200 flex items-center justify-between">
           <h3 class="font-bold text-gray-900">发起组队</h3>
-          <button @click="showTeamModal = false" class="text-gray-500 hover:text-gray-700">✕</button>
+          <button @click="showTeamModal = false" class="text-gray-500 hover:text-gray-700"><X :size="20" /></button>
         </div>
         <div class="p-4 space-y-4">
           <div>
@@ -96,6 +96,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import { X } from 'lucide-vue-next'
 import HomePage from './pages/HomePage.vue'
 import Dashboard from './pages/Dashboard.vue'
 import ItineraryPlanner from './pages/ItineraryPlanner.vue'

@@ -39,7 +39,7 @@
       <section class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-24">
         <div class="bg-white rounded-md shadow-sm border border-gray-200 p-8 hover:shadow-md transition-shadow hover:-translate-y-1 transition-transform">
           <div class="w-14 h-14 bg-gradient-to-br from-blue-500 to-orange-400 rounded-md flex items-center justify-center mb-6 text-white">
-            <span class="text-2xl">✈️</span>
+            <Plane :size="24" />
           </div>
           <h3 class="text-xl font-bold text-gray-900 mb-3">开始规划</h3>
           <p class="text-gray-600 mb-6">定制你的专属旅行剧本</p>
@@ -53,7 +53,7 @@
 
         <div class="bg-white rounded-md shadow-sm border border-gray-200 p-8 hover:shadow-md transition-shadow hover:-translate-y-1 transition-transform">
           <div class="w-14 h-14 bg-gradient-to-br from-blue-500 to-orange-400 rounded-md flex items-center justify-center mb-6 text-white">
-            <span class="text-2xl">📅</span>
+            <Calendar :size="24" />
           </div>
           <h3 class="text-xl font-bold text-gray-900 mb-3">我的行程</h3>
           <p class="text-gray-600 mb-6">查看和管理你的旅行计划</p>
@@ -64,7 +64,7 @@
 
         <div class="bg-white rounded-md shadow-sm border border-gray-200 p-8 hover:shadow-md transition-shadow hover:-translate-y-1 transition-transform">
           <div class="w-14 h-14 bg-gradient-to-br from-blue-500 to-orange-400 rounded-md flex items-center justify-center mb-6 text-white">
-            <span class="text-2xl">👥</span>
+            <Users :size="24" />
           </div>
           <h3 class="text-xl font-bold text-gray-900 mb-3">旅伴匹配</h3>
           <p class="text-gray-600 mb-6">找到志同道合的旅行伙伴</p>
@@ -123,7 +123,7 @@
           <div class="space-y-6">
             <div class="flex items-start gap-4">
               <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-orange-400 rounded-md flex items-center justify-center flex-shrink-0 text-white">
-                <span class="text-xl">🌤️</span>
+                <CloudSun :size="20" />
               </div>
               <div class="flex-1">
                 <h3 class="text-lg font-bold text-gray-900 mb-2">天气准备</h3>
@@ -133,7 +133,7 @@
 
             <div class="flex items-start gap-4">
               <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-orange-400 rounded-md flex items-center justify-center flex-shrink-0 text-white">
-                <span class="text-xl">🧳</span>
+                <Briefcase :size="20" />
               </div>
               <div class="flex-1">
                 <h3 class="text-lg font-bold text-gray-900 mb-2">行李打包</h3>
@@ -143,7 +143,7 @@
 
             <div class="flex items-start gap-4">
               <div class="w-12 h-12 bg-gradient-to-br from-blue-500 to-orange-400 rounded-md flex items-center justify-center flex-shrink-0 text-white">
-                <span class="text-xl">📱</span>
+                <Smartphone :size="20" />
               </div>
               <div class="flex-1">
                 <h3 class="text-lg font-bold text-gray-900 mb-2">旅行应用</h3>
@@ -158,6 +158,8 @@
 </template>
 
 <script setup lang="ts">
+import { Plane, Calendar, Users, CloudSun, Briefcase, Smartphone } from 'lucide-vue-next'
+
 const emit = defineEmits<{
   (e: 'startPlanning'): void
   (e: 'openSettings'): void

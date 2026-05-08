@@ -4,6 +4,14 @@ import { queryFlights } from './src/services/flight.service'
 import { queryHotels } from './src/services/hotel.service'
 import { queryAttractions } from './src/services/attraction.service'
 import { queryWeather } from './src/services/weather.service'
+import {
+  createWorkflowTask,
+  updateWorkflowTask,
+  appendExecutionLog,
+  getWorkflowTask,
+  getWorkflowTasksByRequestId,
+  getWorkflowTaskLogs
+} from './src/services/workflow-task.service'
 
 export default class SupabaseAdapterModule implements IPlugin {
   pluginId = 'supabase-adapter'
@@ -15,13 +23,20 @@ export default class SupabaseAdapterModule implements IPlugin {
 
   onInstall(core: ICore) {
     this.core = core
-    
+
     initSupabaseClient(core)
 
     core.service.register('flight.query', queryFlights)
     core.service.register('hotel.query', queryHotels)
     core.service.register('attraction.query', queryAttractions)
     core.service.register('weather.query', queryWeather)
+
+    core.service.register('workflow.task.create', createWorkflowTask)
+    core.service.register('workflow.task.update', updateWorkflowTask)
+    core.service.register('workflow.task.appendLog', appendExecutionLog)
+    core.service.register('workflow.task.get', getWorkflowTask)
+    core.service.register('workflow.task.getByRequestId', getWorkflowTasksByRequestId)
+    core.service.register('workflow.task.getLogs', getWorkflowTaskLogs)
   }
 
   onMount(core: ICore) {

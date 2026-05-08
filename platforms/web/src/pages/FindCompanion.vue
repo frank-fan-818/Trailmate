@@ -25,17 +25,17 @@
 
       <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
         <div class="bg-white rounded-2xl p-8 shadow-sm border border-gray-200 text-center">
-          <div class="w-16 h-16 bg-gradient-to-br from-blue-500 to-orange-400 rounded-full flex items-center justify-center mx-auto mb-4 text-white text-2xl">🧠</div>
+          <div class="w-16 h-16 bg-gradient-to-br from-blue-500 to-orange-400 rounded-full flex items-center justify-center mx-auto mb-4 text-white text-2xl"><Brain :size="24" /></div>
           <h3 class="text-xl font-bold mb-2">性格匹配</h3>
           <p class="text-gray-600 text-sm">基于旅行偏好和性格标签，匹配志趣相投的伴友</p>
         </div>
         <div class="bg-white rounded-2xl p-8 shadow-sm border border-gray-200 text-center">
-          <div class="w-16 h-16 bg-gradient-to-br from-blue-500 to-orange-400 rounded-full flex items-center justify-center mx-auto mb-4 text-white text-2xl">💰</div>
+          <div class="w-16 h-16 bg-gradient-to-br from-blue-500 to-orange-400 rounded-full flex items-center justify-center mx-auto mb-4 text-white text-2xl"><DollarSign :size="24" /></div>
           <h3 class="text-xl font-bold mb-2">经费预算</h3>
           <p class="text-gray-600 text-sm">穷游、经济、品质三种预算模式自动匹配</p>
         </div>
         <div class="bg-white rounded-2xl p-8 shadow-sm border border-gray-200 text-center">
-          <div class="w-16 h-16 bg-gradient-to-br from-blue-500 to-orange-400 rounded-full flex items-center justify-center mx-auto mb-4 text-white text-2xl">⭐</div>
+          <div class="w-16 h-16 bg-gradient-to-br from-blue-500 to-orange-400 rounded-full flex items-center justify-center mx-auto mb-4 text-white text-2xl"><Star :size="24" /></div>
           <h3 class="text-xl font-bold mb-2">信用评价</h3>
           <p class="text-gray-600 text-sm">完善的信用体系，保障每一次组队安全可靠</p>
         </div>
@@ -51,6 +51,8 @@
 </template>
 
 <script setup lang="ts">
+import { Brain, DollarSign, Star } from 'lucide-vue-next'
+
 defineEmits<{
   (e: 'back'): void
   (e: 'openMatch'): void

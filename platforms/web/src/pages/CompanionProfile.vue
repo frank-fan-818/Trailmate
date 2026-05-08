@@ -34,7 +34,7 @@
           <div class="border-t border-gray-100 pt-6 space-y-6">
             <div>
               <h3 class="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                <span>📍</span> 行程信息
+                <MapPin :size="14" class="inline" /> 行程信息
               </h3>
               <div class="grid grid-cols-2 gap-4 text-sm">
                 <div>
@@ -177,7 +177,7 @@
 
             <div v-if="aiAnalysis.matchReasons.length > 0">
               <h4 class="text-sm font-medium text-gray-900 mb-2 flex items-center gap-2">
-                <span class="text-green-500">✓</span> 匹配亮点
+                <Check :size="16" class="text-green-500 inline" /> 匹配亮点
               </h4>
               <div class="space-y-2">
                 <div
@@ -248,7 +248,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
+import { MapPin, Check } from 'lucide-vue-next'
 
 defineEmits<{
   (e: 'back'): void
@@ -656,12 +657,6 @@ const analyzeWithAI = async () => {
 
   aiAnalysis.value = await generateAIAnalysis(profile.value)
   isAnalyzing.value = false
-}
-
-const getMatchScoreClass = (score: number) => {
-  if (score >= 80) return 'text-green-600 bg-green-50'
-  if (score >= 60) return 'text-orange-600 bg-orange-50'
-  return 'text-gray-600 bg-gray-50'
 }
 
 onMounted(() => {

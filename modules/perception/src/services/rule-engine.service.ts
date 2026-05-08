@@ -153,8 +153,8 @@ function matchLocationRule(conditionParams: Record<string, any>, params: Record<
 /**
  * 时间规则匹配
  */
-function matchTimeRule(conditionParams: Record<string, any>, params: Record<string, any>): boolean {
-  const { beforeMinutes } = conditionParams
+function matchTimeRule(conditionParams: Record<string, any>, _params: Record<string, any>): boolean {
+  const { beforeMinutes: _beforeMinutes } = conditionParams
   // 简化实现，真实场景需要计算当前时间与节点时间的差值
   return Math.random() > 0.8 // 模拟20%概率匹配到即将开始的行程
 }

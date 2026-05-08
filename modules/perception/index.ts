@@ -8,6 +8,7 @@ import { getTimeline, updateNodeStatus, insertCustomNode, stopTimelineScheduler 
 import { simulateLocation, getCurrentLocation, toggleAutoSimulate, getRealLocation, startRealLocationWatcher, stopRealLocationWatcher } from './src/services/location.service'
 import { getNotifications, markNotificationAsRead } from './src/services/notification.service'
 import { stopRuleScheduler, runRulesByType, addCustomRule, removeCustomRule, getAllRules } from './src/services/rule-engine.service'
+import { runPerceptionWorkflow, type PerceptionWorkflowRequest } from './src/workflow/perception-workflow'
 
 export default class PerceptionModule implements IPlugin {
   pluginId = 'perception-core'
@@ -48,9 +49,10 @@ export default class PerceptionModule implements IPlugin {
     core.service.register('perception.getRealLocation', getRealLocation.bind(this))
     core.service.register('perception.startRealLocationWatcher', startRealLocationWatcher.bind(this))
     core.service.register('perception.stopRealLocationWatcher', stopRealLocationWatcher.bind(this))
+    core.service.register('perception.runWorkflow', (request: PerceptionWorkflowRequest) => runPerceptionWorkflow(request))
   }
 
-  onMount(core: ICore) {
+  onMount(_core: ICore) {
     console.log('✅ 情境感知核心模块启动成功')
   }
 
