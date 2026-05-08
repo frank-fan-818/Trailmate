@@ -10,7 +10,7 @@ interface SecurityRule {
 export class SecurityInterceptor {
   private rules: SecurityRule[] = [
     {
-      eventPattern: /^social:.*(?::request|:publish)$/,
+      eventPattern: /^social\..*(?:\.request|\.publish)$/,
       check: async (core, data) => {
         try {
           return await core.service.call<boolean>('user.realname.isVerified', {
@@ -23,7 +23,7 @@ export class SecurityInterceptor {
       errorMessage: 'Please complete identity verification before using social features.'
     },
     {
-      eventPattern: /^perception:location_changed$/,
+      eventPattern: /^perception\.location_changed$/,
       check: async (core, data) => {
         try {
           return await core.service.call<boolean>('user.permission.check', {
