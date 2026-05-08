@@ -306,11 +306,8 @@ const fetchStaticMap = () => {
     mapImageUrl.value = ''
     return
   }
-  const ak = import.meta.env.VITE_BAIDU_MAP_AK as string
   const { latitude, longitude } = currentLocation.value
-  console.log('fetchStaticMap使用坐标:', latitude, longitude)
-  const url = `https://api.map.baidu.com/staticimage/v2?ak=${ak}&mcode=666666&width=512&height=500&zoom=15&center=${longitude},${latitude}&markers=${longitude},${latitude}&markerStyles=0`
-  console.log('静态地图URL:', url)
+  const url = `/api/baidumap/staticimage/v2?ak=${import.meta.env.VITE_BAIDU_MAP_AK}&mcode=666666&width=512&height=500&zoom=15&center=${longitude},${latitude}&markers=${longitude},${latitude}&markerStyles=0`
   mapImageUrl.value = url
 }
 

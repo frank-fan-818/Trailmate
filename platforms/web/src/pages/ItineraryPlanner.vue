@@ -518,10 +518,8 @@ const openPlaceDrawer = async (placeName: string) => {
 
     // 调用百度地图POI搜索API
     const apiUrl = `/api/baidumap/place/v2/search?query=${encodeURIComponent(placeName)}&city=全国&ak=${import.meta.env.VITE_BAIDU_MAP_AK}&output=json&scope=2&page_size=1`
-    console.log('请求百度API:', apiUrl)
     const response = await fetch(apiUrl)
     const data = await response.json()
-    console.log('百度API返回结果:', data)
 
     if (data.status === 0 && data.results && data.results.length > 0) {
         const poi = data.results[0]
@@ -778,11 +776,8 @@ const loadWeatherInfo = async (placeName: string, city?: string) => {
     }
     
     const searchUrl = `/api/baidumap/weather/v1/?district=${encodeURIComponent(cityName)}&data_type=all&ak=${import.meta.env.VITE_BAIDU_MAP_AK}`
-    console.log('请求天气API:', searchUrl)
-    
     const response = await fetch(searchUrl)
     const data = await response.json()
-    console.log('天气API返回:', data)
 
     if (data.status === 0 && data.result) {
       const { location, now, forecasts, indexes } = data.result

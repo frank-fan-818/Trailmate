@@ -45,11 +45,10 @@ export class ConfigCenter {
     return Object.entries(env).reduce((acc, [key, value]) => {
       const cleanKey = key.replace(/^VITE_/, '') as keyof AppConfig
 
-      // 自动转换布尔类型
-      if (value === 'true') value = true
-      if (value === 'false') value = false
-      // 自动转换数字类型
-      if (!isNaN(Number(value))) value = Number(value)
+      // 仅对已知布尔字段进行类型转换
+      if (cleanKey === 'USE_MOCK' && typeof value === 'string') {
+        value = value === 'true'
+      }
 
       acc[cleanKey] = value
       return acc
