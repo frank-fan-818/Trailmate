@@ -2,7 +2,7 @@
   <div class="min-h-screen bg-gray-100">
     <header class="bg-white border-b border-gray-200 px-6 py-4">
       <div class="max-w-2xl mx-auto flex items-center justify-between">
-        <button @click="$emit('back')" class="flex items-center gap-2 text-gray-600 hover:text-gray-900">
+        <button @click="router.back()" class="flex items-center gap-2 text-gray-600 hover:text-gray-900">
           <span>←</span>
           <span>返回</span>
         </button>
@@ -117,10 +117,10 @@
       </div>
 
       <div class="mt-4 flex gap-3">
-        <button @click="$emit('openChat', profile.id, profile.name)" class="flex-1 py-3 bg-white border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors">
+        <button @click="router.push('/chat/' + profile.id + '?name=' + encodeURIComponent(profile.name))" class="flex-1 py-3 bg-white border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors">
           💬 发消息
         </button>
-        <button @click="$emit('openTeamRequest', profile.id)" class="flex-1 py-3 bg-primary text-white font-medium rounded-lg hover:bg-primary/90 transition-colors">
+        <button @click="$emit('open-team-request', profile.id)" class="flex-1 py-3 bg-primary text-white font-medium rounded-lg hover:bg-primary/90 transition-colors">
           🤝 发起组队
         </button>
       </div>
@@ -249,12 +249,13 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { MapPin, Check } from 'lucide-vue-next'
 
+const router = useRouter()
+
 defineEmits<{
-  (e: 'back'): void
-  (e: 'openChat', id: string, name: string): void
-  (e: 'openTeamRequest', id: string): void
+  (e: 'open-team-request', id: string): void
 }>()
 
 const props = defineProps<{

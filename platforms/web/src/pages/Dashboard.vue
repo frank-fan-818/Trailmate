@@ -15,13 +15,13 @@
         </div>
         <div class="flex gap-8 font-semibold text-sm">
           <button class="text-gray-700 hover:text-primary transition-colors">概览</button>
-          <button @click="$emit('startPlanning')" class="text-gray-700 hover:text-primary transition-colors">行程规划</button>
-          <button @click="$emit('openPerception')" class="text-gray-700 hover:text-primary transition-colors">情境感知</button>
+          <button @click="router.push('/planner')" class="text-gray-700 hover:text-primary transition-colors">行程规划</button>
+          <button @click="router.push('/perception')" class="text-gray-700 hover:text-primary transition-colors">情境感知</button>
           <button class="text-gray-700 hover:text-primary transition-colors">我的行程</button>
-          <button @click="$emit('openCommunity')" class="text-gray-700 hover:text-primary transition-colors">伴友社区</button>
+          <button @click="router.push('/find-companion')" class="text-gray-700 hover:text-primary transition-colors">伴友社区</button>
         </div>
         <div class="flex items-center gap-4">
-          <button @click="$emit('openSettings')" class="text-gray-700 hover:text-primary transition-colors">设置</button>
+          <button @click="router.push('/settings')" class="text-gray-700 hover:text-primary transition-colors">设置</button>
           <button class="text-gray-700 hover:text-primary transition-colors">帮助</button>
         </div>
       </div>
@@ -44,7 +44,7 @@
           <h3 class="text-xl font-bold text-gray-900 mb-3">开始规划</h3>
           <p class="text-gray-600 mb-6">定制你的专属旅行剧本</p>
           <button 
-            @click="$emit('startPlanning')"
+            @click="router.push('/planner')"
             class="w-full py-3 bg-primary text-white rounded-md font-semibold hover:bg-primary/90 transition-colors"
           >
             立即开始
@@ -68,7 +68,7 @@
           </div>
           <h3 class="text-xl font-bold text-gray-900 mb-3">旅伴匹配</h3>
           <p class="text-gray-600 mb-6">找到志同道合的旅行伙伴</p>
-          <button @click="$emit('openCommunity')" class="w-full py-3 bg-primary text-white rounded-md font-semibold hover:bg-primary/90 transition-colors">
+          <button @click="router.push('/find-companion')" class="w-full py-3 bg-primary text-white rounded-md font-semibold hover:bg-primary/90 transition-colors">
             寻找旅伴
           </button>
         </div>
@@ -158,14 +158,10 @@
 </template>
 
 <script setup lang="ts">
+import { useRouter } from 'vue-router'
 import { Plane, Calendar, Users, CloudSun, Briefcase, Smartphone } from 'lucide-vue-next'
 
-const emit = defineEmits<{
-  (e: 'startPlanning'): void
-  (e: 'openSettings'): void
-  (e: 'openPerception'): void
-  (e: 'openCommunity'): void
-}>()
+const router = useRouter()
 </script>
 
 <style scoped>

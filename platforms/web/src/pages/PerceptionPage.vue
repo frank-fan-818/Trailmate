@@ -4,7 +4,7 @@
     <header class="fixed top-0 w-full z-50 py-5 transition-all duration-300 bg-white/90 backdrop-blur-md shadow-md">
       <div class="max-w-[1100px] mx-auto px-8 flex justify-between items-center">
         <button
-          @click="$emit('back')"
+          @click="router.back()"
           class="flex items-center gap-2 px-4 py-2 text-gray-700 hover:text-primary transition-colors rounded-lg hover:bg-gray-100"
         >
           <span class="text-lg">←</span>
@@ -238,12 +238,11 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import { useTrailmateCore } from '../composables/use-trailmate-core'
 import type { LocationInfo } from '@trailmate/perception'
 
-defineEmits<{
-  (e: 'back'): void
-}>()
+const router = useRouter()
 
 interface Notification {
   id: string

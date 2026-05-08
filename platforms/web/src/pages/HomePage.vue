@@ -104,7 +104,7 @@
             <p class="text-gray-500 leading-relaxed">
               在风景里，遇见同频的有趣伴友。基于多维性格画像与旅行习惯的智能撮合，让每一段路都有温暖回响。
             </p>
-            <button @click="$emit('start')" class="btn-main mt-8">
+            <button @click="router.push('/dashboard')" class="btn-main mt-8">
               寻找你的伴友
             </button>
           </div>
@@ -202,10 +202,9 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
+import { useRouter } from 'vue-router'
 
-const emit = defineEmits<{
-  (e: 'start'): void
-}>()
+const router = useRouter()
 
 const scrolled = ref(false)
 const sliderPos = ref(0)
@@ -253,7 +252,7 @@ function scrollToSection(id: string) {
 }
 
 function goToPlanner() {
-  emit('start')
+  router.push('/dashboard')
 }
 
 let heroIntervalId: ReturnType<typeof setInterval>

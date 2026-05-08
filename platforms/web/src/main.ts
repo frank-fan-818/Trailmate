@@ -1,10 +1,12 @@
 import { createApp } from 'vue'
 import App from './App.vue'
 import './style.css'
+import router from './router'
 import { TRAILMATE_KEY, useTrailmateCore } from './composables/use-trailmate-core'
 
 async function bootstrap(): Promise<void> {
   const app = createApp(App)
+  app.use(router)
   const services = useTrailmateCore()
   await services.initialize()
 

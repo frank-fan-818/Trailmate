@@ -2,7 +2,7 @@
   <div class="min-h-screen bg-gray-100">
     <header class="bg-white border-b border-gray-200 px-6 py-4">
       <div class="max-w-2xl mx-auto flex items-center justify-between">
-        <button @click="$emit('back')" class="flex items-center gap-2 text-gray-600 hover:text-gray-900">
+        <button @click="router.back()" class="flex items-center gap-2 text-gray-600 hover:text-gray-900">
           <ArrowLeft :size="16" />
           <span>返回</span>
         </button>
@@ -48,11 +48,10 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { ArrowLeft } from 'lucide-vue-next'
 
-defineEmits<{
-  (e: 'back'): void
-}>()
+const router = useRouter()
 
 defineProps<{
   companionId: string

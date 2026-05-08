@@ -5,7 +5,7 @@
       <div class="max-w-[1100px] mx-auto px-8 flex justify-between items-center relative">
         <div class="flex items-center gap-3">
           <button
-            @click="$emit('back')"
+            @click="router.back()"
             class="flex items-center gap-2 px-2 text-gray-700 hover:text-primary transition-colors"
           >
             <ArrowLeft :size="20" />
@@ -413,9 +413,12 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { ArrowLeft, Plus, ClipboardList, X, MapPin, DollarSign, User } from 'lucide-vue-next'
 import { usePlaceDrawer, useItineraryChat } from '../composables/useItineraryPlanner'
 import ItineraryPlannerSidebar from '../components/ItineraryPlannerSidebar.vue'
+
+const router = useRouter()
 
 const {
   showPlaceDrawer, selectedPlace, activePlaceTab,
@@ -431,10 +434,6 @@ const {
 } = useItineraryChat()
 
 const showHistorySidebar = ref(false)
-
-const emit = defineEmits<{
-  (e: 'back'): void
-}>()
 
 const handleGenerate = () => {
   const input = userInput.value.trim()

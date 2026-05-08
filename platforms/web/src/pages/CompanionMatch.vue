@@ -2,7 +2,7 @@
   <div class="min-h-screen bg-gray-100">
     <header class="bg-white border-b border-gray-200 px-6 py-4">
       <div class="max-w-5xl mx-auto flex items-center justify-between">
-        <button @click="$emit('back')" class="flex items-center gap-2 text-gray-600 hover:text-gray-900">
+        <button @click="router.back()" class="flex items-center gap-2 text-gray-600 hover:text-gray-900">
           <span>←</span>
           <span>返回</span>
         </button>
@@ -128,14 +128,12 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { Search, X } from 'lucide-vue-next'
 import { companions } from '../data/companionMockData'
 import CompanionMatchCard from '../components/CompanionMatchCard.vue'
 
-const emit = defineEmits<{
-  (e: 'back'): void
-  (e: 'viewProfile', id: string): void
-}>()
+const router = useRouter()
 
 const filters = ref({
   keyword: '',
@@ -190,7 +188,7 @@ const resetFilters = () => {
 }
 
 const viewProfile = (id: string) => {
-  emit('viewProfile', id)
+  router.push('/companion-profile/' + id)
 }
 
 const toggleInterest = (id: string) => {

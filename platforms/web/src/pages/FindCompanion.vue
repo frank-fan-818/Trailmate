@@ -11,7 +11,7 @@
           <img src="/logo.jpg" alt="Trailmate" class="w-10 h-10 rounded-lg object-cover" />
           <span class="text-xl font-bold">Trailmate<span class="text-primary">.</span></span>
         </div>
-        <button @click="$emit('back')" class="text-gray-700 hover:text-primary transition-colors font-semibold">
+        <button @click="router.back()" class="text-gray-700 hover:text-primary transition-colors font-semibold">
           ← 返回
         </button>
       </div>
@@ -42,7 +42,7 @@
       </div>
 
       <div class="text-center">
-        <button @click="$emit('openMatch')" class="btn-main text-lg px-12 py-4">
+        <button @click="router.push('/companion-match')" class="btn-main text-lg px-12 py-4">
           开始寻找伴友
         </button>
       </div>
@@ -51,12 +51,10 @@
 </template>
 
 <script setup lang="ts">
+import { useRouter } from 'vue-router'
 import { Brain, DollarSign, Star } from 'lucide-vue-next'
 
-defineEmits<{
-  (e: 'back'): void
-  (e: 'openMatch'): void
-}>()
+const router = useRouter()
 </script>
 
 <style scoped>

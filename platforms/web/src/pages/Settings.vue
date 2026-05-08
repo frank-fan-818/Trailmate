@@ -3,7 +3,7 @@
     <!-- 顶部导航 -->
     <header class="h-16 bg-white/80 backdrop-blur-xl border-b border-gray-200/50 px-8 flex items-center justify-between sticky top-0 z-20">
       <button
-        @click="$emit('back')"
+        @click="router.back()"
         class="flex items-center gap-2 text-primary hover:brightness-110 transition-all"
       >
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -263,15 +263,13 @@
 
 <script setup lang="ts">
 import { watch } from 'vue'
+import { useRouter } from 'vue-router'
 import { User } from 'lucide-vue-next'
 import { useSettings } from '../stores/settings'
 import AppleToggle from '../components/AppleToggle.vue'
 
+const router = useRouter()
 const { settings, saveSettings } = useSettings()
-
-const emit = defineEmits<{
-  (e: 'back'): void
-}>()
 
 const travelTypes = ['休闲', '文化', '冒险', '美食', '购物', '自然']
 const transportTypes = ['飞机', '高铁', '自驾', '大巴']
