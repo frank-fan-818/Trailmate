@@ -4,4 +4,4 @@ export type {
   ItineraryItem,
   ItineraryDay,
   ItineraryPlan,
-} from '../../../../shared/types/itinerary.types'
+} from '../../../../../shared/types/itinerary.types'

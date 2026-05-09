@@ -1,12 +1,12 @@
 import type { ItineraryPlan, ItineraryRequest } from '../types/index.js'
-import type { Flight, Hotel, Attraction } from '../../../../shared/types/travel.types'
+import type { Flight, Hotel, Attraction } from '../../../../../shared/types/travel.types.js'
 import {
   WorkflowEngine,
   WorkflowStatus,
   type WorkflowStepConfig,
   type WorkflowExecutionLog,
   type WorkflowTaskPersister
-} from '../../../../shared/workflow-engine'
+} from '../../../../../shared/workflow-engine.ts'
 import { WorkflowStep, type WorkflowTask, type ParsedIntent, type WorkflowContext } from './types.js'
 
 export { WorkflowStep, WorkflowStatus }

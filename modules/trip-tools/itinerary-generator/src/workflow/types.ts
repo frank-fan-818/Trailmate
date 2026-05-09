@@ -1,5 +1,5 @@
 import type { ItineraryPlan, ItineraryRequest } from '../types'
-import type { Flight, Hotel, Attraction } from '../../../../shared/types/travel.types'
+import type { Flight, Hotel, Attraction } from '../../../../../shared/types/travel.types'
 
 export enum WorkflowStep {
   INIT = 'init',
