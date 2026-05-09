@@ -4,10 +4,10 @@ import type { PerceptionContext } from './src/types'
 export type { LocationInfo, TimelineNode, Notification, NotificationLevel, PerceptionContext } from './src/types'
 import { handlePlanGenerated, handlePlanUpdated } from './src/event-handlers/plan-event.handler'
 import { handleLocationChanged } from './src/event-handlers/location-event.handler'
-import { getTimeline, updateNodeStatus, insertCustomNode, stopTimelineScheduler } from './src/services/timeline.service'
+import { getTimeline, updateNodeStatus, insertCustomNode, stopTimelineScheduler, generateTimeline, startTimelineScheduler } from './src/services/timeline.service'
 import { simulateLocation, getCurrentLocation, toggleAutoSimulate, getRealLocation, startRealLocationWatcher, stopRealLocationWatcher } from './src/services/location.service'
 import { getNotifications, markNotificationAsRead } from './src/services/notification.service'
-import { stopRuleScheduler, runRulesByType, addCustomRule, removeCustomRule, getAllRules } from './src/services/rule-engine.service'
+import { stopRuleScheduler, startRuleScheduler, runRulesByType, addCustomRule, removeCustomRule, setRuleEnabled, getAllRules } from './src/services/rule-engine.service'
 import { runPerceptionWorkflow, type PerceptionWorkflowRequest } from './src/workflow/perception-workflow'
 
 export default class PerceptionModule implements IPlugin {
@@ -43,6 +43,7 @@ export default class PerceptionModule implements IPlugin {
     core.service.register('perception.runRulesByType', runRulesByType.bind(this))
     core.service.register('perception.addCustomRule', addCustomRule.bind(this))
     core.service.register('perception.removeCustomRule', removeCustomRule.bind(this))
+    core.service.register('perception.setRuleEnabled', setRuleEnabled.bind(this))
     core.service.register('perception.getAllRules', getAllRules.bind(this))
     core.service.register('perception.updateNodeStatus', updateNodeStatus.bind(this))
     core.service.register('perception.insertCustomNode', insertCustomNode.bind(this))
@@ -50,6 +51,9 @@ export default class PerceptionModule implements IPlugin {
     core.service.register('perception.startRealLocationWatcher', startRealLocationWatcher.bind(this))
     core.service.register('perception.stopRealLocationWatcher', stopRealLocationWatcher.bind(this))
     core.service.register('perception.runWorkflow', (request: PerceptionWorkflowRequest) => runPerceptionWorkflow(request))
+    core.service.register('perception.startRuleScheduler', startRuleScheduler.bind(this))
+    core.service.register('perception.generateTimeline', generateTimeline.bind(this))
+    core.service.register('perception.startTimelineScheduler', startTimelineScheduler.bind(this))
   }
 
   onMount(_core: ICore) {

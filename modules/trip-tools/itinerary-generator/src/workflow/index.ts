@@ -108,7 +108,7 @@ async function callLLM(prompt: string): Promise<string> {
   console.log('[LLM] 调用大模型...')
   await new Promise(resolve => setTimeout(resolve, 500))
 
-  if (prompt.includes('解析用户意图')) {
+  if (prompt.includes('解析用户')) {
     return JSON.stringify({
       destination: '青岛',
       days: 3,
@@ -118,7 +118,7 @@ async function callLLM(prompt: string): Promise<string> {
     })
   }
 
-  if (prompt.includes('生成行程方案')) {
+  if (prompt.includes('行程方案')) {
     return JSON.stringify({
       plans: [
         {

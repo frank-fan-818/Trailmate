@@ -1,6 +1,8 @@
 import type PerceptionModule from '../../index'
-import type { Rule, LocationInfo, PerceptionContext } from '../types'
+import type { Rule, LocationInfo, PerceptionContext, TimelineNode, TimelineNodeStatus } from '../types'
 import { pushNotification } from './notification.service'
+import { updateNodeStatus, getTimelineSnapshot } from './timeline.service'
+import { haversineDistance, checkSpecialArea } from '../utils/geo-utils'
 
 // 内置规则库
 const builtInRules: Rule[] = [
@@ -87,6 +89,50 @@ const builtInRules: Rule[] = [
     },
     enabled: true,
     priority: 5
+  },
+  // 拥堵提醒规则：大城市高峰时段提醒
+  {
+    id: 'rule_congestion_warning',
+    name: '拥堵提醒',
+    description: '大城市高峰时段(7-9/17-19)推送交通拥堵提醒',
+    condition: {
+      type: 'congestion',
+      params: {
+        peakHours: [[7, 9], [17, 19]],
+        bigCities: ['北京', '上海', '广州', '深圳', '成都', '杭州', '重庆', '武汉']
+      }
+    },
+    action: {
+      type: 'push_notification',
+      params: {
+        level: 'warning',
+        content: '当前处于交通高峰时段，请注意拥堵，建议错峰出行'
+      }
+    },
+    enabled: true,
+    priority: 4
+  },
+  // 景区关闭提醒规则
+  {
+    id: 'rule_closure_reminder',
+    name: '景区关闭提醒',
+    description: '接近景区营业结束时间时发送提醒',
+    condition: {
+      type: 'closure',
+      params: {
+        beforeMinutes: 60,
+        closingHour: 17
+      }
+    },
+    action: {
+      type: 'push_notification',
+      params: {
+        level: 'info',
+        content: '附近景区即将关闭，请合理安排游览时间，注意返程'
+      }
+    },
+    enabled: true,
+    priority: 3
   }
 ]
 
@@ -125,6 +171,10 @@ async function matchRule(rule: Rule, params: Record<string, any>): Promise<boole
       return matchWeatherRule(conditionParams, params)
     case 'event':
       return matchEventRule(conditionParams, params)
+    case 'congestion':
+      return matchCongestionRule(conditionParams, params)
+    case 'closure':
+      return matchClosureRule(conditionParams, params)
     default:
       return false
   }
@@ -134,29 +184,88 @@ async function matchRule(rule: Rule, params: Record<string, any>): Promise<boole
  * 位置规则匹配
  */
 function matchLocationRule(conditionParams: Record<string, any>, params: Record<string, any>): boolean {
-  const { location } = params as { location: LocationInfo; context: PerceptionContext }
+  const { location, context } = params as { location: LocationInfo; context: PerceptionContext }
   const { distance, areas } = conditionParams
 
-  // 距离匹配（简化实现，真实场景需要计算两点距离）
-  if (distance && Math.random() > 0.7) { // 模拟30%概率匹配到附近景点
-    return true
+  // 距离匹配：使用 Haversine 公式计算真实距离
+  if (distance && context?.planId) {
+    const timeline: TimelineNode[] = params.timeline || []
+    const currentLat = location.latitude
+    const currentLng = location.longitude
+
+    // 从上下文获取附近景点坐标 (可通过 params.attractions 传入外部坐标)
+    const attractions: Array<{ name: string; latitude: number; longitude: number }> =
+      params.attractions || []
+
+    // 检查 timeline 中 attraction 类型节点：如果传入了对应坐标则匹配距离
+    for (const node of timeline) {
+      const nodeCoords = attractions.find(
+        (a) => a.name === node.title || a.name === node.address
+      )
+      if (nodeCoords) {
+        const dist = haversineDistance(
+          currentLat, currentLng,
+          nodeCoords.latitude, nodeCoords.longitude
+        )
+        if (dist <= distance) {
+          return true
+        }
+      }
+    }
+
+    // 如果 attractions 为空但有 timeline 节点，进行同城匹配（数据不足时的优雅降级）
+    if (attractions.length === 0 && timeline.length > 0) {
+      const cityNodes = timeline.filter(
+        (node) =>
+          node.address &&
+          location.city &&
+          (node.address.includes(location.city) || location.city.includes(node.address.replace(/市$/, '')))
+      )
+      if (cityNodes.length > 0) {
+        return true
+      }
+    }
   }
 
-  // 特殊地区匹配
-  if (areas && areas.includes(location.city)) {
-    return true
+  // 特殊地区匹配：优先使用地理围栏，回退到城市名匹配
+  if (areas && Array.isArray(areas)) {
+    const geoArea = checkSpecialArea(location.latitude, location.longitude)
+    if (geoArea && areas.includes(geoArea)) {
+      return true
+    }
+    // 回退：城市名模糊匹配
+    if (areas.some((area: string) => location.city.includes(area) || location.address.includes(area))) {
+      return true
+    }
   }
 
   return false
 }
 
 /**
- * 时间规则匹配
+ * 时间规则匹配——基于真实的当前时间与 timeline 节点 startTime 比较
  */
-function matchTimeRule(conditionParams: Record<string, any>, _params: Record<string, any>): boolean {
-  const { beforeMinutes: _beforeMinutes } = conditionParams
-  // 简化实现，真实场景需要计算当前时间与节点时间的差值
-  return Math.random() > 0.8 // 模拟20%概率匹配到即将开始的行程
+function matchTimeRule(conditionParams: Record<string, any>, params: Record<string, any>): boolean {
+  const { beforeMinutes = 30 } = conditionParams
+  const timeline: TimelineNode[] = params.timeline || []
+  const now = new Date()
+  const currentMinutes = now.getHours() * 60 + now.getMinutes()
+
+  for (const node of timeline) {
+    // 只检查尚未开始的节点
+    if (node.status !== 'not_started') continue
+    const parts = node.startTime.split(':').map(Number)
+    const nodeMinutes = parts[0] * 60 + (parts[1] || 0)
+    if (isNaN(nodeMinutes)) continue
+
+    const diff = nodeMinutes - currentMinutes
+    // 节点在 beforeMinutes 窗口内且还未开始
+    if (diff > 0 && diff <= beforeMinutes) {
+      return true
+    }
+  }
+
+  return false
 }
 
 /**
@@ -177,6 +286,55 @@ function matchEventRule(conditionParams: Record<string, any>, params: Record<str
 }
 
 /**
+ * 拥堵规则匹配——高峰时段在大城市触发
+ */
+function matchCongestionRule(conditionParams: Record<string, any>, params: Record<string, any>): boolean {
+  const { peakHours = [], bigCities = [] } = conditionParams
+  const { location } = params as { location?: LocationInfo }
+
+  // 检查当前是否在高峰时段
+  const now = new Date()
+  const currentHour = now.getHours()
+  const inPeak = peakHours.some(
+    ([start, end]: [number, number]) => currentHour >= start && currentHour < end
+  )
+  if (!inPeak) return false
+
+  // 检查是否在大城市
+  if (location && bigCities.length > 0) {
+    const cityName = location.city.replace(/市$/, '')
+    return bigCities.some((city: string) => cityName.includes(city) || city.includes(cityName))
+  }
+
+  // 没有位置信息时，仅按时间判断
+  return true
+}
+
+/**
+ * 景区关闭规则匹配——接近景区营业结束时间
+ */
+function matchClosureRule(conditionParams: Record<string, any>, params: Record<string, any>): boolean {
+  const { beforeMinutes = 60, closingHour = 17 } = conditionParams
+  const timeline: TimelineNode[] = params.timeline || []
+  const now = new Date()
+  const currentMinutes = now.getHours() * 60 + now.getMinutes()
+  const closingMinutes = closingHour * 60
+
+  // 检查当前时间是否在关闭前 beforeMinutes 窗口内
+  if (currentMinutes < closingMinutes - beforeMinutes || currentMinutes >= closingMinutes) {
+    return false
+  }
+
+  // 检查 timeline 中是否有 attraction 类型且尚未完成的节点
+  return timeline.some(
+    (node) =>
+      node.type === 'attraction' &&
+      node.status !== 'completed' &&
+      node.status !== 'cancelled'
+  )
+}
+
+/**
  * 执行规则动作
  */
 async function executeRuleAction(this: PerceptionModule, rule: Rule, params: Record<string, any>): Promise<void> {
@@ -192,11 +350,25 @@ async function executeRuleAction(this: PerceptionModule, rule: Rule, params: Rec
         level: actionParams.level
       })
       break
-    case 'update_timeline':
-      // 待实现：更新时间线节点
+    case 'update_timeline': {
+      const { nodeId, status } = actionParams
+      if (nodeId && status && context?.planId) {
+        await updateNodeStatus.call(this, {
+          userId,
+          planId: context.planId,
+          nodeId,
+          status: status as TimelineNodeStatus
+        })
+      }
       break
+    }
     case 'adjust_plan':
-      // 待实现：自动调整行程
+      await pushNotification.call(this, {
+        userId,
+        planId: context?.planId,
+        content: actionParams.content || '系统根据当前情况建议您调整行程安排',
+        level: actionParams.level || 'info'
+      })
       break
   }
 }
@@ -211,16 +383,23 @@ export async function startRuleScheduler(this: PerceptionModule, userId: string)
   // 停止现有定时器
   stopRuleScheduler(userId)
 
-  // 每分钟执行一次时间类规则检查
+  // 每分钟执行一次时间/拥堵/关闭类规则检查
   const timer = setInterval(async () => {
     const context = this.getContext(userId)
     if (!context) return
 
-    await runRulesByType.call(this, 'time', {
+    const baseParams = {
       userId,
       context,
-      currentTime: Date.now()
-    })
+      currentTime: Date.now(),
+      location: context.currentLocation
+    }
+
+    await Promise.all([
+      runRulesByType.call(this, 'time', { ...baseParams, timeline: getTimelineSnapshot(context.planId) }),
+      runRulesByType.call(this, 'congestion', baseParams),
+      runRulesByType.call(this, 'closure', { ...baseParams, timeline: getTimelineSnapshot(context.planId) })
+    ])
   }, 60000) // 1分钟
 
   ruleTimers.set(userId, timer)
@@ -252,6 +431,29 @@ export async function removeCustomRule(ruleId: string): Promise<void> {
   if (index > -1) {
     customRules.splice(index, 1)
   }
+}
+
+/**
+ * 启用或禁用指定规则（同时搜索内置规则和自定义规则）
+ * @returns true 表示找到并更新，false 表示未找到
+ */
+export async function setRuleEnabled(this: PerceptionModule, params: {
+  ruleId: string
+  enabled: boolean
+}): Promise<boolean> {
+  const builtIn = builtInRules.find(r => r.id === params.ruleId)
+  if (builtIn) {
+    builtIn.enabled = params.enabled
+    return true
+  }
+
+  const custom = customRules.find(r => r.id === params.ruleId)
+  if (custom) {
+    custom.enabled = params.enabled
+    return true
+  }
+
+  return false
 }
 
 /**

@@ -77,7 +77,7 @@ export interface PerceptionContext {
 }
 
 export interface RuleCondition {
-  type: 'time' | 'location' | 'weather' | 'event'
+  type: 'time' | 'location' | 'weather' | 'event' | 'congestion' | 'closure'
   params: Record<string, any>
 }
 

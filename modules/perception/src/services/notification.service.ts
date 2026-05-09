@@ -4,6 +4,30 @@ import type { Notification, NotificationLevel } from '../types'
 
 const userNotifications = new Map<string, Notification[]>()
 
+// ============================================================
+// localStorage persistence helpers
+// ============================================================
+const STORAGE_KEY_PREFIX = 'trailmate-notifications-'
+
+function loadFromStorage(userId: string): Notification[] {
+  try {
+    const raw = localStorage.getItem(`${STORAGE_KEY_PREFIX}${userId}`)
+    if (!raw) return []
+    return JSON.parse(raw) as Notification[]
+  } catch {
+    // localStorage unavailable (SSR/Node) or corrupted data — graceful fallback
+    return []
+  }
+}
+
+function saveToStorage(userId: string, notifications: Notification[]): void {
+  try {
+    localStorage.setItem(`${STORAGE_KEY_PREFIX}${userId}`, JSON.stringify(notifications))
+  } catch {
+    // localStorage unavailable or quota exceeded — silent fail
+  }
+}
+
 export async function pushNotification(
   this: PerceptionModule,
   params: {
@@ -29,6 +53,7 @@ export async function pushNotification(
 
   const nextNotifications = [notification, ...(userNotifications.get(params.userId) ?? [])]
   userNotifications.set(params.userId, nextNotifications)
+  saveToStorage(params.userId, nextNotifications)
   this.core?.state.set(`perception.notifications.${params.userId}`, nextNotifications)
   await this.core?.eventBus.emit(GlobalEvent.NOTIFICATION_PUSHED, notification)
 
@@ -39,7 +64,15 @@ export async function getNotifications(
   this: PerceptionModule,
   params: { userId: string; planId?: string; unreadOnly?: boolean }
 ): Promise<Notification[]> {
-  let notifications = userNotifications.get(params.userId) ?? []
+  let notifications = userNotifications.get(params.userId)
+
+  // Hydrate from localStorage if in-memory Map is empty for this user
+  if (!notifications) {
+    notifications = loadFromStorage(params.userId)
+    if (notifications.length > 0) {
+      userNotifications.set(params.userId, notifications)
+    }
+  }
 
   if (params.planId) {
     notifications = notifications.filter((notification) => notification.planId === params.planId)
@@ -64,6 +97,7 @@ export async function markNotificationAsRead(
   }
 
   notification.isRead = true
+  saveToStorage(params.userId, notifications)
   this.core?.state.set(`perception.notifications.${params.userId}`, notifications)
   await this.core?.eventBus.emit(GlobalEvent.NOTIFICATION_UPDATED, notification)
 

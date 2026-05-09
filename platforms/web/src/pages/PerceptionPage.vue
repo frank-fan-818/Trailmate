@@ -132,6 +132,28 @@
             </button>
           </div>
 
+          <!-- 自动模拟开关 -->
+          <div class="mt-4 flex items-center justify-between p-4 rounded-xl border border-gray-200 bg-gray-50">
+            <div>
+              <p class="text-sm font-medium text-gray-900">自动模拟</p>
+              <p class="text-xs text-gray-500">开启后每10秒自动更新位置</p>
+            </div>
+            <button
+              @click="handleToggleAutoSim"
+              :class="[
+                'relative inline-flex h-7 w-12 items-center rounded-full transition-colors',
+                autoSimulate ? 'bg-primary' : 'bg-gray-300'
+              ]"
+            >
+              <span
+                :class="[
+                  'inline-block h-5 w-5 rounded-full bg-white shadow transition-transform',
+                  autoSimulate ? 'translate-x-6' : 'translate-x-1'
+                ]"
+              />
+            </button>
+          </div>
+
           <p class="mt-3 text-sm text-gray-500 text-center">{{ locationStatus }}</p>
 
           <div v-if="currentLocation && mapImageUrl" class="mt-4 rounded-xl overflow-hidden border border-gray-200">
@@ -231,6 +253,177 @@
             </div>
           </div>
         </section>
+
+        <!-- 规则列表 -->
+        <section class="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 xl:col-span-2">
+          <div class="mb-5 flex items-center justify-between">
+            <div>
+              <p class="text-sm font-medium text-primary">📋 规则引擎</p>
+              <h2 class="mt-1 text-xl font-semibold text-gray-900">规则列表</h2>
+            </div>
+            <button
+              @click="showAddRuleModal = true"
+              class="px-4 py-2 text-sm font-medium text-white bg-primary rounded-xl hover:bg-primary/90 transition-colors"
+            >
+              + 添加规则
+            </button>
+          </div>
+
+          <div v-if="rules.length === 0" class="rounded-xl bg-gray-50 px-4 py-8 text-center">
+            <p class="text-gray-500 text-sm">暂无规则数据</p>
+            <p class="text-gray-400 text-xs mt-1">初始化系统后将加载内置规则</p>
+          </div>
+
+          <div v-else class="space-y-3">
+            <div
+              v-for="rule in rules"
+              :key="rule.id"
+              class="grid gap-3 rounded-xl border border-gray-200 px-4 py-4 items-center"
+              :class="rule.enabled ? 'bg-white' : 'bg-gray-50 opacity-60'"
+              style="grid-template-columns: 1fr auto auto auto 52px auto"
+            >
+              <div>
+                <div class="flex items-center gap-2">
+                  <p class="text-sm font-semibold text-gray-900">{{ rule.name }}</p>
+                  <span
+                    class="px-2 py-0.5 text-xs rounded-full"
+                    :class="rule.enabled ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'"
+                  >
+                    {{ rule.enabled ? '已启用' : '已禁用' }}
+                  </span>
+                </div>
+                <p class="mt-1 text-xs text-gray-500">{{ rule.description }}</p>
+              </div>
+              <span class="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-600 font-mono">
+                {{ rule.condition.type }}
+              </span>
+              <span class="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-700 font-mono">
+                {{ rule.action.type }}
+              </span>
+              <span class="text-xs text-gray-400 font-mono">P{{ rule.priority }}</span>
+              <!-- Toggle switch -->
+              <button
+                @click="handleToggleRule(rule.id, !rule.enabled)"
+                :class="[
+                  'relative inline-flex h-7 w-12 items-center rounded-full transition-colors shrink-0',
+                  rule.enabled ? 'bg-primary' : 'bg-gray-300'
+                ]"
+              >
+                <span
+                  :class="[
+                    'inline-block h-5 w-5 rounded-full bg-white shadow transition-transform',
+                    rule.enabled ? 'translate-x-6' : 'translate-x-1'
+                  ]"
+                />
+              </button>
+              <!-- Delete (custom rules only) -->
+              <button
+                v-if="!rule.id.startsWith('rule_')"
+                @click="handleDeleteRule(rule.id)"
+                class="px-2 py-1 text-xs font-medium text-red-600 border border-red-200 rounded-lg hover:bg-red-50 transition-colors shrink-0"
+              >
+                删除
+              </button>
+              <span v-else class="w-14" />
+            </div>
+          </div>
+        </section>
+
+        <!-- 添加规则模态框 -->
+        <div
+          v-if="showAddRuleModal"
+          class="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+          @click.self="showAddRuleModal = false"
+        >
+          <div class="bg-white w-full max-w-lg mx-4 rounded-2xl shadow-xl">
+            <div class="p-5 border-b border-gray-200 flex items-center justify-between">
+              <h3 class="text-lg font-bold text-gray-900">添加自定义规则</h3>
+              <button
+                @click="showAddRuleModal = false"
+                class="text-gray-500 hover:text-gray-700 text-xl leading-none"
+              >
+                &times;
+              </button>
+            </div>
+
+            <div class="p-5 space-y-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">规则名称 *</label>
+                <input
+                  v-model="ruleForm.name"
+                  type="text"
+                  class="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl outline-none focus:border-primary transition-colors"
+                  placeholder="例如：我的自定义提醒"
+                />
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">描述</label>
+                <textarea
+                  v-model="ruleForm.description"
+                  rows="2"
+                  class="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl outline-none focus:border-primary transition-colors"
+                  placeholder="规则说明（可选）"
+                ></textarea>
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">条件类型</label>
+                <select
+                  v-model="ruleForm.conditionType"
+                  class="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl outline-none focus:border-primary transition-colors"
+                >
+                  <option value="time">时间 (time)</option>
+                  <option value="location">位置 (location)</option>
+                  <option value="weather">天气 (weather)</option>
+                  <option value="event">事件 (event)</option>
+                  <option value="congestion">拥堵 (congestion)</option>
+                  <option value="closure">关闭 (closure)</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">动作类型</label>
+                <select
+                  v-model="ruleForm.actionType"
+                  class="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl outline-none focus:border-primary transition-colors"
+                >
+                  <option value="push_notification">推送通知 (push_notification)</option>
+                  <option value="update_timeline">更新时间线 (update_timeline)</option>
+                  <option value="adjust_plan">调整计划 (adjust_plan)</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">优先级</label>
+                <input
+                  v-model.number="ruleForm.priority"
+                  type="number"
+                  min="1"
+                  max="10"
+                  class="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-xl outline-none focus:border-primary transition-colors"
+                />
+                <p class="mt-1 text-xs text-gray-400">数字越大优先级越高（1-10）</p>
+              </div>
+            </div>
+
+            <div class="p-5 border-t border-gray-200 flex gap-3">
+              <button
+                @click="showAddRuleModal = false"
+                class="flex-1 py-2.5 border border-gray-200 text-gray-700 text-sm font-medium rounded-xl hover:bg-gray-50 transition-colors"
+              >
+                取消
+              </button>
+              <button
+                @click="handleSubmitRule"
+                :disabled="!ruleForm.name.trim()"
+                class="flex-1 py-2.5 bg-primary text-white text-sm font-medium rounded-xl hover:bg-primary/90 transition-colors disabled:opacity-60"
+              >
+                添加规则
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     </main>
   </div>
@@ -278,9 +471,14 @@ const {
   getTimeline,
   updateNodeStatus,
   simulateLocation,
+  toggleAutoSimulate,
   getRealLocation,
   startRealLocationWatcher,
-  stopRealLocationWatcher
+  stopRealLocationWatcher,
+  getAllRules,
+  addCustomRule,
+  removeCustomRule,
+  setRuleEnabled
 } = useTrailmateCore()
 
 const locationForm = reactive({
@@ -299,6 +497,16 @@ const isWatchingLocation = ref(false)
 const currentLocation = ref<LocationInfo | null>(null)
 const stopWatcher = ref<(() => void) | null>(null)
 const mapImageUrl = ref<string>('')
+const autoSimulate = ref(false)
+const rules = ref<Array<{ id: string; name: string; description?: string; enabled: boolean; priority: number; condition: { type: string; params: Record<string, any> }; action: { type: string; params: Record<string, any> } }>>([])
+const showAddRuleModal = ref(false)
+const ruleForm = reactive({
+  name: '',
+  description: '',
+  conditionType: 'time' as string,
+  actionType: 'push_notification' as string,
+  priority: 1
+})
 
 const fetchStaticMap = () => {
   if (!currentLocation.value) {
@@ -317,7 +525,7 @@ watch(currentLocation, () => {
 
 onMounted(async () => {
   await initialize()
-  await loadNotifications()
+  await Promise.all([loadNotifications(), loadRules()])
 })
 
 const loadNotifications = async () => {
@@ -325,6 +533,76 @@ const loadNotifications = async () => {
     notifications.value = await getNotifications({})
   } catch (e) {
     console.error('获取通知失败:', e)
+  }
+}
+
+const loadRules = async () => {
+  try {
+    rules.value = await getAllRules()
+  } catch (e) {
+    console.error('获取规则列表失败:', e)
+  }
+}
+
+const handleToggleAutoSim = async () => {
+  try {
+    autoSimulate.value = !autoSimulate.value
+    await toggleAutoSimulate(autoSimulate.value)
+    locationStatus.value = autoSimulate.value ? '自动模拟已开启，每10秒更新位置' : '自动模拟已关闭'
+  } catch (e) {
+    console.error('切换自动模拟失败:', e)
+    autoSimulate.value = !autoSimulate.value
+  }
+}
+
+const handleToggleRule = async (ruleId: string, enabled: boolean) => {
+  try {
+    await setRuleEnabled(ruleId, enabled)
+    await loadRules()
+  } catch (e) {
+    console.error('切换规则状态失败:', e)
+  }
+}
+
+const handleDeleteRule = async (ruleId: string) => {
+  try {
+    await removeCustomRule(ruleId)
+    await loadRules()
+  } catch (e) {
+    console.error('删除规则失败:', e)
+  }
+}
+
+const handleSubmitRule = async () => {
+  if (!ruleForm.name.trim()) return
+
+  const newRule = {
+    id: `custom_${Date.now()}`,
+    name: ruleForm.name.trim(),
+    description: ruleForm.description.trim() || undefined,
+    condition: {
+      type: ruleForm.conditionType,
+      params: {}
+    },
+    action: {
+      type: ruleForm.actionType,
+      params: {}
+    },
+    enabled: true,
+    priority: ruleForm.priority
+  }
+
+  try {
+    await addCustomRule(newRule as any)
+    showAddRuleModal.value = false
+    ruleForm.name = ''
+    ruleForm.description = ''
+    ruleForm.conditionType = 'time'
+    ruleForm.actionType = 'push_notification'
+    ruleForm.priority = 1
+    await loadRules()
+  } catch (e) {
+    console.error('添加自定义规则失败:', e)
   }
 }
 

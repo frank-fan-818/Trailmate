@@ -9,6 +9,16 @@ export interface UseTrailmateCoreOptions {
   userId?: string
 }
 
+export interface Rule {
+  id: string
+  name: string
+  description?: string
+  condition: { type: string; params: Record<string, any> }
+  action: { type: string; params: Record<string, any> }
+  enabled: boolean
+  priority: number
+}
+
 export interface UseTrailmateCoreReturn {
   isInitialized: Ref<boolean>
   isLoading: Ref<boolean>
@@ -31,6 +41,10 @@ export interface UseTrailmateCoreReturn {
   getRealLocation: () => Promise<LocationInfo | null>
   startRealLocationWatcher: (onUpdate: (loc: LocationInfo) => void) => Promise<() => void>
   stopRealLocationWatcher: () => Promise<void>
+  getAllRules: () => Promise<Rule[]>
+  addCustomRule: (rule: Rule) => Promise<void>
+  removeCustomRule: (ruleId: string) => Promise<void>
+  setRuleEnabled: (ruleId: string, enabled: boolean) => Promise<boolean>
 }
 
 const DEMO_USER_ID = 'demo-user'
@@ -91,6 +105,29 @@ export function useTrailmateCore(options: UseTrailmateCoreOptions = {}): UseTrai
     })()
 
     await initPromise
+  }
+
+  const getAllRules = async (): Promise<Rule[]> => {
+    if (!initializedCore) throw new Error('Core未初始化')
+    return await initializedCore.service.call<Rule[]>('perception.getAllRules')
+  }
+
+  const addCustomRule = async (rule: Rule): Promise<void> => {
+    if (!initializedCore) throw new Error('Core未初始化')
+    await initializedCore.service.call('perception.addCustomRule', rule)
+  }
+
+  const removeCustomRule = async (ruleId: string): Promise<void> => {
+    if (!initializedCore) throw new Error('Core未初始化')
+    await initializedCore.service.call('perception.removeCustomRule', ruleId)
+  }
+
+  const setRuleEnabled = async (ruleId: string, enabled: boolean): Promise<boolean> => {
+    if (!initializedCore) throw new Error('Core未初始化')
+    return await initializedCore.service.call<boolean>('perception.setRuleEnabled', {
+      ruleId,
+      enabled
+    })
   }
 
   const getNotifications = async (params?: {
@@ -197,7 +234,11 @@ export function useTrailmateCore(options: UseTrailmateCoreOptions = {}): UseTrai
     toggleAutoSimulate,
     getRealLocation,
     startRealLocationWatcher,
-    stopRealLocationWatcher
+    stopRealLocationWatcher,
+    getAllRules,
+    addCustomRule,
+    removeCustomRule,
+    setRuleEnabled
   }
 }
 
