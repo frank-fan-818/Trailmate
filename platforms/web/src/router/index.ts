@@ -48,7 +48,7 @@ const router = createRouter({
       path: '/chat/:id',
       name: 'chat',
       component: () => import('../pages/ChatPage.vue'),
-      props: (route) => ({ companionId: route.params.id }),
+      props: (route) => ({ companionId: route.params.id, companionName: route.query.name || '' }),
     },
   ],
 })

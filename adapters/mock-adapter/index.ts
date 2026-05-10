@@ -19,6 +19,7 @@ export default class MockAdapterModule implements IPlugin {
     core.service.register('hotel.query', queryHotels, { fallback: true })
     core.service.register('attraction.query', queryAttractions, { fallback: true })
     core.service.register('weather.query', queryWeather, { fallback: true })
+    core.service.register('user.permission.check', async () => true, { fallback: true })
   }
 
   onMount(core: ICore) {

@@ -9,8 +9,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "lucide-vue-next": "^0.400.0",
     "marked": "^17.0.5",
-    "vue": "^3.4.0"
+    "vue": "^3.4.0",
+    "vue-router": "^4.0.0"
   },
   "devDependencies": {
     "@types/node": "^25.5.0",

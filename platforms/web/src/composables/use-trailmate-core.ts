@@ -109,13 +109,16 @@ export function useTrailmateCore(options: UseTrailmateCoreOptions = {}): UseTrai
         const { Core } = await import('@trailmate/core')
         const { default: PerceptionPlugin } = await import('@trailmate/perception')
         const { default: CompanionMatchingPlugin } = await import('@trailmate/companion-matching')
+        const { default: MockAdapterPlugin } = await import('@trailmate/adapters/mock-adapter')
 
         const coreInstance = new Core()
         const perceptionModule = new PerceptionPlugin()
         const companionMatchingModule = new CompanionMatchingPlugin()
+        const mockAdapterModule = new MockAdapterPlugin()
 
         await coreInstance.pluginManager.install(perceptionModule)
         await coreInstance.pluginManager.install(companionMatchingModule)
+        await coreInstance.pluginManager.install(mockAdapterModule)
         await coreInstance.pluginManager.mount()
 
         initializedCore = coreInstance
@@ -332,13 +335,16 @@ export async function initializeTrailmate(): Promise<{
   const { Core } = await import('@trailmate/core')
   const { default: PerceptionPlugin } = await import('@trailmate/perception')
   const { default: CompanionMatchingPlugin } = await import('@trailmate/companion-matching')
+  const { default: MockAdapterPlugin } = await import('@trailmate/adapters/mock-adapter')
 
   const coreInstance = new Core()
   const perceptionModule = new PerceptionPlugin()
   const companionMatchingModule = new CompanionMatchingPlugin()
+  const mockAdapterModule = new MockAdapterPlugin()
 
   await coreInstance.pluginManager.install(perceptionModule)
   await coreInstance.pluginManager.install(companionMatchingModule)
+  await coreInstance.pluginManager.install(mockAdapterModule)
   await coreInstance.pluginManager.mount()
 
   return {

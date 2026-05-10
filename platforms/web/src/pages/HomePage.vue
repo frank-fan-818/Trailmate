@@ -272,7 +272,7 @@ onUnmounted(() => {
 
 <style scoped>
 .btn-main {
-  background: var(--color-primary);
+  background: #FF6B4A;
   color: white;
   border: none;
   padding: 14px 28px;
@@ -283,7 +283,7 @@ onUnmounted(() => {
 }
 
 .btn-main:hover {
-  background: var(--color-primary-hover);
+  background: #E55A3D;
   transform: translateY(-2px);
   box-shadow: 0 10px 20px rgba(255, 107, 74, 0.2);
 }

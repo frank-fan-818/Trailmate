@@ -7,7 +7,7 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
 export default defineConfig({
-  envDir: '../../',
+  envDir: './',
   plugins: [vue()],
   resolve: {
     alias: {
@@ -15,7 +15,8 @@ export default defineConfig({
       '@trailmate/core': path.resolve(__dirname, '../../core'),
       '@trailmate/perception': path.resolve(__dirname, '../../modules/perception'),
       '@trailmate/companion-matching': path.resolve(__dirname, '../../modules/companion-matching'),
-      '@trailmate/modules': path.resolve(__dirname, '../../modules')
+      '@trailmate/modules': path.resolve(__dirname, '../../modules'),
+      '@trailmate/adapters': path.resolve(__dirname, '../../adapters')
     }
   },
   server: {
