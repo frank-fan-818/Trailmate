@@ -2,6 +2,13 @@ import { ref, type InjectionKey, type Ref } from 'vue'
 import type { Core } from '@trailmate/core'
 import type PerceptionModule from '@trailmate/perception'
 import type { Notification, TimelineNode, LocationInfo } from '@trailmate/perception'
+import type {
+  CompanionProfile,
+  CompanionFilters,
+  UserProfile,
+  MatchResult,
+  TeamRequest
+} from '@trailmate/companion-matching'
 
 export const TRAILMATE_KEY: InjectionKey<UseTrailmateCoreReturn> = Symbol('trailmate')
 
@@ -45,6 +52,22 @@ export interface UseTrailmateCoreReturn {
   addCustomRule: (rule: Rule) => Promise<void>
   removeCustomRule: (ruleId: string) => Promise<void>
   setRuleEnabled: (ruleId: string, enabled: boolean) => Promise<boolean>
+  // Companion matching
+  getCompanions: () => Promise<CompanionProfile[]>
+  getCompanionById: (id: string) => Promise<CompanionProfile | undefined>
+  calculateMatch: (companion: CompanionProfile, userProfile: UserProfile) => Promise<MatchResult>
+  filterCompanions: (filters: CompanionFilters, userProfile: UserProfile) => Promise<MatchResult[]>
+  createTeamRequest: (params: {
+    fromUserId: string
+    toUserId: string
+    destination: string
+    date: string
+    message: string
+    splitType: 'aa' | 'host' | 'custom'
+  }) => Promise<TeamRequest>
+  getTeamRequests: (userId: string) => Promise<TeamRequest[]>
+  getPendingTeamRequests: (userId: string) => Promise<TeamRequest[]>
+  updateTeamRequestStatus: (requestId: string, status: 'accepted' | 'rejected') => Promise<TeamRequest | undefined>
 }
 
 const DEMO_USER_ID = 'demo-user'
@@ -85,11 +108,14 @@ export function useTrailmateCore(options: UseTrailmateCoreOptions = {}): UseTrai
       try {
         const { Core } = await import('@trailmate/core')
         const { default: PerceptionPlugin } = await import('@trailmate/perception')
+        const { default: CompanionMatchingPlugin } = await import('@trailmate/companion-matching')
 
         const coreInstance = new Core()
         const perceptionModule = new PerceptionPlugin()
+        const companionMatchingModule = new CompanionMatchingPlugin()
 
         await coreInstance.pluginManager.install(perceptionModule)
+        await coreInstance.pluginManager.install(companionMatchingModule)
         await coreInstance.pluginManager.mount()
 
         initializedCore = coreInstance
@@ -128,6 +154,55 @@ export function useTrailmateCore(options: UseTrailmateCoreOptions = {}): UseTrai
       ruleId,
       enabled
     })
+  }
+
+  // ---- companion matching methods ----
+
+  const getCompanions = async (): Promise<CompanionProfile[]> => {
+    if (!initializedCore) throw new Error('Core未初始化')
+    return await initializedCore.service.call<CompanionProfile[]>('companion.getCompanions')
+  }
+
+  const getCompanionById = async (id: string): Promise<CompanionProfile | undefined> => {
+    if (!initializedCore) throw new Error('Core未初始化')
+    return await initializedCore.service.call<CompanionProfile | undefined>('companion.getCompanionById', id)
+  }
+
+  const calculateMatch = async (companion: CompanionProfile, userProfile: UserProfile): Promise<MatchResult> => {
+    if (!initializedCore) throw new Error('Core未初始化')
+    return await initializedCore.service.call<MatchResult>('companion.calculateMatch', companion, userProfile)
+  }
+
+  const filterCompanions = async (filters: CompanionFilters, userProfile: UserProfile): Promise<MatchResult[]> => {
+    if (!initializedCore) throw new Error('Core未初始化')
+    return await initializedCore.service.call<MatchResult[]>('companion.filterCompanions', filters, userProfile)
+  }
+
+  const createTeamRequest = async (params: {
+    fromUserId: string
+    toUserId: string
+    destination: string
+    date: string
+    message: string
+    splitType: 'aa' | 'host' | 'custom'
+  }): Promise<TeamRequest> => {
+    if (!initializedCore) throw new Error('Core未初始化')
+    return await initializedCore.service.call<TeamRequest>('companion.createTeamRequest', params)
+  }
+
+  const getTeamRequests = async (userId: string): Promise<TeamRequest[]> => {
+    if (!initializedCore) throw new Error('Core未初始化')
+    return await initializedCore.service.call<TeamRequest[]>('companion.getTeamRequests', userId)
+  }
+
+  const getPendingTeamRequests = async (userId: string): Promise<TeamRequest[]> => {
+    if (!initializedCore) throw new Error('Core未初始化')
+    return await initializedCore.service.call<TeamRequest[]>('companion.getPendingTeamRequests', userId)
+  }
+
+  const updateTeamRequestStatus = async (requestId: string, status: 'accepted' | 'rejected'): Promise<TeamRequest | undefined> => {
+    if (!initializedCore) throw new Error('Core未初始化')
+    return await initializedCore.service.call<TeamRequest | undefined>('companion.updateTeamRequestStatus', requestId, status)
   }
 
   const getNotifications = async (params?: {
@@ -238,7 +313,15 @@ export function useTrailmateCore(options: UseTrailmateCoreOptions = {}): UseTrai
     getAllRules,
     addCustomRule,
     removeCustomRule,
-    setRuleEnabled
+    setRuleEnabled,
+    getCompanions,
+    getCompanionById,
+    calculateMatch,
+    filterCompanions,
+    createTeamRequest,
+    getTeamRequests,
+    getPendingTeamRequests,
+    updateTeamRequestStatus
   }
 }
 
@@ -248,11 +331,14 @@ export async function initializeTrailmate(): Promise<{
 }> {
   const { Core } = await import('@trailmate/core')
   const { default: PerceptionPlugin } = await import('@trailmate/perception')
+  const { default: CompanionMatchingPlugin } = await import('@trailmate/companion-matching')
 
   const coreInstance = new Core()
   const perceptionModule = new PerceptionPlugin()
+  const companionMatchingModule = new CompanionMatchingPlugin()
 
   await coreInstance.pluginManager.install(perceptionModule)
+  await coreInstance.pluginManager.install(companionMatchingModule)
   await coreInstance.pluginManager.mount()
 
   return {

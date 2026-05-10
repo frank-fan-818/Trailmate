@@ -15,8 +15,8 @@
             <span class="px-2 py-0.5 bg-yellow-100 text-yellow-700 text-xs rounded">{{ creditLabel }}</span>
           </div>
           <div class="flex items-center gap-2">
-            <span v-if="companion.matchScore" class="px-2 py-0.5 bg-primary/10 text-primary text-xs font-medium rounded">
-              {{ companion.matchScore }}%匹配
+            <span v-if="matchScore !== undefined" class="px-2 py-0.5 bg-primary/10 text-primary text-xs font-medium rounded">
+              {{ matchScore }}%匹配
             </span>
             <span class="text-sm text-gray-500">⭐ {{ companion.creditScore }}</span>
           </div>
@@ -67,11 +67,11 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { MapPin, Heart } from 'lucide-vue-next'
-import type { Companion } from '../data/companionMockData'
-import { getCreditBadgeText } from '../data/companionMockData'
+import type { CompanionProfile } from '@trailmate/companion-matching'
 
 const props = defineProps<{
-  companion: Companion
+  companion: CompanionProfile
+  matchScore?: number
 }>()
 
 defineEmits<{
@@ -80,7 +80,14 @@ defineEmits<{
   teamRequest: [id: string]
 }>()
 
-const creditLabel = computed(() => getCreditBadgeText(props.companion.creditLevel))
+const creditLabel = computed(() => {
+  switch (props.companion.creditLevel) {
+    case '钻石': return '钻石'
+    case '黄金': return '黄金'
+    case '白银': return '白银'
+    default: return '白银'
+  }
+})
 </script>
 
 <style scoped>

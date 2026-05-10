@@ -13,6 +13,7 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
       '@trailmate/core': path.resolve(__dirname, '../../core'),
       '@trailmate/perception': path.resolve(__dirname, '../../modules/perception'),
+      '@trailmate/companion-matching': path.resolve(__dirname, '../../modules/companion-matching'),
       '@trailmate/modules': path.resolve(__dirname, '../../modules')
     }
   },

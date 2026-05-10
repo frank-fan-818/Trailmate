@@ -12,7 +12,20 @@
     </header>
 
     <div class="max-w-2xl mx-auto px-4 py-6">
-      <div class="bg-white rounded-lg border border-gray-200 overflow-hidden">
+      <!-- Loading -->
+      <div v-if="profileLoading" class="text-center py-16">
+        <div class="text-4xl mb-4 animate-spin">⏳</div>
+        <p class="text-gray-500">加载中...</p>
+      </div>
+
+      <!-- Error -->
+      <div v-else-if="profileError" class="text-center py-16">
+        <div class="text-4xl mb-4">⚠️</div>
+        <p class="text-red-500">{{ profileError }}</p>
+      </div>
+
+      <!-- Data -->
+      <div v-else-if="profile" class="bg-white rounded-lg border border-gray-200 overflow-hidden">
         <div class="h-24 bg-gradient-to-r from-blue-500 to-orange-400"></div>
 
         <div class="px-6 pb-6">
@@ -51,7 +64,7 @@
                 </div>
                 <div>
                   <span class="text-gray-500">预算范围</span>
-                  <p class="font-medium text-gray-900">¥{{ profile.budgetRange[0] }} - ¥{{ profile.budgetRange[1] }}</p>
+                  <p class="font-medium text-gray-900">{{ profile.budget }}</p>
                 </div>
               </div>
             </div>
@@ -65,18 +78,6 @@
                   <span class="text-sm text-gray-500">旅行类型</span>
                   <div class="flex flex-wrap gap-2 mt-1">
                     <span v-for="type in profile.travelTypes" :key="type" class="px-3 py-1 bg-gray-100 text-gray-700 rounded text-sm">{{ type }}</span>
-                  </div>
-                </div>
-                <div>
-                  <span class="text-sm text-gray-500">交通方式</span>
-                  <div class="flex flex-wrap gap-2 mt-1">
-                    <span v-for="t in profile.transports" :key="t" class="px-3 py-1 bg-gray-100 text-gray-700 rounded text-sm">{{ t }}</span>
-                  </div>
-                </div>
-                <div>
-                  <span class="text-sm text-gray-500">住宿类型</span>
-                  <div class="flex flex-wrap gap-2 mt-1">
-                    <span v-for="a in profile.accommodations" :key="a" class="px-3 py-1 bg-gray-100 text-gray-700 rounded text-sm">{{ a }}</span>
                   </div>
                 </div>
               </div>
@@ -251,6 +252,8 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { MapPin, Check } from 'lucide-vue-next'
+import { useTrailmateCore } from '../composables/use-trailmate-core'
+import type { CompanionProfile, UserProfile, MatchResult } from '@trailmate/companion-matching'
 
 const router = useRouter()
 
@@ -262,30 +265,6 @@ const props = defineProps<{
   companionId: string
 }>()
 
-interface CompanionProfile {
-  id: string
-  name: string
-  bio: string
-  destination: string
-  travelDays: number
-  departureDate: string
-  budgetRange: [number, number]
-  travelTypes: string[]
-  transports: string[]
-  accommodations: string[]
-  creditScore: string
-  creditLevel: string
-  creditBadge: 'diamond' | 'gold' | 'silver'
-  totalTrips: number
-  completionRate: number
-  personalityType: 'planner' | 'spontaneous'
-  wakeTime: string
-  sleepTime: string
-  gender: '男' | '女' | '保密'
-  age: number
-  matchScore?: number
-}
-
 interface AIAnalysis {
   matchScore: number
   matchReasons: string[]
@@ -295,358 +274,86 @@ interface AIAnalysis {
   recommendScore: number
 }
 
-const isAnalyzing = ref(false)
-const aiAnalysis = ref<AIAnalysis | null>(null)
+const { initialize, getCompanionById, calculateMatch } = useTrailmateCore()
 
-const currentUserProfile = {
+const currentUserProfile: UserProfile = {
+  userId: 'demo-user',
   destination: '云南大理',
   travelDays: 5,
   budgetType: 'medium',
   personalityType: 'spontaneous',
   travelTypes: ['休闲', '美食', '摄影'],
   wakeTime: '08:00',
-  sleepTime: '23:00'
+  sleepTime: '23:00',
+  gender: '男',
+  age: 28
 }
 
-const mockProfile: Record<string, CompanionProfile> = {
-  '1': {
-    id: '1',
-    name: '林小夏',
-    bio: '热爱旅行，喜欢探索小众目的地。计划型选手，擅长做详细攻略，但也愿意根据情况调整。摄影爱好者，喜欢记录旅途中的美好瞬间。',
-    destination: '云南大理',
-    travelDays: 5,
-    departureDate: '3天后出发',
-    budgetRange: [5000, 10000],
-    travelTypes: ['休闲', '自然', '美食'],
-    transports: ['高铁', '大巴'],
-    accommodations: ['民宿', '酒店'],
-    creditScore: '4.9',
-    creditLevel: '黄金',
-    creditBadge: 'gold',
-    totalTrips: 12,
-    completionRate: 92,
-    personalityType: 'planner',
-    wakeTime: '07:00',
-    sleepTime: '22:00',
-    gender: '女',
-    age: 26,
-    matchScore: 78
-  },
-  '2': {
-    id: '2',
-    name: '张明',
-    bio: '自由摄影师，四处漂泊。随性而为，享受旅途中的意外惊喜。希望找到志同道合的伙伴一起探索世界。',
-    destination: '西藏拉萨',
-    travelDays: 7,
-    departureDate: '下周出发',
-    budgetRange: [3000, 8000],
-    travelTypes: ['冒险', '文化', '自然'],
-    transports: ['飞机', '自驾'],
-    accommodations: ['青旅', '民宿'],
-    creditScore: '4.7',
-    creditLevel: '白银',
-    creditBadge: 'silver',
-    totalTrips: 8,
-    completionRate: 88,
-    personalityType: 'spontaneous',
-    wakeTime: '09:00',
-    sleepTime: '00:00',
-    gender: '男',
-    age: 32,
-    matchScore: 50
-  },
-  '3': {
-    id: '3',
-    name: '王建国',
-    bio: '退休教师，热爱大自然。喜欢慢节奏旅行，享受每一个地方的风景和文化。正在寻找同样喜欢慢旅行的伴友。',
-    destination: '四川成都',
-    travelDays: 4,
-    departureDate: '5天后出发',
-    budgetRange: [2000, 5000],
-    travelTypes: ['休闲', '文化'],
-    transports: ['高铁'],
-    accommodations: ['酒店'],
-    creditScore: '4.8',
-    creditLevel: '黄金',
-    creditBadge: 'gold',
-    totalTrips: 5,
-    completionRate: 100,
-    personalityType: 'planner',
-    wakeTime: '06:30',
-    sleepTime: '21:30',
-    gender: '男',
-    age: 58,
-    matchScore: 50
-  },
-  '4': {
-    id: '4',
-    name: '陈思思',
-    bio: '互联网从业者，利用假期旅行。喜欢购物和美食，对日本文化很感兴趣。希望找到行程相似的伙伴同行。',
-    destination: '日本东京',
-    travelDays: 6,
-    departureDate: '本月底出发',
-    budgetRange: [8000, 15000],
-    travelTypes: ['购物', '美食', '文化'],
-    transports: ['飞机'],
-    accommodations: ['酒店', '民宿'],
-    creditScore: '5.0',
-    creditLevel: '钻石',
-    creditBadge: 'diamond',
-    totalTrips: 15,
-    completionRate: 95,
-    personalityType: 'spontaneous',
-    wakeTime: '10:00',
-    sleepTime: '00:00',
-    gender: '女',
-    age: 27,
-    matchScore: 50
-  },
-  '5': {
-    id: '5',
-    name: '刘德华',
-    bio: '背包客，已经走过30多个国家。喜欢深度游而非打卡式旅行。善于规划行程，可以照顾同行伙伴。',
-    destination: '泰国清迈',
-    travelDays: 8,
-    departureDate: '2周后出发',
-    budgetRange: [3000, 8000],
-    travelTypes: ['自然', '探险', '人文'],
-    transports: ['飞机', '大巴', '摩托'],
-    accommodations: ['青旅', '民宿'],
-    creditScore: '4.8',
-    creditLevel: '黄金',
-    creditBadge: 'gold',
-    totalTrips: 30,
-    completionRate: 98,
-    personalityType: 'planner',
-    wakeTime: '07:00',
-    sleepTime: '22:00',
-    gender: '男',
-    age: 35,
-    matchScore: 50
-  },
-  '6': {
-    id: '6',
-    name: '赵小雨',
-    bio: '学生党，预算有限但热情满满。第一次独自旅行，希望找到有经验的伙伴带一带。很好相处，不矫情。',
-    destination: '厦门鼓浪屿',
-    travelDays: 3,
-    departureDate: '下周出发',
-    budgetRange: [1000, 3000],
-    travelTypes: ['休闲', '美食', '拍照'],
-    transports: ['高铁', '公交'],
-    accommodations: ['青旅'],
-    creditScore: '4.6',
-    creditLevel: '白银',
-    creditBadge: 'silver',
-    totalTrips: 2,
-    completionRate: 80,
-    personalityType: 'spontaneous',
-    wakeTime: '09:00',
-    sleepTime: '23:00',
-    gender: '女',
-    age: 22,
-    matchScore: 50
-  },
-  '7': {
-    id: '7',
-    name: '孙海',
-    bio: '程序员一枚，利用年假旅行。喜欢自然风光，摄影和爬山是最大的爱好。希望找到体力好的伙伴一起徒步。',
-    destination: '云南大理',
-    travelDays: 6,
-    departureDate: '5天后出发',
-    budgetRange: [4000, 8000],
-    travelTypes: ['自然', '摄影', '徒步'],
-    transports: ['高铁', '包车'],
-    accommodations: ['民宿'],
-    creditScore: '4.8',
-    creditLevel: '黄金',
-    creditBadge: 'gold',
-    totalTrips: 10,
-    completionRate: 90,
-    personalityType: 'planner',
-    wakeTime: '06:00',
-    sleepTime: '22:00',
-    gender: '男',
-    age: 30,
-    matchScore: 88
-  },
-  '11': {
-    id: '11',
-    name: '黄大伟',
-    bio: '健身教练，体能超级好。旅行中也每天锻炼。喜欢挑战性的活动，徒步、攀岩、潜水都在行。',
-    destination: '云南大理',
-    travelDays: 5,
-    departureDate: '下周出发',
-    budgetRange: [3000, 7000],
-    travelTypes: ['冒险', '运动', '自然'],
-    transports: ['高铁', '包车'],
-    accommodations: ['民宿', '露营'],
-    creditScore: '4.6',
-    creditLevel: '白银',
-    creditBadge: 'silver',
-    totalTrips: 6,
-    completionRate: 85,
-    personalityType: 'planner',
-    wakeTime: '06:00',
-    sleepTime: '22:00',
-    gender: '男',
-    age: 28,
-    matchScore: 85
-  },
-  '12': {
-    id: '12',
-    name: '许晴',
-    bio: '时尚杂志编辑，对美有极致追求。旅行中不停拍照，品味独特。喜欢小众有设计感的地方，不喜欢大众景点。',
-    destination: '云南大理',
-    travelDays: 4,
-    departureDate: '下周出发',
-    budgetRange: [6000, 12000],
-    travelTypes: ['休闲', '摄影', '艺术'],
-    transports: ['高铁', '包车'],
-    accommodations: ['精品酒店'],
-    creditScore: '4.8',
-    creditLevel: '黄金',
-    creditBadge: 'gold',
-    totalTrips: 20,
-    completionRate: 95,
-    personalityType: 'spontaneous',
-    wakeTime: '10:00',
-    sleepTime: '00:00',
-    gender: '女',
-    age: 25,
-    matchScore: 82
-  },
-  '14': {
-    id: '14',
-    name: '丁一',
-    bio: '自由插画师，在线接单边旅行边工作。喜欢有故事感的地方，安静的小镇、古老的村落是心头好。',
-    destination: '云南大理',
-    travelDays: 10,
-    departureDate: '随时出发',
-    budgetRange: [2000, 5000],
-    travelTypes: ['艺术', '小众', '慢节奏'],
-    transports: ['高铁', '大巴'],
-    accommodations: ['民宿'],
-    creditScore: '4.9',
-    creditLevel: '黄金',
-    creditBadge: 'gold',
-    totalTrips: 18,
-    completionRate: 94,
-    personalityType: 'spontaneous',
-    wakeTime: '09:30',
-    sleepTime: '23:30',
-    gender: '保密',
-    age: 27,
-    matchScore: 75
-  },
-  '20': {
-    id: '20',
-    name: '薛之谦',
-    bio: '音乐人，经常各地演出顺便旅行。喜欢livehouse和音乐节，有演出机会都会去看看。随性而为型选手。',
-    destination: '云南大理',
-    travelDays: 3,
-    departureDate: '随时出发',
-    budgetRange: [1500, 4000],
-    travelTypes: ['音乐', '社交', '夜生活'],
-    transports: ['高铁', '飞机'],
-    accommodations: ['青旅', '民宿'],
-    creditScore: '4.7',
-    creditLevel: '白银',
-    creditBadge: 'silver',
-    totalTrips: 14,
-    completionRate: 90,
-    personalityType: 'spontaneous',
-    wakeTime: '10:00',
-    sleepTime: '02:00',
-    gender: '男',
-    age: 36,
-    matchScore: 70
-  }
-}
+const profileLoading = ref(true)
+const profileError = ref<string | null>(null)
+const profile = ref<CompanionProfile | null>(null)
+const matchResult = ref<MatchResult | null>(null)
+const isAnalyzing = ref(false)
+const aiAnalysis = ref<AIAnalysis | null>(null)
 
-const profile = ref<CompanionProfile>(mockProfile[props.companionId] || mockProfile['1'])
-
-const generateAIAnalysis = async (p: CompanionProfile): Promise<AIAnalysis> => {
+const generateAIAnalysis = async (p: CompanionProfile, mr: MatchResult): Promise<AIAnalysis> => {
+  const { matchScore, matchDetails } = mr
   const reasons: string[] = []
   const issues: string[] = []
   const compatibilities: string[] = []
   const icebreakers: string[] = []
 
-  let score = 50
-
-  if (p.destination === currentUserProfile.destination) {
-    score += 20
+  if (matchDetails.destinationMatch) {
     reasons.push(`📍 目的地一致：${p.destination}`)
   }
-
-  if (p.travelTypes.some(t => currentUserProfile.travelTypes.includes(t))) {
-    const overlap = p.travelTypes.filter(t => currentUserProfile.travelTypes.includes(t))
-    score += overlap.length * 5
-    compatibilities.push(`🎯 旅行偏好契合：都喜欢「${overlap.join('、')}」`)
+  if (matchDetails.budgetMatch) {
+    reasons.push(`💰 预算匹配：${p.budgetType}`)
+  } else {
+    issues.push('⚠️ 预算级别不同，分摊费用时需提前沟通')
   }
-
-  if (p.personalityType === currentUserProfile.personalityType) {
-    score += 8
+  if (matchDetails.personalityMatch) {
     compatibilities.push(`🧠 性格相近：都是${p.personalityType === 'planner' ? '计划型' : '随性型'}`)
   } else {
     issues.push(`⚠️ 性格差异：TA是${p.personalityType === 'planner' ? '计划型' : '随性型'}，你是${currentUserProfile.personalityType === 'planner' ? '计划型' : '随性型'}`)
   }
-
-  const wakeDiff = Math.abs(parseInt(p.wakeTime.split(':')[0]) - parseInt(currentUserProfile.wakeTime.split(':')[0]))
-  if (wakeDiff > 2) {
-    issues.push(`⏰ 作息差异：TA习惯${p.wakeTime}起床，你习惯${currentUserProfile.wakeTime}起床`)
-  } else if (wakeDiff <= 1) {
-    compatibilities.push(`⏰ 作息相近：起床时间差不多`)
+  if (matchDetails.travelTypeOverlap > 0) {
+    compatibilities.push(`🎯 旅行偏好契合：有${matchDetails.travelTypeOverlap}个共同类型`)
   }
-
-  const sleepDiff = Math.abs(parseInt(p.sleepTime.split(':')[0]) - parseInt(currentUserProfile.sleepTime.split(':')[0]))
-  if (sleepDiff > 2) {
-    issues.push(`🌙 睡眠习惯：TA习惯${p.sleepTime}睡觉，你习惯${currentUserProfile.sleepTime}睡觉`)
+  if (matchDetails.scheduleCompatibility >= 7) {
+    compatibilities.push('⏰ 作息时间非常匹配')
+  } else if (matchDetails.scheduleCompatibility >= 4) {
+    compatibilities.push('⏰ 作息时间基本兼容')
   }
 
   if (p.creditBadge === 'diamond') {
-    score += 5
     reasons.push(`💎 信用优秀：钻石会员，历史组队${p.totalTrips}次`)
   } else if (p.creditBadge === 'gold') {
-    score += 3
-    reasons.push(`⭐ 信用良好：黄金会员，完成率${p.completionRate}%`)
+    reasons.push(`⭐ 信用良好：黄金会员，完成${p.totalTrips}次组队`)
   }
-
   if (p.totalTrips >= 10) {
-    score += 3
     reasons.push(`✈️ 旅行经验丰富：已去过${p.totalTrips}个目的地`)
-  }
-
-  if (p.completionRate >= 90) {
-    score += 3
-    reasons.push(`🎯 组队记录良好：完成率${p.completionRate}%`)
   }
 
   if (p.gender !== '保密') {
     icebreakers.push(`你是${p.gender}吗？我看到你也想去${p.destination}！`)
   }
-
-  if (p.travelTypes.includes('摄影') && currentUserProfile.travelTypes.includes('摄影')) {
+  if (p.travelTypes.includes('摄影')) {
     icebreakers.push('看到你喜欢摄影！这次去大理打算拍些什么题材？')
   }
-
   if (p.travelTypes.includes('美食')) {
     icebreakers.push('听说大理有很多特色美食，你有什么推荐的吗？')
   }
-
   if (p.personalityType === 'spontaneous') {
     icebreakers.push('我看到你喜欢随性旅行，有没有临时发现的好地方想分享？')
   }
 
-  const finalScore = Math.min(score, 98)
-
   return {
-    matchScore: finalScore,
+    matchScore,
     matchReasons: reasons.length > 0 ? reasons : ['💡 目的地相同，可以考虑结伴'],
     potentialIssues: issues,
     icebreakers: icebreakers.length > 0 ? icebreakers : ['你好！看到你的行程刚好和我一样，要不组队一起？'],
     travelCompatibility: compatibilities.length > 0 ? compatibilities : ['📍 目的地重叠，可以拼车拼房'],
-    recommendScore: finalScore >= 80 ? 5 : finalScore >= 60 ? 4 : 3
+    recommendScore: matchScore >= 80 ? 5 : matchScore >= 60 ? 4 : 3
   }
 }
 
@@ -654,22 +361,33 @@ const analyzeWithAI = async () => {
   isAnalyzing.value = true
   aiAnalysis.value = null
 
-  await new Promise(resolve => setTimeout(resolve, 1500))
+  if (!matchResult.value && profile.value) {
+    matchResult.value = await calculateMatch(profile.value, currentUserProfile)
+  }
 
-  aiAnalysis.value = await generateAIAnalysis(profile.value)
+  if (profile.value && matchResult.value) {
+    aiAnalysis.value = await generateAIAnalysis(profile.value, matchResult.value)
+  }
   isAnalyzing.value = false
 }
 
-onMounted(() => {
-  if (profile.value.matchScore) {
-    aiAnalysis.value = {
-      matchScore: profile.value.matchScore,
-      matchReasons: [],
-      potentialIssues: [],
-      icebreakers: [],
-      travelCompatibility: [],
-      recommendScore: profile.value.matchScore >= 80 ? 5 : 4
+onMounted(async () => {
+  await initialize()
+
+  profileLoading.value = true
+  profileError.value = null
+  try {
+    const data = await getCompanionById(props.companionId)
+    if (data) {
+      profile.value = data
+      matchResult.value = await calculateMatch(data, currentUserProfile)
+    } else {
+      profileError.value = '未找到该旅伴信息'
     }
+  } catch (e) {
+    profileError.value = e instanceof Error ? e.message : '加载旅伴信息失败'
+  } finally {
+    profileLoading.value = false
   }
 })
 </script>

@@ -26,7 +26,8 @@
     "paths": {
       "@/*": ["./src/*"],
       "@trailmate/core": ["../../core/index.ts"],
-      "@trailmate/perception": ["../../modules/perception/index.ts"]
+      "@trailmate/perception": ["../../modules/perception/index.ts"],
+      "@trailmate/companion-matching": ["../../modules/companion-matching/index.ts"]
     }
   },
   "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.tsx", "src/**/*.vue"],
