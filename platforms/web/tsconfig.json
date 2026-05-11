@@ -19,7 +19,6 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
-    "ignoreDeprecations": "6.0",
 
     /* Path aliases */
     "baseUrl": ".",
@@ -27,7 +26,8 @@
       "@/*": ["./src/*"],
       "@trailmate/core": ["../../core/index.ts"],
       "@trailmate/perception": ["../../modules/perception/index.ts"],
-      "@trailmate/companion-matching": ["../../modules/companion-matching/index.ts"]
+      "@trailmate/companion-matching": ["../../modules/companion-matching/index.ts"],
+      "@trailmate/adapters/*": ["../../adapters/*"]
     }
   },
   "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.tsx", "src/**/*.vue"],
