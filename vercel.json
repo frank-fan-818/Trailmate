@@ -1,5 +1,5 @@
 {
-  "buildCommand": "cd platforms/web && npx vite build",
+  "buildCommand": "cd platforms/web && node ../node_modules/vite/bin/vite.js build",
   "outputDirectory": "platforms/web/dist",
   "installCommand": "npm install"
 }
