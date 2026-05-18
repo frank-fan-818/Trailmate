@@ -308,7 +308,11 @@ export function useItineraryChat() {
    - ✅ 正确：去 [[故宫]] 参观，住在 [[如家酒店]]
    - ❌ 错误：去故宫参观，住在如家酒店
 2. 所有注意事项必须使用 【提示内容】 格式
-3. 不要使用其他格式来标注地点`
+3. 在回复的最末尾，必须附上一个JSON格式的行程数据，格式如下：
+\`\`\`json
+{"plans":[{"name":"方案名称","description":"方案描述","totalDays":天数,"totalCost":总预算,"tags":["标签1","标签2"],"days":[{"day":1,"items":[{"type":"attraction|meal|hotel|transport|flight","name":"地点名","startTime":"08:00","endTime":"10:00","cost":费用,"address":"地址"}]}]}]}
+\`\`\`
+4. 不要使用其他格式来标注地点`
       : `【Important】You must respond in English. You are TrailMate, an intelligent travel assistant.
 
 【Mandatory Output Rules】：
@@ -377,9 +381,18 @@ export function useItineraryChat() {
       saveCurrentChat()
 
       try {
-        const jsonMatch = response.match(/\{[\s\S]*\}/)
-        if (jsonMatch) {
-          const result = JSON.parse(jsonMatch[0])
+        // 优先从 ```json 代码块中提取
+        let jsonStr = ''
+        const codeBlockMatch = response.match(/```json\s*([\s\S]*?)\s*```/)
+        if (codeBlockMatch) {
+          jsonStr = codeBlockMatch[1]
+        } else {
+          // 回退：从文本中匹配第一个完整 JSON 对象
+          const jsonMatch = response.match(/\{[\s\S]*\}/)
+          if (jsonMatch) jsonStr = jsonMatch[0]
+        }
+        if (jsonStr) {
+          const result = JSON.parse(jsonStr)
           if (result.plans && Array.isArray(result.plans)) {
             plans.value = result.plans
             savePlansToStorage(result.plans)
