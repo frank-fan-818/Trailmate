@@ -463,13 +463,34 @@ export function useItineraryChat() {
   }
 
   const renderAIResponse = (content: string) => {
+    // Remove trailing JSON block from display
+    content = content.replace(/```json[\s\S]*?```/g, '')
+
+    // Day headers: ## Day N → styled badge
+    content = content.replace(/^##\s*(Day\s*\d+|第\d+天).*$/gm, (match) => {
+      return `<div class="day-header"><span class="day-badge">${match.replace(/^##\s*/, '')}</span></div>`
+    })
+
+    // [[地点名]] → clickable styled chip
     content = content.replace(/\[\[([^\]]+)\]\]/g, (_match, placeName) => {
       return `<span class="place-name" data-place="${placeName.trim()}">📍 ${placeName.trim()}</span>`
     })
+    // 【提示】→ styled tip
     content = content.replace(/【([^】]+)】/g, (_match, tipContent) => {
       return `<span class="ai-tip">💡 ${tipContent}</span>`
     })
-    return marked(content) as string
+    // Bullet items → styled list rows
+    content = content.replace(/^[-*]\s+(.+)$/gm, (_match, item) => {
+      return `<div class="itinerary-item">${item}</div>`
+    })
+    // Cost emphasis: ¥数字
+    content = content.replace(/¥(\d[\d,]*)/g, '<span class="cost-tag">¥$1</span>')
+    // Time patterns: 08:00-10:00
+    content = content.replace(/(\d{2}:\d{2})\s*[-~至到]\s*(\d{2}:\d{2})/g, '<span class="time-range">$1 - $2</span>')
+    // Bold headings without ##
+    content = content.replace(/^\*\*(.+)\*\*$/gm, '<h3 class="section-heading">$1</h3>')
+
+    return `<div class="itinerary-content">${marked(content) as string}</div>`
   }
 
   const handlePlaceClick = (event: MouseEvent, onPlaceClick: (name: string) => void) => {

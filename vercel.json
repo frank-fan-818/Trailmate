@@ -3,7 +3,6 @@
   "outputDirectory": "platforms/web/dist",
   "installCommand": "npm install",
   "rewrites": [
-    { "source": "/api/baidumap/(.*)", "destination": "https://api.map.baidu.com/$1" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
