@@ -96,7 +96,7 @@ export function useAiConcierge() {
     const apiUrl = (import.meta as any).env.VITE_OPENROUTER_API_URL as string || 'https://openrouter.ai/api/v1/chat/completions'
 
     const body: any = {
-      model: 'deepseek/deepseek-chat-v3-0324:free',
+      model: 'minimax/minimax-m2.5:free',
       messages: [
         { role: 'system', content: buildSystemPrompt() },
         ...apiMessages
@@ -115,8 +115,11 @@ export function useAiConcierge() {
     })
 
     if (!response.ok) {
+      if (response.status === 429) {
+        throw new Error('AI 服务繁忙，请稍后重试（免费模型请求量较大）')
+      }
       const errText = await response.text().catch(() => '')
-      throw new Error(`API 请求失败 (${response.status}): ${errText.slice(0, 200)}`)
+      throw new Error(`API 请求失败 (${response.status})`)
     }
 
     return response.json()
