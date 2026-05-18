@@ -23,7 +23,7 @@
         </div>
         <div class="flex items-center gap-4">
           <button @click="router.push('/settings')" class="text-gray-700 hover:text-primary transition-colors">设置</button>
-          <button class="text-gray-700 hover:text-primary transition-colors">帮助</button>
+          <button @click="router.push('/help')" class="text-gray-700 hover:text-primary transition-colors">帮助</button>
         </div>
       </div>
     </header>

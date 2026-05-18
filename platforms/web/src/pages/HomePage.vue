@@ -32,8 +32,8 @@
         </div>
         <div class="flex gap-8 font-semibold text-sm">
           <button @click="scrollToSection('feature')" :class="scrolled ? 'text-gray-700 hover:text-primary' : 'text-white'">发现剧本</button>
-          <button @click="scrollToSection('feature')" :class="scrolled ? 'text-gray-700 hover:text-primary' : 'text-white'">智能核心</button>
-          <button @click="scrollToSection('feature')" :class="scrolled ? 'text-gray-700 hover:text-primary' : 'text-white'">伴友社区</button>
+          <button @click="router.push('/concierge')" :class="scrolled ? 'text-gray-700 hover:text-primary' : 'text-white'">智能核心</button>
+          <button @click="router.push('/find-companion')" :class="scrolled ? 'text-gray-700 hover:text-primary' : 'text-white'">伴友社区</button>
         </div>
       </div>
     </header>
@@ -83,7 +83,7 @@
             <p class="text-gray-500 leading-relaxed">
               你的随身伴旅。根据你当前的位置、天气及实时情绪，动态推荐周边的宝藏机位与深度体验点。
             </p>
-            <button class="btn-main mt-8">
+            <button @click="router.push('/perception')" class="btn-main mt-8">
               体验动态推荐
             </button>
           </div>

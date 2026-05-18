@@ -241,13 +241,13 @@
             </div>
 
             <div class="p-6">
-              <button class="bg-white text-neutral-700 rounded-lg font-medium border border-neutral-200 hover:bg-neutral-50 transition-colors w-full text-sm py-2.5 px-5 mb-3">
+              <button @click="router.push('/help')" class="bg-white text-neutral-700 rounded-lg font-medium border border-neutral-200 hover:bg-neutral-50 transition-colors w-full text-sm py-2.5 px-5 mb-3">
                 帮助文档
               </button>
 
-              <button class="bg-white text-neutral-700 rounded-lg font-medium border border-neutral-200 hover:bg-neutral-50 transition-colors w-full text-sm py-2.5 px-5 mb-3">
+              <a href="https://github.com/frank-fan-818/Trailmate/issues" target="_blank" class="block bg-white text-neutral-700 rounded-lg font-medium border border-neutral-200 hover:bg-neutral-50 transition-colors w-full text-sm py-2.5 px-5 mb-3 text-center">
                 问题反馈
-              </button>
+              </a>
 
               <button class="bg-white text-neutral-700 rounded-lg font-medium border border-neutral-200 hover:bg-neutral-50 transition-colors w-full text-sm py-2.5 px-5">
                 用户协议与隐私政策

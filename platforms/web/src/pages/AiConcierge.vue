@@ -108,6 +108,12 @@ const autoResize = (e: Event) => {
   el.style.height = Math.min(el.scrollHeight, 120) + 'px'
 }
 
+// Bridge: WelcomeScreen @select calls this directly
+const sendMessage = (text: string) => {
+  input.value = text
+  handleSend()
+}
+
 const handleSend = async () => {
   const text = input.value.trim()
   if (!text || isProcessing.value) return
