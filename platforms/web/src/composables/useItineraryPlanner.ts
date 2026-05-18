@@ -1,6 +1,7 @@
 import { ref, watch } from 'vue'
 import { marked } from 'marked'
 import { useSettings } from '../stores/settings'
+import { CONCIERGE_TOOLS } from './useToolRegistry'
 
 const { settings } = useSettings()
 
@@ -354,6 +355,7 @@ export function useItineraryChat() {
     const isChinese = settings.value.language === 'zh'
     const systemPrompt = isChinese
       ? `【重要】你必须用中文回复所有内容。你是伴旅智能旅行助手，擅长规划旅行行程。
+你可以使用工具来查询实时信息（如天气、位置、旅伴等），在需要准确数据时优先调用工具而非编造。
 
 【强制输出规则 - 必须严格遵守】：
 1. 所有景点、地标、酒店、餐厅等地点名称必须使用 [[地点名]] 格式包裹
@@ -386,6 +388,7 @@ export function useItineraryChat() {
       body: JSON.stringify({
         'model': 'minimax/minimax-m2.5:free',
         'messages': fullMessages,
+        'tools': CONCIERGE_TOOLS,
         'reasoning': { 'enabled': true }
       })
     })
@@ -397,9 +400,50 @@ export function useItineraryChat() {
 
     const data = await response.json()
     if (data.choices && Array.isArray(data.choices)) {
-      return data.choices[0]?.message?.content || '抱歉，我暂时无法回答这个问题'
+      return data.choices[0]?.message
     }
     throw new Error('无法解析API响应')
+  }
+
+  // ---- Tool execution ----
+  const executePlannerTool = async (name: string, args: Record<string, any>): Promise<any> => {
+    // Use dynamic import to get core service access
+    const { initializeTrailmate } = await import('../composables/use-trailmate-core')
+    const { module: perceptionModule, core: coreInstance } = await initializeTrailmate()
+
+    switch (name) {
+      case 'perception_getCurrentLocation':
+        return await coreInstance.service.call('perception.getCurrentLocation', 'demo-user')
+      case 'perception_getNotifications':
+        return await coreInstance.service.call('perception.getNotifications', { userId: 'demo-user', ...args })
+      case 'perception_getAllRules':
+        return await coreInstance.service.call('perception.getAllRules')
+      case 'companion_filterCompanions': {
+        const { default: typeModule } = await import('@trailmate/companion-matching')
+        const filters: any = {}
+        if (args.keyword) filters.keyword = args.keyword
+        if (args.budget) filters.budget = args.budget
+        if (args.personalityType) filters.personalityType = args.personalityType
+        return await coreInstance.service.call('companion.filterCompanions', filters, {
+          userId: 'demo-user', destination: '云南大理', travelDays: 5,
+          budgetType: 'medium', personalityType: 'spontaneous',
+          travelTypes: ['休闲', '美食'], wakeTime: '08:00', sleepTime: '23:00',
+          gender: '男', age: 28
+        })
+      }
+      case 'companion_calculateMatch': {
+        const companion = await coreInstance.service.call('companion.getCompanionById', args.companionId)
+        if (!companion) return { error: '未找到该同伴' }
+        return await coreInstance.service.call('companion.calculateMatch', companion, {
+          userId: 'demo-user', destination: '云南大理', travelDays: 5,
+          budgetType: 'medium', personalityType: 'spontaneous',
+          travelTypes: ['休闲', '美食'], wakeTime: '08:00', sleepTime: '23:00',
+          gender: '男', age: 28
+        })
+      }
+      default:
+        return { error: `工具 ${name} 在规划器中不可用` }
+    }
   }
 
   const handleGenerate = async (input: string) => {
@@ -413,12 +457,13 @@ export function useItineraryChat() {
 
       const historyForApi = messages.value.map(msg => ({ role: msg.role, content: msg.content }))
 
-      let response = ''
+      // Call LLM (with retry)
+      let llmMessage: any = null
       let retryCount = 0
       const maxRetries = 2
       while (retryCount <= maxRetries) {
         try {
-          response = await callOpenRouterAPI(historyForApi)
+          llmMessage = await callOpenRouterAPI(historyForApi)
           break
         } catch (apiError) {
           retryCount++
@@ -427,15 +472,39 @@ export function useItineraryChat() {
         }
       }
 
-      const aiMsg: ChatMessage = { id: `ai-${Date.now()}`, role: 'assistant', content: response, timestamp: new Date() }
+      // Handle tool calls if LLM requested them
+      let finalResponse = llmMessage?.content || ''
+      if (llmMessage?.tool_calls?.length > 0) {
+        const toolResults: any[] = []
+        for (const tc of llmMessage.tool_calls) {
+          try {
+            const args = JSON.parse(tc.function.arguments || '{}')
+            const result = await executePlannerTool(tc.function.name, args)
+            toolResults.push({ tool_call_id: tc.id, role: 'tool', content: JSON.stringify(result) })
+          } catch { toolResults.push({ tool_call_id: tc.id, role: 'tool', content: JSON.stringify({ error: '工具执行失败' }) }) }
+        }
+
+        // Second LLM call with tool results
+        const followUpMessages = [
+          ...historyForApi,
+          { role: 'assistant', content: null, tool_calls: llmMessage.tool_calls },
+          ...toolResults
+        ]
+        try {
+          const followUp = await callOpenRouterAPI(followUpMessages)
+          finalResponse = followUp?.content || finalResponse
+        } catch { /* keep original content */ }
+      }
+
+      const aiMsg: ChatMessage = { id: `ai-${Date.now()}`, role: 'assistant', content: finalResponse, timestamp: new Date() }
       messages.value.push(aiMsg)
-      aiResponse.value = response
+      aiResponse.value = finalResponse
       saveCurrentChat()
 
       try {
         // 优先从 ```json 代码块中提取
         let jsonStr = ''
-        const codeBlockMatch = response.match(/```json\s*([\s\S]*?)\s*```/)
+        const codeBlockMatch = finalResponse.match(/```json\s*([\s\S]*?)\s*```/)
         if (codeBlockMatch) {
           jsonStr = codeBlockMatch[1]
         } else {
