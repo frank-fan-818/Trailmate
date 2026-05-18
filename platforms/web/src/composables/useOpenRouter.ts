@@ -30,23 +30,28 @@ export async function callLLM(
   return res.json()
 }
 
-// ====== Shared tool execution ======
+// ====== Shared tool execution (with cached Core singleton) ======
 
-export async function executeToolCall(name: string, args: Record<string, any>): Promise<any> {
+let _cachedCore: any = null
+
+async function getCore(): Promise<any> {
+  if (_cachedCore) return _cachedCore
+  const { Core } = await import('@trailmate/core')
   const { default: Plugin } = await import('@trailmate/perception')
   const { default: CompanionPlugin } = await import('@trailmate/companion-matching')
-  const { Core } = await import('@trailmate/core')
   const { default: MockAdapter } = await import('@trailmate/adapters/mock-adapter')
 
   const core = new Core()
-  const perception = new Plugin()
-  const companion = new CompanionPlugin()
-  const mock = new MockAdapter()
-
-  await core.pluginManager.install(mock)
-  await core.pluginManager.install(perception)
-  await core.pluginManager.install(companion)
+  await core.pluginManager.install(new MockAdapter())
+  await core.pluginManager.install(new Plugin())
+  await core.pluginManager.install(new CompanionPlugin())
   await core.pluginManager.mount()
+  _cachedCore = core
+  return core
+}
+
+export async function executeToolCall(name: string, args: Record<string, any>): Promise<any> {
+  const core = await getCore()
 
   switch (name) {
     case 'perception_getCurrentLocation':
