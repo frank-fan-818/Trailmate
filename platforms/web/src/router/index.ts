@@ -50,6 +50,11 @@ const router = createRouter({
       component: () => import('../pages/MyTrips.vue'),
     },
     {
+      path: '/concierge',
+      name: 'concierge',
+      component: () => import('../pages/AiConcierge.vue'),
+    },
+    {
       path: '/chat/:id',
       name: 'chat',
       component: () => import('../pages/ChatPage.vue'),

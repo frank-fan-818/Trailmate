@@ -16,8 +16,9 @@
         <div class="flex gap-8 font-semibold text-sm">
           <button class="text-gray-700 hover:text-primary transition-colors">概览</button>
           <button @click="router.push('/planner')" class="text-gray-700 hover:text-primary transition-colors">行程规划</button>
+          <button @click="router.push('/concierge')" class="text-gray-700 hover:text-primary transition-colors">AI 管家</button>
           <button @click="router.push('/perception')" class="text-gray-700 hover:text-primary transition-colors">情境感知</button>
-          <button class="text-gray-700 hover:text-primary transition-colors">我的行程</button>
+          <button @click="router.push('/my-trips')" class="text-gray-700 hover:text-primary transition-colors">我的行程</button>
           <button @click="router.push('/find-companion')" class="text-gray-700 hover:text-primary transition-colors">伴友社区</button>
         </div>
         <div class="flex items-center gap-4">
