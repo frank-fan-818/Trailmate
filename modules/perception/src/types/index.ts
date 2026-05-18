@@ -42,6 +42,8 @@ export interface TimelineNode {
   relatedId?: string
   tags?: string[]
   remindTime?: number
+  latitude?: number
+  longitude?: number
 }
 
 export enum NotificationLevel {

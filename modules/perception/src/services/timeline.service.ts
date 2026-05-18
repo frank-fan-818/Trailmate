@@ -44,6 +44,8 @@ export async function generateTimeline(
       type: mapItineraryItemTypeToTimelineType(item.type),
       status: TimelineNodeStatus.NOT_STARTED,
       address: item.address,
+      latitude: (item as any).position?.lat,
+      longitude: (item as any).position?.lng,
       relatedId: item.id,
       tags: item.tags,
       remindTime: item.type === 'flight' ? 90 : 30

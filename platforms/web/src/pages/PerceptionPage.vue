@@ -156,11 +156,11 @@
 
           <p class="mt-3 text-sm text-gray-500 text-center">{{ locationStatus }}</p>
 
-          <div v-if="currentLocation && mapImageUrl" class="mt-4 rounded-xl overflow-hidden border border-gray-200">
-            <img
-              :src="mapImageUrl"
-              alt="当前位置地图"
-              class="w-full h-[500px] object-cover"
+          <div class="mt-4 rounded-xl overflow-hidden border border-gray-200">
+            <TravelMap
+              :user-position="currentLocation"
+              :timeline-nodes="timeline"
+              height="450px"
             />
           </div>
         </section>
@@ -430,9 +430,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, watch } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useTrailmateCore } from '../composables/use-trailmate-core'
+import TravelMap from '../components/TravelMap.vue'
 import type { LocationInfo } from '@trailmate/perception'
 
 const router = useRouter()
@@ -496,7 +497,6 @@ const isGettingRealLocation = ref(false)
 const isWatchingLocation = ref(false)
 const currentLocation = ref<LocationInfo | null>(null)
 const stopWatcher = ref<(() => void) | null>(null)
-const mapImageUrl = ref<string>('')
 const autoSimulate = ref(false)
 const rules = ref<Array<{ id: string; name: string; description?: string; enabled: boolean; priority: number; condition: { type: string; params: Record<string, any> }; action: { type: string; params: Record<string, any> } }>>([])
 const showAddRuleModal = ref(false)
@@ -508,24 +508,20 @@ const ruleForm = reactive({
   priority: 1
 })
 
-const fetchStaticMap = () => {
-  if (!currentLocation.value) {
-    mapImageUrl.value = ''
-    return
-  }
-  const { latitude, longitude } = currentLocation.value
-  const url = `/api/baidumap/staticimage/v2?ak=${import.meta.env.VITE_BAIDU_MAP_AK}&mcode=666666&width=512&height=500&zoom=15&center=${longitude},${latitude}&markers=${longitude},${latitude}&markerStyles=0`
-  mapImageUrl.value = url
+const loadDemoTimeline = () => {
+  timeline.value = [
+    { id: 'demo_0_0', planId: 'demo-plan', dayIndex: 0, startTime: '09:00', endTime: '10:00', title: '天安门广场', description: '参观天安门广场', type: 'attraction', status: 'completed', address: '北京市东城区天安门广场', latitude: 39.9042, longitude: 116.3974 },
+    { id: 'demo_0_1', planId: 'demo-plan', dayIndex: 0, startTime: '10:30', endTime: '11:30', title: '故宫博物院', description: '参观故宫', type: 'attraction', status: 'in_progress', address: '北京市东城区景山前街4号', latitude: 39.9163, longitude: 116.3972 },
+    { id: 'demo_0_2', planId: 'demo-plan', dayIndex: 0, startTime: '12:00', endTime: '13:00', title: '四季民福烤鸭', description: '午餐', type: 'meal', status: 'not_started', address: '北京市东城区王府井大街', latitude: 39.9147, longitude: 116.4103 },
+    { id: 'demo_0_3', planId: 'demo-plan', dayIndex: 0, startTime: '14:00', endTime: '16:00', title: '颐和园', description: '游览颐和园', type: 'attraction', status: 'not_started', address: '北京市海淀区新建宫门路19号', latitude: 39.9999, longitude: 116.2755 },
+    { id: 'demo_0_4', planId: 'demo-plan', dayIndex: 0, startTime: '18:00', endTime: '20:00', title: '北京胡同酒店', description: '入住酒店', type: 'hotel', status: 'not_started', address: '北京市东城区南锣鼓巷', latitude: 39.9375, longitude: 116.4025 },
+  ]
 }
-
-watch(currentLocation, () => {
-  console.log('currentLocation变化:', currentLocation.value)
-  fetchStaticMap()
-})
 
 onMounted(async () => {
   await initialize()
   await Promise.all([loadNotifications(), loadRules()])
+  loadDemoTimeline()
 })
 
 const loadNotifications = async () => {
