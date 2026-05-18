@@ -2,6 +2,7 @@ import { ref, watch } from 'vue'
 import { marked } from 'marked'
 import { useSettings } from '../stores/settings'
 import { CONCIERGE_TOOLS } from './useToolRegistry'
+import { callLLM } from './useOpenRouter'
 
 const { settings } = useSettings()
 
@@ -340,38 +341,25 @@ export function useItineraryChat() {
     } catch { /* silent */ }
   }
 
-  const callOpenRouterAPI = async (messagesHistory: Array<{ role: 'user' | 'assistant', content: string }>) => {
-    const apiKey = import.meta.env.VITE_OPENROUTER_API_KEY as string
+  const callPlannerLLM = async (messagesHistory: Array<{ role: string; content: string }>) => {
+    const apiKey = (import.meta as any).env.VITE_OPENROUTER_API_KEY as string
     if (!apiKey) throw new Error('OpenRouter API Key 未配置')
-
-    const userPreference = `用户偏好：
-- 预算范围：¥${settings.value.budget[0]} - ¥${settings.value.budget[1]}
-- 喜欢的旅行类型：${settings.value.travelTypes.join('、') || '无特别偏好'}
-- 偏好的交通方式：${settings.value.transports.join('、') || '无特别偏好'}
-- 偏好的住宿类型：${settings.value.accommodations.join('、') || '无特别偏好'}
-- 语言：${settings.value.language === 'zh' ? '中文' : '英文'}
-请严格按照用户偏好生成内容。`
 
     const isChinese = settings.value.language === 'zh'
     const systemPrompt = isChinese
       ? `【重要】你必须用中文回复所有内容。你是伴旅智能旅行助手，擅长规划旅行行程。
 你可以使用工具来查询实时信息（如天气、位置、旅伴等），在需要准确数据时优先调用工具而非编造。
+用户偏好：预算¥${settings.value.budget[0]}-${settings.value.budget[1]}，${settings.value.travelTypes.join('、') || '通用'}旅行，${settings.value.transports.join('、') || '不限'}交通。
 
 【强制输出规则 - 必须严格遵守】：
 1. 所有景点、地标、酒店、餐厅等地点名称必须使用 [[地点名]] 格式包裹
-   - ✅ 正确：去 [[故宫]] 参观，住在 [[如家酒店]]
-   - ❌ 错误：去故宫参观，住在如家酒店
 2. 所有注意事项必须使用 【提示内容】 格式
-3. 在回复的最末尾，必须附上一个JSON格式的行程数据，格式如下：
+3. 在回复的最末尾，必须附上一个JSON格式的行程数据：
 \`\`\`json
-{"plans":[{"name":"方案名称","description":"方案描述","totalDays":天数,"totalCost":总预算,"tags":["标签1","标签2"],"days":[{"day":1,"items":[{"type":"attraction|meal|hotel|transport|flight","name":"地点名","startTime":"08:00","endTime":"10:00","cost":费用,"address":"地址"}]}]}]}
+{"plans":[{"name":"方案名称","description":"方案描述","totalDays":天数,"totalCost":总预算,"tags":["标签1"],"days":[{"day":1,"items":[{"type":"attraction|meal|hotel|transport|flight","name":"地点名","startTime":"08:00","endTime":"10:00","cost":费用,"address":"地址"}]}]}]}
 \`\`\`
 4. 不要使用其他格式来标注地点`
-      : `【Important】You must respond in English. You are TrailMate, an intelligent travel assistant.
-
-【Mandatory Output Rules】：
-1. All place names must be wrapped in [[Place Name]] format
-2. All tips must use 【Tip Content】 format`
+      : `【Important】You must respond in English. You are TrailMate, an intelligent travel assistant.`
 
     const fullMessages = [
       { role: 'system', content: systemPrompt },
@@ -379,71 +367,11 @@ export function useItineraryChat() {
       ...messagesHistory
     ]
 
-    const response = await fetch(import.meta.env.VITE_OPENROUTER_API_URL as string, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        'model': 'minimax/minimax-m2.5:free',
-        'messages': fullMessages,
-        'tools': CONCIERGE_TOOLS,
-        'reasoning': { 'enabled': true }
-      })
-    })
-
-    if (!response.ok) {
-      const errorText = await response.text()
-      throw new Error(`API请求失败: ${response.status} - ${errorText}`)
-    }
-
-    const data = await response.json()
-    if (data.choices && Array.isArray(data.choices)) {
-      return data.choices[0]?.message
-    }
-    throw new Error('无法解析API响应')
-  }
-
-  // ---- Tool execution ----
-  const executePlannerTool = async (name: string, args: Record<string, any>): Promise<any> => {
-    // Use dynamic import to get core service access
-    const { initializeTrailmate } = await import('../composables/use-trailmate-core')
-    const { module: perceptionModule, core: coreInstance } = await initializeTrailmate()
-
-    switch (name) {
-      case 'perception_getCurrentLocation':
-        return await coreInstance.service.call('perception.getCurrentLocation', 'demo-user')
-      case 'perception_getNotifications':
-        return await coreInstance.service.call('perception.getNotifications', { userId: 'demo-user', ...args })
-      case 'perception_getAllRules':
-        return await coreInstance.service.call('perception.getAllRules')
-      case 'companion_filterCompanions': {
-        const { default: typeModule } = await import('@trailmate/companion-matching')
-        const filters: any = {}
-        if (args.keyword) filters.keyword = args.keyword
-        if (args.budget) filters.budget = args.budget
-        if (args.personalityType) filters.personalityType = args.personalityType
-        return await coreInstance.service.call('companion.filterCompanions', filters, {
-          userId: 'demo-user', destination: '云南大理', travelDays: 5,
-          budgetType: 'medium', personalityType: 'spontaneous',
-          travelTypes: ['休闲', '美食'], wakeTime: '08:00', sleepTime: '23:00',
-          gender: '男', age: 28
-        })
-      }
-      case 'companion_calculateMatch': {
-        const companion = await coreInstance.service.call('companion.getCompanionById', args.companionId)
-        if (!companion) return { error: '未找到该同伴' }
-        return await coreInstance.service.call('companion.calculateMatch', companion, {
-          userId: 'demo-user', destination: '云南大理', travelDays: 5,
-          budgetType: 'medium', personalityType: 'spontaneous',
-          travelTypes: ['休闲', '美食'], wakeTime: '08:00', sleepTime: '23:00',
-          gender: '男', age: 28
-        })
-      }
-      default:
-        return { error: `工具 ${name} 在规划器中不可用` }
-    }
+    // Use shared runWithTools for automatic tool calling loop
+    const result = await (await import('./useOpenRouter')).runWithTools(
+      messagesHistory, systemPrompt
+    )
+    return { content: result.content }
   }
 
   const handleGenerate = async (input: string) => {
@@ -457,43 +385,19 @@ export function useItineraryChat() {
 
       const historyForApi = messages.value.map(msg => ({ role: msg.role, content: msg.content }))
 
-      // Call LLM (with retry)
-      let llmMessage: any = null
+      // Call LLM (runWithTools handles tool calling loop automatically)
+      let finalResponse = ''
       let retryCount = 0
-      const maxRetries = 2
-      while (retryCount <= maxRetries) {
+      while (retryCount <= 2) {
         try {
-          llmMessage = await callOpenRouterAPI(historyForApi)
+          const msg = await callPlannerLLM(historyForApi)
+          finalResponse = msg?.content || ''
           break
         } catch (apiError) {
           retryCount++
-          if (retryCount > maxRetries) throw apiError
+          if (retryCount > 2) throw apiError
           await new Promise(resolve => setTimeout(resolve, 1000))
         }
-      }
-
-      // Handle tool calls if LLM requested them
-      let finalResponse = llmMessage?.content || ''
-      if (llmMessage?.tool_calls?.length > 0) {
-        const toolResults: any[] = []
-        for (const tc of llmMessage.tool_calls) {
-          try {
-            const args = JSON.parse(tc.function.arguments || '{}')
-            const result = await executePlannerTool(tc.function.name, args)
-            toolResults.push({ tool_call_id: tc.id, role: 'tool', content: JSON.stringify(result) })
-          } catch { toolResults.push({ tool_call_id: tc.id, role: 'tool', content: JSON.stringify({ error: '工具执行失败' }) }) }
-        }
-
-        // Second LLM call with tool results
-        const followUpMessages = [
-          ...historyForApi,
-          { role: 'assistant', content: null, tool_calls: llmMessage.tool_calls },
-          ...toolResults
-        ]
-        try {
-          const followUp = await callOpenRouterAPI(followUpMessages)
-          finalResponse = followUp?.content || finalResponse
-        } catch { /* keep original content */ }
       }
 
       const aiMsg: ChatMessage = { id: `ai-${Date.now()}`, role: 'assistant', content: finalResponse, timestamp: new Date() }
@@ -502,7 +406,6 @@ export function useItineraryChat() {
       saveCurrentChat()
 
       try {
-        // 优先从 ```json 代码块中提取
         let jsonStr = ''
         const codeBlockMatch = finalResponse.match(/```json\s*([\s\S]*?)\s*```/)
         if (codeBlockMatch) {
