@@ -10,7 +10,7 @@ export async function callLLM(
   const apiUrl = (import.meta as any).env.VITE_OPENROUTER_API_URL as string || 'https://openrouter.ai/api/v1/chat/completions'
 
   const body: any = {
-    model: options?.model || 'minimax/minimax-m2.5:free',
+    model: options?.model || 'minimax/minimax-m2.5',
     messages,
     max_tokens: 2000
   }
