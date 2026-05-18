@@ -75,6 +75,34 @@
         </div>
       </section>
 
+      <!-- 旅行工具 -->
+      <section class="mb-24">
+        <h2 class="text-2xl font-bold text-gray-900 mb-8">旅行工具</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div class="bg-white rounded-md shadow-sm border border-gray-200 p-8 hover:shadow-md hover:-translate-y-1 transition-all">
+            <div class="w-14 h-14 bg-gradient-to-br from-blue-500 to-cyan-400 rounded-md flex items-center justify-center mb-6 text-white">
+              <Plane :size="24" />
+            </div>
+            <h3 class="text-xl font-bold text-gray-900 mb-3">机票查询</h3>
+            <p class="text-gray-600 mb-6">搜索航班，比较价格，找到最合适的出行方式</p>
+            <button @click="router.push('/flights')" class="w-full py-3 bg-primary text-white rounded-md font-semibold hover:bg-primary/90 transition-colors">
+              搜索航班
+            </button>
+          </div>
+
+          <div class="bg-white rounded-md shadow-sm border border-gray-200 p-8 hover:shadow-md hover:-translate-y-1 transition-all">
+            <div class="w-14 h-14 bg-gradient-to-br from-green-500 to-emerald-400 rounded-md flex items-center justify-center mb-6 text-white">
+              <span class="text-2xl">💱</span>
+            </div>
+            <h3 class="text-xl font-bold text-gray-900 mb-3">汇率换算</h3>
+            <p class="text-gray-600 mb-6">实时汇率查询，支持 30+ 主流货币</p>
+            <button @click="router.push('/exchange')" class="w-full py-3 bg-primary text-white rounded-md font-semibold hover:bg-primary/90 transition-colors">
+              查看汇率
+            </button>
+          </div>
+        </div>
+      </section>
+
       <!-- 旅行灵感 -->
       <section class="mb-24">
         <h2 class="text-2xl font-bold text-gray-900 mb-8">旅行灵感</h2>

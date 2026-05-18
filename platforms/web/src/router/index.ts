@@ -50,6 +50,16 @@ const router = createRouter({
       component: () => import('../pages/MyTrips.vue'),
     },
     {
+      path: '/flights',
+      name: 'flights',
+      component: () => import('../pages/FlightsPage.vue'),
+    },
+    {
+      path: '/exchange',
+      name: 'exchange',
+      component: () => import('../pages/ExchangePage.vue'),
+    },
+    {
       path: '/help',
       name: 'help',
       component: () => import('../pages/HelpPage.vue'),

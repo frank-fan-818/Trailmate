@@ -416,13 +416,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, onMounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { ArrowLeft, Plus, ClipboardList, X, MapPin, DollarSign, User } from 'lucide-vue-next'
 import { usePlaceDrawer, useItineraryChat } from '../composables/useItineraryPlanner'
 import ItineraryPlannerSidebar from '../components/ItineraryPlannerSidebar.vue'
 
 const router = useRouter()
+const route = useRoute()
 
 const {
   showPlaceDrawer, selectedPlace, activePlaceTab,
@@ -439,6 +440,15 @@ const {
 } = useItineraryChat()
 
 const showHistorySidebar = ref(false)
+
+// Load specific chat from MyTrips query param
+onMounted(() => {
+  const chatId = route.query.chatId as string
+  if (chatId) {
+    const chat = chatHistory.value.find(c => c.id === chatId)
+    if (chat) loadChat(chat)
+  }
+})
 
 const handleGenerate = () => {
   const input = userInput.value.trim()
