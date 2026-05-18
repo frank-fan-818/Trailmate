@@ -45,6 +45,11 @@ const router = createRouter({
       props: (route) => ({ companionId: route.params.id }),
     },
     {
+      path: '/my-trips',
+      name: 'myTrips',
+      component: () => import('../pages/MyTrips.vue'),
+    },
+    {
       path: '/chat/:id',
       name: 'chat',
       component: () => import('../pages/ChatPage.vue'),

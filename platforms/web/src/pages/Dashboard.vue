@@ -57,7 +57,7 @@
           </div>
           <h3 class="text-xl font-bold text-gray-900 mb-3">我的行程</h3>
           <p class="text-gray-600 mb-6">查看和管理你的旅行计划</p>
-          <button class="w-full py-3 bg-primary text-white rounded-md font-semibold hover:bg-primary/90 transition-colors">
+          <button @click="router.push('/my-trips')" class="w-full py-3 bg-primary text-white rounded-md font-semibold hover:bg-primary/90 transition-colors">
             查看行程
           </button>
         </div>

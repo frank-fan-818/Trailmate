@@ -278,6 +278,15 @@ export function useItineraryChat() {
     aiResponse.value = ''
   }
 
+  const savePlansToStorage = (p: any[]) => {
+    try {
+      const existing = loadSavedPlans()
+      const wrapped = p.map(plan => ({ ...plan, savedAt: Date.now() }))
+      const merged = [...wrapped, ...existing.filter((e: any) => !wrapped.some(w => w.name === e.name))]
+      localStorage.setItem('trailmate-saved-plans', JSON.stringify(merged.slice(0, 10)))
+    } catch { /* silent */ }
+  }
+
   const callOpenRouterAPI = async (messagesHistory: Array<{ role: 'user' | 'assistant', content: string }>) => {
     const apiKey = import.meta.env.VITE_OPENROUTER_API_KEY as string
     if (!apiKey) throw new Error('OpenRouter API Key 未配置')
@@ -373,6 +382,7 @@ export function useItineraryChat() {
           const result = JSON.parse(jsonMatch[0])
           if (result.plans && Array.isArray(result.plans)) {
             plans.value = result.plans
+            savePlansToStorage(result.plans)
           }
         }
       } catch (_) { /* 解析失败就展示文本回复 */ }
@@ -414,6 +424,14 @@ export function useItineraryChat() {
     handleGenerate, renderAIResponse, handlePlaceClick,
     saveHistoryToStorage
   }
+}
+
+/** 从 localStorage 读取已保存的行程计划 */
+export function loadSavedPlans(): any[] {
+  try {
+    const raw = localStorage.getItem('trailmate-saved-plans')
+    return raw ? JSON.parse(raw) : []
+  } catch { return [] }
 }
 
 // ====== 辅助函数 ======
