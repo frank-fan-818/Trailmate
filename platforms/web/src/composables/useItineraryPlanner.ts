@@ -361,12 +361,6 @@ export function useItineraryChat() {
 4. 不要使用其他格式来标注地点`
       : `【Important】You must respond in English. You are TrailMate, an intelligent travel assistant.`
 
-    const fullMessages = [
-      { role: 'system', content: systemPrompt },
-      { role: 'user', content: userPreference },
-      ...messagesHistory
-    ]
-
     // Use shared runWithTools for automatic tool calling loop
     const result = await (await import('./useOpenRouter')).runWithTools(
       messagesHistory, systemPrompt
