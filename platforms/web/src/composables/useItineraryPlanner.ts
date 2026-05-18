@@ -36,18 +36,61 @@ export function usePlaceDrawer() {
     { id: 'tips', label: '提示', icon: '💡' }
   ]
 
-  const mockFoods = ref([
-    { emoji: '🍜', name: '老北京炸酱面', distance: '500m', price: '35', rating: '4.8' },
-    { emoji: '🥟', name: '鼎香坊水饺', distance: '800m', price: '45', rating: '4.6' },
-    { emoji: '🦆', name: '全聚德烤鸭', distance: '1.2km', price: '180', rating: '4.9' },
-    { emoji: '🍲', name: '东来顺火锅', distance: '1.5km', price: '120', rating: '4.7' }
-  ])
+  const nearbyFoods = ref<Array<{ emoji: string; name: string; distance: string; price: string; rating: string }>>([])
+  const nearbyHotels = ref<Array<{ icon: string; name: string; type: string; price: string; rating: string }>>([])
+  const foodsLoading = ref(false)
+  const hotelsLoading = ref(false)
 
-  const mockHotels = ref([
-    { icon: '🏨', name: '格林豪泰酒店', type: '经济型', price: '180', rating: '4.2' },
-    { icon: '🏩', name: '如家精选酒店', type: '舒适型', price: '280', rating: '4.5' },
-    { icon: '🏨', name: '香格里拉大酒店', type: '豪华型', price: '680', rating: '4.8' }
-  ])
+  const loadNearbyFoods = async (city?: string) => {
+    foodsLoading.value = true
+    try {
+      const ak = (import.meta as any).env.VITE_BAIDU_MAP_AK as string
+      const region = city || '北京'
+      const url = `/api/baidumap/place/v2/search?query=美食&region=${encodeURIComponent(region)}&ak=${ak}&output=json&page_size=6&scope=2`
+      const res = await fetch(url)
+      const data = await res.json()
+      if (data.status === 0 && data.results) {
+        nearbyFoods.value = data.results.slice(0, 6).map((r: any) => ({
+          emoji: '🍜',
+          name: r.name,
+          distance: r.address || region,
+          price: r.detail_info?.price || '人均 ¥50',
+          rating: r.detail_info?.overall_rating?.toString() || '4.5'
+        }))
+      }
+    } catch (e) { console.error('加载美食失败:', e) }
+    finally { foodsLoading.value = false }
+  }
+
+  const loadNearbyHotels = async (city?: string) => {
+    hotelsLoading.value = true
+    try {
+      const ak = (import.meta as any).env.VITE_BAIDU_MAP_AK as string
+      const region = city || '北京'
+      const url = `/api/baidumap/place/v2/search?query=酒店&region=${encodeURIComponent(region)}&ak=${ak}&output=json&page_size=6&scope=2`
+      const res = await fetch(url)
+      const data = await res.json()
+      if (data.status === 0 && data.results) {
+        nearbyHotels.value = data.results.slice(0, 6).map((r: any) => {
+          let typeLabel = '舒适型'
+          const price = r.detail_info?.price
+          if (price != null) {
+            const p = parseInt(price)
+            if (p < 200) typeLabel = '经济型'
+            else if (p > 500) typeLabel = '豪华型'
+          }
+          return {
+            icon: '🏨',
+            name: r.name,
+            type: typeLabel,
+            price: price || '200',
+            rating: r.detail_info?.overall_rating?.toString() || '4.3'
+          }
+        })
+      }
+    } catch (e) { console.error('加载酒店失败:', e) }
+    finally { hotelsLoading.value = false }
+  }
 
   const getPlaceIcon = (type: string) => {
     if (!type) return '📍'
@@ -73,6 +116,9 @@ export function usePlaceDrawer() {
       }
       showPlaceDrawer.value = true
       activePlaceTab.value = 'detail'
+      // Preload nearby foods & hotels in background
+      loadNearbyFoods()
+      loadNearbyHotels()
 
       const apiUrl = `/api/baidumap/place/v2/search?query=${encodeURIComponent(placeName)}&city=全国&ak=${import.meta.env.VITE_BAIDU_MAP_AK}&output=json&scope=2&page_size=1`
       const response = await fetch(apiUrl)
@@ -108,6 +154,11 @@ export function usePlaceDrawer() {
           ticket: poi.detail_info?.price?.toString() || '免费',
           city: city,
           province: province
+        }
+        // Reload foods & hotels with the actual city
+        if (city) {
+          loadNearbyFoods(city)
+          loadNearbyHotels(city)
         }
       } else {
         const mockPlace = getMockPlaceInfo(placeName)
@@ -192,7 +243,8 @@ export function usePlaceDrawer() {
 
   return {
     showPlaceDrawer, selectedPlace, activePlaceTab,
-    weatherLoading, weatherInfo, placeTabs, mockFoods, mockHotels,
+    weatherLoading, weatherInfo, placeTabs,
+    nearbyFoods, nearbyHotels, foodsLoading, hotelsLoading,
     openPlaceDrawer, closePlaceDrawer
   }
 }

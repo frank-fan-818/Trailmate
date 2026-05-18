@@ -139,8 +139,10 @@
 
             <!-- 美食推荐 -->
             <div v-else-if="activePlaceTab === 'food'" class="space-y-4">
+              <div v-if="foodsLoading" class="text-center py-6 text-gray-500">加载中...</div>
+              <div v-else-if="nearbyFoods.length === 0" class="text-center py-6 text-gray-400">暂无美食数据</div>
               <div
-                v-for="(food, index) in mockFoods"
+                v-for="(food, index) in nearbyFoods"
                 :key="index"
                 class="bg-gray-50 rounded-xl p-4 hover:bg-gray-100 transition-colors cursor-pointer"
               >
@@ -148,7 +150,7 @@
                   <span class="text-2xl">{{ food.emoji }}</span>
                   <div class="flex-1">
                     <h4 class="font-medium text-gray-900">{{ food.name }}</h4>
-                    <p class="text-sm text-gray-500">{{ food.distance }} | ¥{{ food.price }}</p>
+                    <p class="text-sm text-gray-500">{{ food.distance }} | {{ food.price }}</p>
                   </div>
                   <span class="text-yellow-500">⭐ {{ food.rating }}</span>
                 </div>
@@ -157,8 +159,10 @@
 
             <!-- 住宿参考 -->
             <div v-else-if="activePlaceTab === 'hotel'" class="space-y-4">
+              <div v-if="hotelsLoading" class="text-center py-6 text-gray-500">加载中...</div>
+              <div v-else-if="nearbyHotels.length === 0" class="text-center py-6 text-gray-400">暂无住宿数据</div>
               <div
-                v-for="(hotel, index) in mockHotels"
+                v-for="(hotel, index) in nearbyHotels"
                 :key="index"
                 class="bg-gray-50 rounded-xl p-4 hover:bg-gray-100 transition-colors cursor-pointer"
               >
@@ -422,7 +426,8 @@ const router = useRouter()
 
 const {
   showPlaceDrawer, selectedPlace, activePlaceTab,
-  weatherLoading, weatherInfo, placeTabs, mockFoods, mockHotels,
+  weatherLoading, weatherInfo, placeTabs,
+  nearbyFoods, nearbyHotels, foodsLoading, hotelsLoading,
   openPlaceDrawer, closePlaceDrawer
 } = usePlaceDrawer()
 
