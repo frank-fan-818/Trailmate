@@ -1,5 +1,18 @@
 import { CONCIERGE_TOOLS, type ToolDef } from './useToolRegistry'
 
+// ====== Helpers ======
+
+function extractContent(message: any): string {
+  if (message?.content) return message.content
+  // Some providers return reasoning text when content is null
+  if (message?.reasoning) return message.reasoning
+  const details = message?.reasoning_details
+  if (Array.isArray(details) && details.length > 0) {
+    return details.map((d: any) => d.text || '').join('')
+  }
+  return ''
+}
+
 // ====== Shared LLM call ======
 
 export async function callLLM(
@@ -116,7 +129,7 @@ export async function runWithTools(
   const choice1 = res1.choices?.[0]
 
   if (!choice1?.message?.tool_calls?.length) {
-    return { content: choice1?.message?.content || '' }
+    return { content: extractContent(choice1?.message) }
   }
 
   // Execute tools
@@ -144,7 +157,7 @@ export async function runWithTools(
 
   const res2 = await callLLM(apiMessages)
   return {
-    content: res2.choices?.[0]?.message?.content || choice1.message.content || '',
+    content: extractContent(res2.choices?.[0]?.message) || extractContent(choice1.message),
     toolCalls: executedTools
   }
 }
