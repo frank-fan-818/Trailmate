@@ -132,13 +132,17 @@ export async function runWithTools(
     return { content: extractContent(choice1?.message) }
   }
 
-  // Execute tools
+  // Execute tools (only standard OpenAI format: tc.function.name + tc.function.arguments)
   const executedTools: Array<{ name: string; result: any }> = []
   const toolResults: any[] = []
   for (const tc of choice1.message.tool_calls) {
+    // Skip non-standard tool calls (e.g. minimax:tool_call URI scheme)
+    if (!tc.function || !tc.function.name) {
+      continue
+    }
     const execName = tc.function.name
     try {
-      const args = JSON.parse(tc.function.arguments || '{}')
+      const args = tc.function.arguments ? JSON.parse(tc.function.arguments) : {}
       const result = await Promise.race([
         executeToolCall(execName, args),
         new Promise((_, reject) => setTimeout(() => reject(new Error('超时')), 15000))
