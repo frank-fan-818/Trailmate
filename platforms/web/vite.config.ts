@@ -19,6 +19,7 @@ export default defineConfig({
       '@trailmate/adapters': path.resolve(__dirname, '../../adapters')
     }
   },
+  appType: 'spa',
   server: {
     port: 3000,
     host: true,

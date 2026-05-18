@@ -1,5 +1,8 @@
 {
   "buildCommand": "cd platforms/web && node ../../node_modules/vite/bin/vite.js build",
   "outputDirectory": "platforms/web/dist",
-  "installCommand": "npm install"
+  "installCommand": "npm install",
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
 }
