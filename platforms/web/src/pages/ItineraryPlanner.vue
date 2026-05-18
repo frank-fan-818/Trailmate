@@ -550,62 +550,6 @@ const onPlaceClick = (event: MouseEvent) => {
   border-radius: 0 6px 6px 0;
 }
 
-/* Day header badge */
-.ai-markdown :deep(.day-header) {
-  margin: 16px 0 8px 0;
-}
-.ai-markdown :deep(.day-badge) {
-  display: inline-block;
-  background: linear-gradient(135deg, #FF6B4A 0%, #FF8F6B 100%);
-  color: white;
-  padding: 6px 16px;
-  border-radius: 20px;
-  font-size: 0.95rem;
-  font-weight: 700;
-}
-
-/* Itinerary list items */
-.ai-markdown :deep(.itinerary-item) {
-  background: #f9fafb;
-  border-radius: 8px;
-  padding: 8px 14px;
-  margin: 4px 0;
-  font-size: 0.9rem;
-  line-height: 1.6;
-}
-.ai-markdown :deep(.itinerary-item .place-name) {
-  margin: 0 2px;
-}
-
-/* Cost tag */
-.ai-markdown :deep(.cost-tag) {
-  color: #FF6B4A;
-  font-weight: 700;
-}
-
-/* Time range */
-.ai-markdown :deep(.time-range) {
-  background: #e0e7ff;
-  color: #3730a3;
-  padding: 1px 6px;
-  border-radius: 4px;
-  font-family: monospace;
-  font-size: 0.85rem;
-}
-
-/* Section heading */
-.ai-markdown :deep(.section-heading) {
-  font-size: 1.05rem;
-  font-weight: 700;
-  color: #374151;
-  margin: 12px 0 6px 0;
-}
-
-/* Container */
-.ai-markdown :deep(.itinerary-content) {
-  line-height: 1.8;
-}
-
 .animate-slide-in {
   animation: slideIn 0.3s ease-out;
 }
