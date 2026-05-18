@@ -3,6 +3,8 @@
   "outputDirectory": "platforms/web/dist",
   "installCommand": "npm install",
   "rewrites": [
+    { "source": "/api/baidumap/:path*", "destination": "https://api.map.baidu.com/:path*" },
+    { "source": "/api/openrouter/:path*", "destination": "https://openrouter.ai/api/:path*" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
