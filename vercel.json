@@ -2,7 +2,14 @@
   "buildCommand": "cd platforms/web && node ../../node_modules/vite/bin/vite.js build",
   "outputDirectory": "platforms/web/dist",
   "installCommand": "npm install",
+  "functions": {
+    "api/baidumap-proxy.js": {
+      "memory": 128,
+      "maxDuration": 10
+    }
+  },
   "rewrites": [
+    { "source": "/api/baidumap/(.*)", "destination": "/api/baidumap-proxy" },
     { "source": "/((?!api/).*)", "destination": "/index.html" }
   ]
 }

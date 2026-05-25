@@ -4,6 +4,16 @@ import { useSettings } from '../stores/settings'
 import { CONCIERGE_TOOLS } from './useToolRegistry'
 import { callLLM, runWithTools } from './useOpenRouter'
 
+// Baidu API proxy: Vercel rewrites /api/baidumap/* → /api/baidumap-proxy
+// But rewrite strips path, so we encode path+params into query string
+function fetchBaiduApi(path: string, params: Record<string, string>): Promise<Response> {
+  const sp = new URLSearchParams({ path, ...params })
+  // In dev (localhost), Vite proxy handles /api/baidumap/* directly
+  // In prod (Vercel), /api/baidumap/* rewrites to /api/baidumap-proxy
+  const url = `/api/baidumap/${path}?${sp.toString()}`
+  return fetch(url)
+}
+
 const { settings } = useSettings()
 
 // ====== 地点详情抽屉 ======
@@ -50,8 +60,7 @@ export function usePlaceDrawer() {
     try {
       const ak = (import.meta as any).env.VITE_BAIDU_MAP_AK as string
       const region = city || '北京'
-      const url = `/api/baidumap/place/v2/search?query=美食&region=${encodeURIComponent(region)}&ak=${ak}&output=json&page_size=6&scope=2`
-      const res = await fetch(url)
+      const res = await fetchBaiduApi('place/v2/search', { query:'美食', region, ak, output:'json', page_size:'6', scope:'2' })
       const data = await res.json()
       if (data.status === 0 && data.results) {
         nearbyFoods.value = data.results.slice(0, 6).map((r: any) => ({
@@ -71,8 +80,7 @@ export function usePlaceDrawer() {
     try {
       const ak = (import.meta as any).env.VITE_BAIDU_MAP_AK as string
       const region = city || '北京'
-      const url = `/api/baidumap/place/v2/search?query=酒店&region=${encodeURIComponent(region)}&ak=${ak}&output=json&page_size=6&scope=2`
-      const res = await fetch(url)
+      const res = await fetchBaiduApi('place/v2/search', { query:'酒店', region, ak, output:'json', page_size:'6', scope:'2' })
       const data = await res.json()
       if (data.status === 0 && data.results) {
         nearbyHotels.value = data.results.slice(0, 6).map((r: any) => {
@@ -124,8 +132,8 @@ export function usePlaceDrawer() {
       loadNearbyFoods()
       loadNearbyHotels()
 
-      const apiUrl = `/api/baidumap/place/v2/search?query=${encodeURIComponent(placeName)}&city=全国&ak=${import.meta.env.VITE_BAIDU_MAP_AK}&output=json&scope=2&page_size=1`
-      const response = await fetch(apiUrl)
+      const ak = (import.meta as any).env.VITE_BAIDU_MAP_AK as string
+      const response = await fetchBaiduApi('place/v2/search', { query: placeName, region: '全国', ak, output: 'json', scope: '2', page_size: '1' })
       const data = await response.json()
 
       if (data.status === 0 && data.results && data.results.length > 0) {
@@ -254,8 +262,8 @@ export function usePlaceDrawer() {
       // Fallback: Baidu Weather API for Chinese cities
       const cityName = city || displayCity || '北京市'
       const districtId = getDistrictId(cityName)
-      const baiduUrl = `/api/baidumap/weather/v1/?district_id=${districtId}&data_type=all&ak=${import.meta.env.VITE_BAIDU_MAP_AK}`
-      const bdRes = await fetch(baiduUrl)
+      const ak = (import.meta as any).env.VITE_BAIDU_MAP_AK as string
+      const bdRes = await fetchBaiduApi('weather/v1/', { district_id: districtId, data_type: 'all', ak })
       const bdData = await bdRes.json()
       if (bdData.status === 0 && bdData.result) {
         const { location, now, forecasts, indexes } = bdData.result

@@ -4,6 +4,12 @@ import { GlobalEvent } from '@trailmate/core'
 
 const BAIDU_MAP_AK = import.meta.env.VITE_BAIDU_MAP_AK as string
 
+// Baidu API proxy helper: encodes path + params for Vercel serverless function
+function baiduFetch(path: string, params: Record<string, string>): Promise<Response> {
+  const sp = new URLSearchParams({ path, ...params })
+  return fetch(`/api/baidumap/${path}?${sp.toString()}`)
+}
+
 const userLocations = new Map<string, LocationInfo>()
 const autoSimulateTimers = new Map<string, ReturnType<typeof setInterval>>()
 const locationWatchers = new Map<string, number>()
@@ -17,10 +23,7 @@ function convertWGSToBaidu(lat: number, lng: number): Promise<{ lat: number; lng
   return new Promise((resolve) => {
     console.log('convertWGSToBaidu被调用, 原始坐标:', lat, lng)
 
-    const url = `/api/baidumap/geoconv/v2/?coords=${lng},${lat}&model=2&ak=${BAIDU_MAP_AK}&output=json`
-    console.log('坐标转换请求:', url)
-
-    fetch(url)
+    baiduFetch('geoconv/v2/', { coords: `${lng},${lat}`, model: '2', ak: BAIDU_MAP_AK, output: 'json' })
       .then(res => res.json())
       .then(data => {
         console.log('坐标转换响应:', data)
@@ -48,10 +51,7 @@ function baiduGeocoder(lat: number, lng: number): Promise<{ address: string; cit
   return new Promise((resolve) => {
     console.log('baiduGeocoder被调用, 坐标:', lat, lng)
 
-    const url = `/api/baidumap/reverse_geocoding/v3/?ak=${BAIDU_MAP_AK}&extensions_poi=1&entire_poi=1&sort_strategy=distance&output=json&coordtype=bd09ll&location=${lat},${lng}`
-    console.log('逆地理编码请求:', url)
-
-    fetch(url)
+    baiduFetch('reverse_geocoding/v3/', { ak: BAIDU_MAP_AK, extensions_poi: '1', entire_poi: '1', sort_strategy: 'distance', output: 'json', coordtype: 'bd09ll', location: `${lat},${lng}` })
       .then(res => res.json())
       .then(data => {
         console.log('逆地理编码响应:', data)
