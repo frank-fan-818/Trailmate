@@ -2,7 +2,7 @@ import { ref, watch } from 'vue'
 import { marked } from 'marked'
 import { useSettings } from '../stores/settings'
 import { CONCIERGE_TOOLS } from './useToolRegistry'
-import { callLLM } from './useOpenRouter'
+import { callLLM, runWithTools } from './useOpenRouter'
 
 const { settings } = useSettings()
 
@@ -383,9 +383,7 @@ export function useItineraryChat() {
       : `【Important】You must respond in English. You are TrailMate, an intelligent travel assistant.`
 
     // Use shared runWithTools for automatic tool calling loop
-    const result = await (await import('./useOpenRouter')).runWithTools(
-      messagesHistory, systemPrompt
-    )
+    const result = await runWithTools(messagesHistory, systemPrompt)
     return { content: result.content }
   }
 
