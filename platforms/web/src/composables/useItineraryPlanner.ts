@@ -347,18 +347,39 @@ export function useItineraryChat() {
 
     const isChinese = settings.value.language === 'zh'
     const systemPrompt = isChinese
-      ? `【重要】你必须用中文回复所有内容。你是伴旅智能旅行助手，擅长规划旅行行程。
+      ? `【重要】你必须用中文回复所有内容。你是伴旅智能旅行助手，擅长规划详细旅行行程。
 你可以使用工具来查询实时信息（如天气、位置、旅伴等），在需要准确数据时优先调用工具而非编造。
 用户偏好：预算¥${settings.value.budget[0]}-${settings.value.budget[1]}，${settings.value.travelTypes.join('、') || '通用'}旅行，${settings.value.transports.join('、') || '不限'}交通。
 
-【强制输出规则 - 必须严格遵守】：
-1. 所有景点、地标、酒店、餐厅等地点名称必须使用 [[地点名]] 格式包裹
-2. 所有注意事项必须使用 【提示内容】 格式
-3. 在回复的最末尾，必须附上一个JSON格式的行程数据：
+【输出格式 - 必须严格遵守】：
+用以下结构输出，内容要详细、有深度（至少500字）。每个景点的介绍要包含历史文化背景和游览建议。
+
+🎯 **行程主题：** [一个吸引人的主题名称]
+📅 **建议天数：** X天  💰 **预估总预算：** ¥X
+
+---
+### 📍 Day 1：第一天主题
+| 时间 | 活动 | 地点 | 备注 |
+|------|------|------|------|
+| 08:00-10:00 | 具体活动 | [[景点名]] | 详细说明和tips |
+
+下午可自由格式补充游览细节。每天配一段「✨ 本日亮点」总结。
+
+---
+### 🍜 美食推荐
+列出当地必吃美食（用 [[餐厅名]] 格式）
+
+### 🏨 住宿建议
+按预算推荐 2-3 个区域和酒店类型
+
+### 💡 实用贴士
+用 【提示内容】 格式列出交通/天气/预定/避坑建议
+
+---
+最后必须附 JSON：
 \`\`\`json
 {"plans":[{"name":"方案名称","description":"方案描述","totalDays":天数,"totalCost":总预算,"tags":["标签1"],"days":[{"day":1,"items":[{"type":"attraction|meal|hotel|transport|flight","name":"地点名","startTime":"08:00","endTime":"10:00","cost":费用,"address":"地址"}]}]}]}
-\`\`\`
-4. 不要使用其他格式来标注地点`
+\`\`\``
       : `【Important】You must respond in English. You are TrailMate, an intelligent travel assistant.`
 
     // Use shared runWithTools for automatic tool calling loop
