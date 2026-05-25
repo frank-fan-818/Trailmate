@@ -1,7 +1,6 @@
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { getSupabase } from '@/lib/supabase'
-import type { SupabaseClient } from '@supabase/supabase-js'
+import { getSupabaseClientSafe } from '@trailmate/adapters/supabase-adapter/src/client'
 
 export interface User {
   id: string
@@ -12,7 +11,7 @@ export interface User {
 
 const STORAGE_KEY = 'trailmate_user'
 
-const supabase: SupabaseClient | null = getSupabase()
+const supabase = getSupabaseClientSafe()
 
 // ── 全局共享响应式状态 ──
 const currentUser = ref<User | null>(null)
