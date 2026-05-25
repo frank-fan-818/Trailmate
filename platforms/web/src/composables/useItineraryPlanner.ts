@@ -21,6 +21,8 @@ interface PlaceInfo {
   content?: string
   city?: string
   province?: string
+  latitude?: number
+  longitude?: number
 }
 
 export function usePlaceDrawer() {
@@ -155,7 +157,9 @@ export function usePlaceDrawer() {
           openTime: poi.detail_info?.opening_hours || '09:00 - 18:00',
           ticket: poi.detail_info?.price?.toString() || '免费',
           city: city,
-          province: province
+          province: province,
+          latitude: poi.location?.lat,
+          longitude: poi.location?.lng
         }
         // Reload foods & hotels with the actual city
         if (city) {
@@ -195,43 +199,83 @@ export function usePlaceDrawer() {
     }
   })
 
-  const loadWeatherInfo = async (placeName: string, city?: string) => {
+  const loadWeatherInfo = async (_placeName: string, city?: string) => {
     weatherLoading.value = true
     weatherInfo.value = null
 
-    try {
-      const cityName = city || extractCityName(placeName) || '北京市'
-      // Baidu Weather API requires district_id (6-digit admin code), not city name
-      const districtId = getDistrictId(cityName)
-      const searchUrl = `/api/baidumap/weather/v1/?district_id=${districtId}&data_type=all&ak=${import.meta.env.VITE_BAIDU_MAP_AK}`
-      const response = await fetch(searchUrl)
-      const data = await response.json()
+    const wmoCodes: Record<number, string> = {
+      0:'晴天',1:'大部晴朗',2:'多云',3:'阴天',45:'雾',48:'霜雾',
+      51:'小毛毛雨',53:'毛毛雨',55:'大毛毛雨',61:'小雨',63:'中雨',65:'大雨',
+      71:'小雪',73:'中雪',75:'大雪',80:'阵雨',81:'中阵雨',82:'大阵雨',
+      85:'小雪阵',86:'大雪阵',95:'雷暴',96:'雷暴+小冰雹',99:'雷暴+大冰雹'
+    }
 
-      if (data.status === 0 && data.result) {
-        const { location, now, forecasts, indexes } = data.result
+    const displayCity = city || selectedPlace.value?.city || selectedPlace.value?.name || '北京'
+
+    try {
+      // Primary: Open-Meteo global free weather API (coordinates-based)
+      const lat = selectedPlace.value?.latitude
+      const lng = selectedPlace.value?.longitude
+      if (lat != null && lng != null) {
+        const meteoUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m,wind_direction_10m&daily=temperature_2m_max,temperature_2m_min,weather_code&timezone=auto&forecast_days=4`
+        const res = await fetch(meteoUrl)
+        const d = await res.json()
+        if (d.current) {
+          const cur = d.current
+          const daily = d.daily
+          weatherInfo.value = {
+            city: displayCity,
+            updateTime: new Date().toLocaleString('zh-CN'),
+            now: {
+              temp: cur.temperature_2m,
+              feelsLike: cur.temperature_2m,
+              text: wmoCodes[cur.weather_code] || '未知',
+              weatherIcon: getWeatherIcon(wmoCodes[cur.weather_code] || ''),
+              humidity: cur.relative_humidity_2m,
+              windDir: ['北','东北','东','东南','南','西南','西','西北'][Math.round((cur.wind_direction_10m || 0) / 45) % 8],
+              windClass: `${cur.wind_speed_10m}km/h`,
+              visibility: '正常'
+            },
+            forecasts: (daily?.time || []).slice(0, 3).map((date: string, i: number) => ({
+              date, week: ['周日','周一','周二','周三','周四','周五','周六'][new Date(date).getDay()],
+              textDay: wmoCodes[daily.weather_code?.[i]] || '未知',
+              textNight: '',
+              high: `${daily.temperature_2m_max?.[i]}°C`,
+              low: `${daily.temperature_2m_min?.[i]}°C`,
+              weatherIcon: getWeatherIcon(wmoCodes[daily.weather_code?.[i]] || '')
+            })),
+            indexes: []
+          }
+          weatherLoading.value = false
+          return
+        }
+      }
+
+      // Fallback: Baidu Weather API for Chinese cities
+      const cityName = city || displayCity || '北京市'
+      const districtId = getDistrictId(cityName)
+      const baiduUrl = `/api/baidumap/weather/v1/?district_id=${districtId}&data_type=all&ak=${import.meta.env.VITE_BAIDU_MAP_AK}`
+      const bdRes = await fetch(baiduUrl)
+      const bdData = await bdRes.json()
+      if (bdData.status === 0 && bdData.result) {
+        const { location, now, forecasts, indexes } = bdData.result
         weatherInfo.value = {
           city: location.city || location.name,
           updateTime: now.uptime ? now.uptime.replace(/(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})/, '$2-$3 $4:$5') : '最近更新',
           now: {
-            temp: now.temp,
-            feelsLike: now.feels_like,
-            text: now.text,
-            weatherIcon: getWeatherIcon(now.text),
-            humidity: now.rh,
-            windDir: now.wind_dir,
-            windClass: now.wind_class,
+            temp: now.temp, feelsLike: now.feels_like, text: now.text,
+            weatherIcon: getWeatherIcon(now.text), humidity: now.rh,
+            windDir: now.wind_dir, windClass: now.wind_class,
             visibility: now.vis ? (parseInt(now.vis) / 1000).toFixed(1) : '未知'
           },
           forecasts: forecasts?.slice(0, 3).map((item: any) => ({
-            date: item.date,
-            week: ['周日', '周一', '周二', '周三', '周四', '周五', '周六'][parseInt(item.week)],
+            date: item.date, week: ['周日','周一','周二','周三','周四','周五','周六'][parseInt(item.week)],
             textDay: item.text_day, textNight: item.text_night,
             high: item.high, low: item.low,
             weatherIcon: getWeatherIcon(item.text_day)
           })) || [],
           indexes: indexes?.slice(0, 4).map((item: any) => ({
-            name: item.name, brief: item.brief, detail: item.detail,
-            icon: getIndexIcon(item.name)
+            name: item.name, brief: item.brief, detail: item.detail, icon: getIndexIcon(item.name)
           })) || []
         }
       } else {
@@ -239,7 +283,7 @@ export function usePlaceDrawer() {
       }
     } catch (error) {
       console.error('获取天气失败:', error)
-      weatherInfo.value = buildMockWeather(city || placeName)
+      weatherInfo.value = buildMockWeather(city || displayCity)
     } finally {
       weatherLoading.value = false
     }
