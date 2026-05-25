@@ -1,19 +1,17 @@
-// Catch-all proxy for nested Baidu API paths: /api/baidumap/place/v2/search etc.
+// Vercel Serverless Function — proxy /api/baidumap/* → api.map.baidu.com
+// All Baidu API calls go through this to avoid browser CORS/tracker blocking
 
 export default async function handler(req, res) {
-  const { path } = req.query
-  const pathStr = Array.isArray(path) ? path.join('/') : (path || '')
-
-  const targetUrl = `https://api.map.baidu.com/${pathStr}?${new URLSearchParams(
-    Object.fromEntries(Object.entries(req.query).filter(([k]) => k !== 'path'))
-  ).toString()}`
+  // Extract the path after /api/baidumap/
+  const baiduPath = req.url.replace(/^\/api\/baidumap\/?/, '')
+  const targetUrl = `https://api.map.baidu.com/${baiduPath}`
 
   try {
     const response = await fetch(targetUrl, {
       headers: { 'User-Agent': 'Trailmate/1.0' }
     })
     const body = await response.text()
-    const ct = response.headers.get('content-type') || ''
+    const ct = response.headers.get('content-type') || 'application/json; charset=utf-8'
     res.setHeader('Content-Type', ct.includes('xml') ? 'application/json; charset=utf-8' : ct)
     res.status(response.status).send(body)
   } catch (e) {

@@ -48,7 +48,7 @@ export function usePlaceDrawer() {
     try {
       const ak = (import.meta as any).env.VITE_BAIDU_MAP_AK as string
       const region = city || '北京'
-      const url = `https://api.map.baidu.com/place/v2/search?query=美食&region=${encodeURIComponent(region)}&ak=${ak}&output=json&page_size=6&scope=2`
+      const url = `/api/baidumap/place/v2/search?query=美食&region=${encodeURIComponent(region)}&ak=${ak}&output=json&page_size=6&scope=2`
       const res = await fetch(url)
       const data = await res.json()
       if (data.status === 0 && data.results) {
@@ -69,7 +69,7 @@ export function usePlaceDrawer() {
     try {
       const ak = (import.meta as any).env.VITE_BAIDU_MAP_AK as string
       const region = city || '北京'
-      const url = `https://api.map.baidu.com/place/v2/search?query=酒店&region=${encodeURIComponent(region)}&ak=${ak}&output=json&page_size=6&scope=2`
+      const url = `/api/baidumap/place/v2/search?query=酒店&region=${encodeURIComponent(region)}&ak=${ak}&output=json&page_size=6&scope=2`
       const res = await fetch(url)
       const data = await res.json()
       if (data.status === 0 && data.results) {
@@ -122,7 +122,7 @@ export function usePlaceDrawer() {
       loadNearbyFoods()
       loadNearbyHotels()
 
-      const apiUrl = `https://api.map.baidu.com/place/v2/search?query=${encodeURIComponent(placeName)}&city=全国&ak=${import.meta.env.VITE_BAIDU_MAP_AK}&output=json&scope=2&page_size=1`
+      const apiUrl = `/api/baidumap/place/v2/search?query=${encodeURIComponent(placeName)}&city=全国&ak=${import.meta.env.VITE_BAIDU_MAP_AK}&output=json&scope=2&page_size=1`
       const response = await fetch(apiUrl)
       const data = await response.json()
 
@@ -201,7 +201,7 @@ export function usePlaceDrawer() {
 
     try {
       const cityName = city || extractCityName(placeName) || '北京市'
-      const searchUrl = `https://api.map.baidu.com/weather/v1/?district=${encodeURIComponent(cityName)}&data_type=all&ak=${import.meta.env.VITE_BAIDU_MAP_AK}`
+      const searchUrl = `/api/baidumap/weather/v1/?district=${encodeURIComponent(cityName)}&data_type=all&ak=${import.meta.env.VITE_BAIDU_MAP_AK}`
       const response = await fetch(searchUrl)
       const data = await response.json()
 
