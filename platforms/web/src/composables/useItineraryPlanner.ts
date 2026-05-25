@@ -201,7 +201,9 @@ export function usePlaceDrawer() {
 
     try {
       const cityName = city || extractCityName(placeName) || '北京市'
-      const searchUrl = `/api/baidumap/weather/v1/?district=${encodeURIComponent(cityName)}&data_type=all&ak=${import.meta.env.VITE_BAIDU_MAP_AK}`
+      // Baidu Weather API requires district_id (6-digit admin code), not city name
+      const districtId = getDistrictId(cityName)
+      const searchUrl = `/api/baidumap/weather/v1/?district_id=${districtId}&data_type=all&ak=${import.meta.env.VITE_BAIDU_MAP_AK}`
       const response = await fetch(searchUrl)
       const data = await response.json()
 
@@ -517,6 +519,33 @@ function getMockPlaceInfo(placeName: string): Partial<{
   else if (placeName.includes('西安')) extractedCity = '西安市'
 
   return { icon: '📍', category: '景点', rating: '4.5', distance: '市中心', description: '这是一个非常值得一去的景点。', address: '当地', openTime: '09:00 - 18:00', ticket: '60', city: extractedCity }
+}
+
+// Baidu Weather API district_id mapping for common Chinese cities
+function getDistrictId(cityName: string): string {
+  const map: Record<string, string> = {
+    '北京市':'110101','上海市':'310101','广州市':'440101','深圳市':'440301',
+    '成都市':'510101','杭州市':'330101','重庆市':'500101','武汉市':'420101',
+    '西安市':'610101','南京市':'320101','天津市':'120101','苏州市':'320501',
+    '长沙市':'430101','青岛市':'370201','大连市':'210201','厦门市':'350201',
+    '三亚市':'460201','昆明市':'530101','哈尔滨市':'230101','长春市':'220101',
+    '沈阳市':'210101','济南市':'370101','合肥市':'340101','郑州市':'410101',
+    '贵阳市':'520101','兰州市':'620101','南宁市':'450101','海口市':'460101',
+    '拉萨市':'540101','银川市':'640101','西宁市':'630101','乌鲁木齐市':'650101',
+    '呼和浩特市':'150101','福州市':'350101','南昌市':'360101','太原市':'140101',
+    '石家庄市':'130101','桂林市':'450301','大理市':'532901','丽江市':'530701',
+    '张家界市':'430801','黄山市':'341001','洛阳市':'410301','开封市':'410201',
+  }
+  // Strip 市 suffix and try exact match, then try without suffix
+  const clean = cityName.replace(/市$/, '')
+  for (const [key, val] of Object.entries(map)) {
+    if (key.replace(/市$/, '') === clean) return val
+  }
+  // Fallback: search partial match
+  for (const [key, val] of Object.entries(map)) {
+    if (clean.includes(key.replace(/市$/, '')) || key.includes(clean)) return val
+  }
+  return '110101' // default Beijing
 }
 
 function extractCityName(placeName: string): string | null {
