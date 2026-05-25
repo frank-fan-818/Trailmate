@@ -30,10 +30,31 @@
           <img src="/logo.jpg" alt="Trailmate" class="w-10 h-10 rounded-lg object-cover" />
           <span class="text-xl font-bold">Trailmate<span class="text-primary">.</span></span>
         </div>
-        <div class="flex gap-8 font-semibold text-sm">
+        <div class="flex gap-8 font-semibold text-sm items-center">
           <button @click="scrollToSection('feature')" :class="scrolled ? 'text-gray-700 hover:text-primary' : 'text-white'">发现剧本</button>
           <button @click="router.push('/concierge')" :class="scrolled ? 'text-gray-700 hover:text-primary' : 'text-white'">智能核心</button>
           <button @click="router.push('/find-companion')" :class="scrolled ? 'text-gray-700 hover:text-primary' : 'text-white'">伴友社区</button>
+          <button
+            v-if="!auth.isAuthenticated.value"
+            @click="router.push('/login')"
+            class="ml-4 px-5 py-2 rounded-lg font-semibold text-sm transition-all duration-300 border"
+            :class="scrolled
+              ? 'border-primary text-primary hover:bg-primary hover:text-white'
+              : 'border-white text-white hover:bg-white hover:text-gray-900'"
+          >
+            登录
+          </button>
+          <router-link
+            v-else
+            to="/dashboard"
+            class="ml-4 flex items-center gap-2"
+            :class="scrolled ? 'text-gray-700 hover:text-primary' : 'text-white'"
+          >
+            <div class="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center text-xs font-bold">
+              {{ auth.user.value?.name?.charAt(0)?.toUpperCase() || '旅' }}
+            </div>
+            <span class="hidden sm:inline">{{ auth.user.value?.name }}</span>
+          </router-link>
         </div>
       </div>
     </header>
@@ -203,8 +224,10 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { useAuth } from '@/composables/useAuth'
 
 const router = useRouter()
+const auth = useAuth()
 
 const scrolled = ref(false)
 const sliderPos = ref(0)

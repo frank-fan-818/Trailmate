@@ -24,6 +24,17 @@
         <div class="flex items-center gap-4">
           <button @click="router.push('/settings')" class="text-gray-700 hover:text-primary transition-colors">设置</button>
           <button @click="router.push('/help')" class="text-gray-700 hover:text-primary transition-colors">帮助</button>
+          <template v-if="auth.isAuthenticated.value">
+            <span class="text-sm text-gray-500">{{ auth.user.value?.name }}</span>
+            <button @click="auth.logout()" class="text-sm text-gray-400 hover:text-primary transition-colors">退出</button>
+          </template>
+          <button
+            v-else
+            @click="router.push('/login')"
+            class="px-4 py-1.5 bg-primary text-white text-sm font-semibold rounded-md hover:bg-primary-hover transition-colors"
+          >
+            登录
+          </button>
         </div>
       </div>
     </header>
@@ -189,8 +200,10 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
 import { Plane, Calendar, Users, CloudSun, Briefcase, Smartphone } from 'lucide-vue-next'
+import { useAuth } from '@/composables/useAuth'
 
 const router = useRouter()
+const auth = useAuth()
 </script>
 
 <style scoped>
