@@ -23,24 +23,31 @@ export async function callLLM(
   const apiUrl = (import.meta as any).env.VITE_OPENROUTER_API_URL as string || 'https://openrouter.ai/api/v1/chat/completions'
 
   const body: any = {
-    model: options?.model || 'minimax/minimax-m2.5:free',
+    model: options?.model || 'minimax/minimax-m2.5',
     messages,
     max_tokens: 2000
   }
   if (options?.tools && options.tools.length > 0) body.tools = options.tools
 
-  const res = await fetch(apiUrl, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
-    body: JSON.stringify(body)
-  })
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const res = await fetch(apiUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+      body: JSON.stringify(body)
+    })
 
-  if (!res.ok) {
-    if (res.status === 429) throw new Error('AI 服务繁忙，请稍后重试（免费模型请求量较大）')
+    if (res.ok) return res.json()
+
+    if (res.status === 429 && attempt < 2) {
+      await new Promise(r => setTimeout(r, 2000 * (attempt + 1)))
+      continue
+    }
+
+    if (res.status === 429) throw new Error('AI 服务繁忙，请稍后重试')
     throw new Error(`API 请求失败 (${res.status})`)
   }
 
-  return res.json()
+  throw new Error('API 请求失败')
 }
 
 // ====== Shared tool execution (with cached Core singleton) ======
