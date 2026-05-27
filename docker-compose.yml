@@ -1,0 +1,10 @@
+services:
+  trailmate-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3456:3456"
+    environment:
+      - NODE_ENV=production
+    restart: unless-stopped
