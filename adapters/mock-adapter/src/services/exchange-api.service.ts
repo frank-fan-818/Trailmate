@@ -1,8 +1,8 @@
 import type { ExchangeRate, ExchangeResult } from '../../types'
 import { exchangeRateData } from '../data/exchange.data'
 
-// Frankfurter API — 免费、无需密钥、自带CORS头、全球可用
-const FRANKFURTER_API = 'https://api.frankfurter.app/latest'
+// ExchangeRate-API — 免费套餐1500次/月、自带CORS头
+const EXCHANGE_API = 'https://open.er-api.com/v6/latest'
 
 async function fetchWithTimeout(url: string, timeoutMs = 5000): Promise<Response> {
   const controller = new AbortController()
@@ -24,19 +24,20 @@ export async function queryExchangeRateReal(params: {
 }): Promise<ExchangeResult> {
   const { from, to, amount = 1 } = params
 
-  // Step 1: Frankfurter 实时汇率
+  // Step 1: ExchangeRate-API 实时汇率
   try {
-    const url = `${FRANKFURTER_API}?from=${from}&to=${to}`
+    const url = `${EXCHANGE_API}/${from}`
     const res = await fetchWithTimeout(url)
     if (res.ok) {
       const data = await res.json()
       const rate = data.rates?.[to]
       if (rate !== undefined) {
-        return { from, to, amount, result: parseFloat((amount * rate).toFixed(6)), rate, date: data.date }
+        const date = new Date((data.time_last_update_unix || 0) * 1000).toISOString().slice(0, 10)
+        return { from, to, amount, result: parseFloat((amount * rate).toFixed(6)), rate, date }
       }
     }
   } catch {
-    console.warn('[ExchangeAPI] Frankfurter unavailable, using mock fallback')
+    console.warn('[ExchangeAPI] API unavailable, using mock fallback')
   }
 
   // Step 2: mock 降级
@@ -53,16 +54,17 @@ export async function queryExchangeRateReal(params: {
  * 获取某货币对全部 31 种货币的汇率
  */
 export async function getAllRatesReal(base: string): Promise<ExchangeRate> {
-  // Step 1: Frankfurter 实时汇率
+  // Step 1: ExchangeRate-API 实时汇率
   try {
-    const url = `${FRANKFURTER_API}?from=${base}`
+    const url = `${EXCHANGE_API}/${base}`
     const res = await fetchWithTimeout(url)
     if (res.ok) {
       const data = await res.json()
-      return { base: data.base, date: data.date, rates: data.rates }
+      const date = new Date((data.time_last_update_unix || 0) * 1000).toISOString().slice(0, 10)
+      return { base: data.base_code, date, rates: data.rates }
     }
   } catch {
-    console.warn('[ExchangeAPI] Frankfurter unavailable for getAllRates, using mock fallback')
+    console.warn('[ExchangeAPI] API unavailable for getAllRates, using mock fallback')
   }
 
   // Step 2: mock 降级

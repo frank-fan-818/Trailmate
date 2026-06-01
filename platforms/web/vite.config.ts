@@ -35,6 +35,11 @@ export default defineConfig({
         changeOrigin: true,
         secure: true,
         rewrite: (path) => path.replace(/^\/api\/baidumap/, '')
+      },
+      '/api/exchange': {
+        target: 'https://open.er-api.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace('/api/exchange', '/v6')
       }
     }
   }
