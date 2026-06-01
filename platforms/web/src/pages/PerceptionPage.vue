@@ -161,6 +161,7 @@
               :user-position="currentLocation"
               :timeline-nodes="timeline"
               :center="mapCenter"
+              :zoom="mapZoom"
               height="450px"
             />
           </div>
@@ -559,6 +560,16 @@ const mapCenter = computed<[number, number]>(() => {
   if (currentLocation.value) return [currentLocation.value.latitude, currentLocation.value.longitude]
   return [39.9042, 116.4074] // default Beijing
 })
+const mapZoom = computed(() => {
+  // If only city-level coords (all items share same coords), zoom out
+  const coords = timeline.value.filter(n => n.latitude != null)
+  if (coords.length < 2) return 13
+  // Check spread: if all within ~10km, use city zoom; else country zoom
+  const lats = coords.map(n => n.latitude!)
+  const lngs = coords.map(n => n.longitude!)
+  const spread = Math.max(Math.max(...lats) - Math.min(...lats), Math.max(...lngs) - Math.min(...lngs))
+  return spread < 0.1 ? 14 : spread < 1 ? 10 : 5
+})
 
 // Geocode address using free Nominatim API (OpenStreetMap, global coverage)
 async function geocodeAddress(address: string, cityHint?: string): Promise<{ lat: number; lng: number } | null> {
@@ -607,22 +618,34 @@ async function loadTimelineFromPlan() {
   if (!plan || !plan.days) { timeline.value = []; return }
   const statuses = loadStatuses()
 
-  // Extract city from plan tags or description for geocoding hint
-  const cityHint = plan.tags?.join(' ') || ''
+  // Extract city/country from plan metadata
+  const cityHint = extractCityFromPlan(plan)
+
+  // Geocode the city first for accurate map center
+  let cityCoords: { lat: number; lng: number } | null = null
+  if (cityHint) {
+    cityCoords = await geocodeAddress(cityHint)
+  }
 
   const nodes: TimelineNode[] = []
   for (const day of plan.days) {
     for (const item of (day.items || [])) {
       const id = `${plan.name}_day${day.day}_${item.name}`
-      // Try to geocode the address
       let latitude: number | undefined
       let longitude: number | undefined
       if (item.address) {
-        const coords = await geocodeAddress(item.address, cityHint)
+        // Use full context: "Street, City, Country"
+        const fullQuery = cityHint ? `${item.address}, ${cityHint}` : item.address
+        const coords = await geocodeAddress(fullQuery)
         if (coords) {
           latitude = coords.lat
           longitude = coords.lng
         }
+      }
+      // Fallback: use city coords for items without address
+      if (latitude == null && cityCoords) {
+        latitude = cityCoords.lat
+        longitude = cityCoords.lng
       }
       nodes.push({
         id,
@@ -641,6 +664,35 @@ async function loadTimelineFromPlan() {
     }
   }
   timeline.value = nodes
+}
+
+// Extract city/country from plan name, description, and tags
+function extractCityFromPlan(plan: any): string {
+  const sources = [plan.name, plan.description, ...(plan.tags || [])].filter(Boolean)
+  const combined = sources.join(' ')
+
+  // Common Chinese city patterns: XX市, XX省, XX国
+  const cnCityMatch = combined.match(/([\u4e00-\u9fa5]{2,5})(?:市|省|国)/)
+  if (cnCityMatch) return cnCityMatch[0]
+
+  // Common European city names (from the AI-generated content)
+  const knownCities = [
+    'Munich', 'Berlin', 'Paris', 'London', 'Rome', 'Barcelona', 'Amsterdam',
+    'Vienna', 'Prague', 'Budapest', 'Milan', 'Venice', 'Florence',
+    'Tokyo', 'Kyoto', 'Osaka', 'Seoul', 'Bangkok', 'Singapore',
+    'New York', 'Los Angeles', 'San Francisco', 'Chicago', 'Sydney',
+    '慕尼黑', '柏林', '巴黎', '伦敦', '罗马', '巴塞罗那', '阿姆斯特丹',
+    '维也纳', '布拉格', '布达佩斯', '米兰', '威尼斯', '佛罗伦萨',
+    '东京', '京都', '大阪', '首尔', '曼谷', '新加坡',
+    '纽约', '洛杉矶', '旧金山', '芝加哥', '悉尼',
+  ]
+  for (const city of knownCities) {
+    if (combined.includes(city)) return city
+  }
+
+  // Fallback: return first address from first day
+  const firstAddr = plan.days?.[0]?.items?.[0]?.address
+  return firstAddr || ''
 }
 
 function loadStatuses(): Record<string, string> {

@@ -153,7 +153,7 @@ watch(() => props.userPosition, (pos) => {
 })
 
 watch(() => props.center, (c) => {
-  if (map && c) map.setView(c, map.getZoom())
+  if (map && c) map.setView(c, props.zoom || 13)
 })
 
 watch(() => props.timelineNodes, () => {
