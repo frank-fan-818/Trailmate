@@ -1,7 +1,6 @@
 import { ref, watch } from 'vue'
 import { marked } from 'marked'
 import { useSettings } from '../stores/settings'
-import { CONCIERGE_TOOLS } from './useToolRegistry'
 import { callLLM } from './useOpenRouter'
 
 // Baidu API proxy: Vercel rewrites /api/baidumap/* → /api/baidumap-proxy
@@ -395,6 +394,58 @@ export function useItineraryChat() {
     } catch { /* silent */ }
   }
 
+/**
+ * 从 AI 回复文本中精准提取 JSON 行程数据并剥离。
+ * 优先匹配 [PLAN_DATA]...[/PLAN_DATA] 分隔符，
+ * 兼容旧格式：```json 代码块、行首松散 JSON。
+ */
+const PLAN_DATA_RE = /\[PLAN_DATA\]\s*([\s\S]*?)\s*\[\/PLAN_DATA\]/
+const JSON_FENCE_RE = /```json\s*([\s\S]*?)\s*```/
+const JSON_LOOSE_RE = /\{"plans"\s*:\s*\[/
+
+export function extractJsonFromText(content: string): { text: string; plans: any | null } {
+  let jsonStr = ''
+  let jsonStart = -1
+
+  // 策略1: [PLAN_DATA]...[/PLAN_DATA] 分隔符（新格式，最可靠）
+  const delimMatch = content.match(PLAN_DATA_RE)
+  if (delimMatch) {
+    jsonStr = delimMatch[1]
+    jsonStart = delimMatch.index!
+  }
+
+  // 策略2: ```json ... ``` 代码块
+  if (!jsonStr) {
+    const m = content.match(JSON_FENCE_RE)
+    if (m) { jsonStr = m[1]; jsonStart = m.index! }
+  }
+
+  // 策略3: 找到 {"plans" 开头的行（新行或行首）
+  if (!jsonStr) {
+    const m = content.match(JSON_LOOSE_RE)
+    if (m) {
+      const idx = m.index!
+      let depth = 0, end = idx
+      for (let i = idx; i < content.length; i++) {
+        if (content[i] === '{') depth++
+        else if (content[i] === '}') { depth--; if (depth === 0) { end = i + 1; break } }
+      }
+      if (depth === 0) { jsonStr = content.slice(idx, end); jsonStart = idx }
+    }
+  }
+
+  if (!jsonStr) return { text: content.trim(), plans: null }
+
+  try {
+    const parsed = JSON.parse(jsonStr)
+    const plans = parsed?.plans && Array.isArray(parsed.plans) ? parsed.plans : null
+    const cleanText = content.slice(0, jsonStart).trim()
+    return { text: cleanText, plans: plans ? { plans } : null }
+  } catch {
+    return { text: content.trim(), plans: null }
+  }
+}
+
   const callPlannerLLM = async (messagesHistory: Array<{ role: string; content: string }>) => {
     const isChinese = settings.value.language === 'zh'
     const systemPrompt = isChinese
@@ -426,8 +477,10 @@ export function useItineraryChat() {
 用 【提示内容】 格式列出交通/天气/预定/避坑建议
 
 ---
-在回复末尾附上结构化数据，不要用代码块包裹，直接输出纯 JSON：
-{"plans":[{"name":"方案名称","description":"方案描述","totalDays":天数,"totalCost":总预算,"tags":["标签1"],"days":[{"day":1,"items":[{"type":"attraction|meal|hotel|transport|flight","name":"地点名","startTime":"08:00","endTime":"10:00","cost":费用,"address":"地址"}]}]}]}`
+在回复末尾用 [PLAN_DATA]...[/PLAN_DATA] 包裹行程数据（这不会被用户看到，仅用于系统解析）：
+[PLAN_DATA]
+{"plans":[{"name":"方案名称","description":"方案描述","totalDays":天数,"totalCost":总预算,"tags":["标签1"],"days":[{"day":1,"items":[{"type":"attraction|meal|hotel|transport|flight","name":"地点名","startTime":"08:00","endTime":"10:00","cost":费用,"address":"地址"}]}]}]}
+[/PLAN_DATA]`
       : `【Important】You must respond in English. You are TrailMate, an intelligent travel assistant.`
 
     // 行程规划不需要工具调用，直接 LLM 对话
@@ -437,17 +490,8 @@ export function useItineraryChat() {
     ])
     const content = res.choices?.[0]?.message?.content || ''
 
-    // 从回复末尾提取 JSON（可能不在代码块内），并从显示内容中移除
-    const jsonMatch = content.match(/\{[\s\S]*"plans"[\s\S]*\}/)
-    let plansJson: any = null
-    if (jsonMatch) {
-      try {
-        plansJson = JSON.parse(jsonMatch[0])
-      } catch {}
-    }
-
-    // 移除 JSON 部分，返回干净的文本内容
-    const cleanContent = jsonMatch ? content.slice(0, jsonMatch.index).trim() : content
+    // 从回复末尾提取 JSON 并剥离
+    const { text: cleanContent, plans: plansJson } = extractJsonFromText(content)
 
     return { content: cleanContent, plans: plansJson }
   }
@@ -503,6 +547,8 @@ export function useItineraryChat() {
   }
 
   const renderAIResponse = (content: string) => {
+    // 移除系统分隔符和旧格式 JSON 代码块，防止在对话中显示
+    content = content.replace(/\[PLAN_DATA\][\s\S]*?\[\/PLAN_DATA\]/g, '')
     content = content.replace(/```json[\s\S]*?```/g, '')
     content = content.replace(/\[\[([^\]]+)\]\]/g, (_match, placeName) => {
       return `<span class="place-name" data-place="${placeName.trim()}">📍 ${placeName.trim()}</span>`

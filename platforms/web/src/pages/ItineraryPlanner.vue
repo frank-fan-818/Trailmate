@@ -444,7 +444,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ArrowLeft, Plus, ClipboardList, X, MapPin, DollarSign, User } from 'lucide-vue-next'
-import { usePlaceDrawer, useItineraryChat, loadSavedPlans } from '../composables/useItineraryPlanner'
+import { usePlaceDrawer, useItineraryChat, loadSavedPlans, extractJsonFromText } from '../composables/useItineraryPlanner'
 import ItineraryPlannerSidebar from '../components/ItineraryPlannerSidebar.vue'
 import PlanDetail from '../components/PlanDetail.vue'
 
@@ -523,46 +523,19 @@ const handleGenerate = () => {
 function extractPlanFromChat() {
   for (const msg of messages.value) {
     if (msg.role !== 'assistant') continue
-    const content = msg.content
-
-    // 尝试多种 JSON 提取策略
-    let jsonStr = ''
-    // 策略1: ```json ... ``` 代码块
-    const codeMatch = content.match(/```json\s*([\s\S]*?)\s*```/)
-    if (codeMatch) jsonStr = codeMatch[1]
-    // 策略2: 行尾的 {...} JSON 对象（新格式）
-    if (!jsonStr) {
-      const lines = content.split('\n')
-      for (let i = lines.length - 1; i >= 0; i--) {
-        const m = lines[i].match(/\{"plans"\s*:\s*\[/)
-        if (m) {
-          jsonStr = lines.slice(i).join('\n').trim()
-          break
-        }
+    const { plans: result } = extractJsonFromText(msg.content)
+    if (result?.plans && Array.isArray(result.plans)) {
+      plans.value = result.plans
+      expandedPlanIdx.value = 0
+      const allPlans = loadSavedPlans()
+      for (const plan of result.plans) {
+        const idx = allPlans.findIndex((p: any) => p.name === plan.name)
+        if (idx >= 0) allPlans[idx] = { ...plan, savedAt: Date.now() }
+        else allPlans.unshift({ ...plan, savedAt: Date.now() })
       }
+      localStorage.setItem('trailmate-saved-plans', JSON.stringify(allPlans.slice(0, 10)))
+      return
     }
-    // 策略3: 全文正则回退
-    if (!jsonStr) {
-      const m = content.match(/\{"plans"\s*:\s*\[[\s\S]*?\}\s*\]\s*\}/)
-      if (m) jsonStr = m[0]
-    }
-
-    if (!jsonStr) continue
-    try {
-      const result = JSON.parse(jsonStr)
-      if (result.plans && Array.isArray(result.plans)) {
-        plans.value = result.plans
-        expandedPlanIdx.value = 0
-        const allPlans = loadSavedPlans()
-        for (const plan of result.plans) {
-          const idx = allPlans.findIndex((p: any) => p.name === plan.name)
-          if (idx >= 0) allPlans[idx] = { ...plan, savedAt: Date.now() }
-          else allPlans.unshift({ ...plan, savedAt: Date.now() })
-        }
-        localStorage.setItem('trailmate-saved-plans', JSON.stringify(allPlans.slice(0, 10)))
-        return
-      }
-    } catch {}
   }
 }
 
