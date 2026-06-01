@@ -39,7 +39,7 @@ export default defineConfig({
       '/api/exchange-proxy': {
         target: 'https://api.frankfurter.app',
         changeOrigin: true,
-        rewrite: (path) => path.replace('/api/exchange-proxy', '')
+        rewrite: (path) => path.replace('/api/exchange-proxy', '/latest')
       }
     }
   }

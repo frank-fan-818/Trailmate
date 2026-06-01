@@ -3,7 +3,7 @@ import { exchangeRateData } from '../data/exchange.data'
 
 // Frankfurter API — 免费、无需密钥、全球可用
 // 国内浏览器 → Vercel 代理 → Frankfurter (绕过墙)
-const PROXY_API = '/api/exchange-proxy/latest'
+const PROXY_API = '/api/exchange-proxy'
 
 async function fetchWithTimeout(url: string, timeoutMs = 5000): Promise<Response> {
   const controller = new AbortController()
