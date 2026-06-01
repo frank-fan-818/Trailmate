@@ -243,6 +243,22 @@
             <p class="text-gray-500 text-sm">请选择一个行程方案</p>
           </div>
 
+          <!-- 加载骨架屏 -->
+          <div v-else-if="timelineLoading" class="space-y-3">
+            <div class="flex items-center gap-2 mb-2">
+              <span class="inline-block w-4 h-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin"></span>
+              <span class="text-sm text-gray-500">正在解析地址坐标...</span>
+            </div>
+            <div v-for="i in 5" :key="i" class="rounded-xl border border-gray-100 px-4 py-4 animate-pulse">
+              <div class="flex gap-4 items-center">
+                <div class="h-4 bg-gray-200 rounded w-12" />
+                <div class="h-4 bg-gray-200 rounded w-20" />
+                <div class="h-4 bg-gray-200 rounded w-40 flex-1" />
+                <div class="h-8 bg-gray-200 rounded w-20" />
+              </div>
+            </div>
+          </div>
+
           <div v-else class="space-y-3">
             <div
               v-for="node in timeline"
@@ -540,6 +556,7 @@ const ruleForm = reactive({
 // Plan-based timeline
 const savedPlans = ref<any[]>([])
 const activePlanIdx = ref(-1)
+const timelineLoading = ref(false)
 const timelineStatuses = ref<Record<string, string>>({})
 const STATUS_STORAGE_KEY = 'trailmate-timeline-statuses'
 const geocodeCache = ref<Record<string, { lat: number; lng: number } | null>>({})
@@ -616,6 +633,7 @@ async function geocodeAddress(address: string, cityHint?: string): Promise<{ lat
 async function loadTimelineFromPlan() {
   const plan = activePlan.value
   if (!plan || !plan.days) { timeline.value = []; return }
+  timelineLoading.value = true
   const statuses = loadStatuses()
 
   // Extract city/country from plan metadata
@@ -664,6 +682,7 @@ async function loadTimelineFromPlan() {
     }
   }
   timeline.value = nodes
+  timelineLoading.value = false
 }
 
 // Extract city/country from plan name, description, and tags
@@ -927,4 +946,14 @@ const getStatusBadgeClass = (status: string) => {
       return 'bg-gray-100 text-gray-600'
   }
 }
+</script>
+
+<style scoped>
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+.animate-spin {
+  animation: spin 0.8s linear infinite;
+}
+</style>
 </script>
