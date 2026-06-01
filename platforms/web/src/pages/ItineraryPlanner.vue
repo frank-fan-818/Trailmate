@@ -368,33 +368,42 @@
         </div>
 
         <!-- 行程方案展示区 -->
-        <div v-if="plans.length > 0" class="space-y-6">
-          <h2 class="text-xl font-bold text-gray-900 mb-6">生成的行程方案</h2>
-          
+        <div v-if="plans.length > 0" class="space-y-8">
+          <h2 class="text-xl font-bold text-gray-900">生成的行程方案</h2>
+
           <div
-            v-for="plan in plans"
-            :key="plan.id"
-            class="bg-white rounded-2xl shadow-lg p-8 hover:shadow-xl transition-shadow cursor-pointer border border-gray-200 hover:-translate-y-2 transition-transform"
+            v-for="(plan, pi) in plans"
+            :key="pi"
+            class="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden"
           >
-            <div class="flex justify-between items-start mb-6">
-              <div>
-                <h3 class="text-2xl font-bold text-gray-900 mb-3">{{ plan.name }}</h3>
-                <p class="text-gray-600 leading-relaxed">{{ plan.description }}</p>
+            <!-- 方案头部 -->
+            <div
+              class="p-6 cursor-pointer hover:bg-gray-50 transition-colors"
+              @click="expandedPlanIdx = expandedPlanIdx === pi ? -1 : pi"
+            >
+              <div class="flex justify-between items-start">
+                <div class="flex-1">
+                  <h3 class="text-xl font-bold text-gray-900 mb-2">{{ plan.name }}</h3>
+                  <p class="text-gray-500 text-sm line-clamp-2">{{ plan.description }}</p>
+                </div>
+                <div class="flex items-center gap-3 flex-shrink-0 ml-4">
+                  <span class="px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-semibold">
+                    {{ dayCount(plan) }}天
+                  </span>
+                  <span class="text-gray-400 text-lg transition-transform" :class="expandedPlanIdx === pi ? 'rotate-180' : ''">▾</span>
+                </div>
               </div>
-              <span class="px-4 py-2 bg-primary/10 text-primary rounded-full text-sm font-semibold">
-                {{ plan.days }}天行程
-              </span>
+              <div class="flex flex-wrap gap-2 mt-3">
+                <span v-for="tag in plan.tags" :key="tag" class="px-2 py-0.5 bg-gray-100 text-gray-500 rounded-full text-xs">{{ tag }}</span>
+                <span class="text-xs text-gray-400 flex items-center gap-1">
+                  <DollarSign :size="12" /> ¥{{ formatCost(plan) }}
+                </span>
+              </div>
             </div>
-            
-            <div class="flex flex-wrap items-center gap-8 text-sm text-gray-600">
-              <div class="flex items-center gap-2">
-                <DollarSign :size="14" class="inline" />
-                <span>预计花费 ¥{{ plan.cost }}</span>
-              </div>
-              <div class="flex items-center gap-2">
-                <MapPin :size="14" class="inline" />
-                <span>{{ plan.destinations.join('、') }}</span>
-              </div>
+
+            <!-- 展开的详细行程 -->
+            <div v-if="expandedPlanIdx === pi" class="border-t border-gray-100 p-6">
+              <PlanDetail :plan="normalizePlan(plan)" :editable="true" @update="onPlanUpdate(pi, $event)" />
             </div>
           </div>
         </div>
@@ -419,8 +428,9 @@
 import { ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ArrowLeft, Plus, ClipboardList, X, MapPin, DollarSign, User } from 'lucide-vue-next'
-import { usePlaceDrawer, useItineraryChat } from '../composables/useItineraryPlanner'
+import { usePlaceDrawer, useItineraryChat, loadSavedPlans } from '../composables/useItineraryPlanner'
 import ItineraryPlannerSidebar from '../components/ItineraryPlannerSidebar.vue'
+import PlanDetail from '../components/PlanDetail.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -440,13 +450,45 @@ const {
 } = useItineraryChat()
 
 const showHistorySidebar = ref(false)
+const expandedPlanIdx = ref(-1)
 
-// Load specific chat from MyTrips query param
+// Plan helpers — normalize AI field names (totalDays/totalCost) to internal format
+function dayCount(plan: any) { return plan.totalDays || plan.days?.length || 0 }
+function formatCost(plan: any) { return (plan.totalCost || plan.cost || 0).toLocaleString() }
+function normalizePlan(plan: any) {
+  const days = plan.days || []
+  return {
+    ...plan,
+    totalDays: plan.totalDays || days.length,
+    totalCost: plan.totalCost || plan.totalDays,
+    days: days.map((d: any) => ({
+      ...d,
+      items: (d.items || []).map((item: any) => ({
+        ...item,
+        cost: item.cost ? Number(item.cost) : undefined,
+      })),
+    })),
+  }
+}
+function onPlanUpdate(idx: number, updatedPlan: any) {
+  plans.value[idx] = { ...plans.value[idx], ...updatedPlan }
+}
+
+// Load specific chat or plan from MyTrips query param
 onMounted(() => {
   const chatId = route.query.chatId as string
   if (chatId) {
     const chat = chatHistory.value.find(c => c.id === chatId)
     if (chat) loadChat(chat)
+  }
+  const planName = route.query.planName as string
+  if (planName) {
+    const allPlans = loadSavedPlans()
+    const found = allPlans.find((p: any) => p.name === planName)
+    if (found) {
+      plans.value = [found]
+      expandedPlanIdx.value = 0
+    }
   }
 })
 

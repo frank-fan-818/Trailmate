@@ -205,14 +205,40 @@
 
         <!-- 底部：时间线 -->
         <section class="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 xl:col-span-2">
-          <div class="mb-5">
-            <p class="text-sm font-medium text-primary">📅 时间线</p>
-            <h2 class="mt-1 text-xl font-semibold text-gray-900">行程进度</h2>
+          <div class="mb-5 flex items-center justify-between flex-wrap gap-4">
+            <div>
+              <p class="text-sm font-medium text-primary">📅 时间线</p>
+              <h2 class="mt-1 text-xl font-semibold text-gray-900">行程进度</h2>
+            </div>
+            <select
+              v-if="savedPlans.length > 0"
+              v-model="activePlanIdx"
+              @change="loadTimelineFromPlan"
+              class="px-3 py-2 text-sm border border-gray-200 rounded-xl outline-none focus:border-primary"
+            >
+              <option :value="-1">选择行程方案</option>
+              <option v-for="(p, i) in savedPlans" :key="i" :value="i">{{ p.name }}</option>
+            </select>
           </div>
 
-          <div v-if="timeline.length === 0" class="rounded-xl bg-gray-50 px-4 py-8 text-center">
-            <p class="text-gray-500 text-sm">暂无时间线数据</p>
-            <p class="text-gray-400 text-xs mt-1">生成行程后将自动生成时间线</p>
+          <!-- 进度条 -->
+          <div v-if="activePlan && timeline.length > 0" class="mb-4">
+            <div class="flex items-center justify-between mb-1">
+              <span class="text-xs text-gray-500">完成进度</span>
+              <span class="text-xs font-semibold" :class="progressPercent >= 100 ? 'text-green-600' : 'text-primary'">{{ completedCount }}/{{ timeline.length }} ({{ progressPercent }}%)</span>
+            </div>
+            <div class="h-2 bg-gray-100 rounded-full overflow-hidden">
+              <div class="h-full bg-primary rounded-full transition-all duration-500" :style="{ width: progressPercent + '%' }"></div>
+            </div>
+          </div>
+
+          <div v-if="savedPlans.length === 0" class="rounded-xl bg-gray-50 px-4 py-8 text-center">
+            <p class="text-gray-500 text-sm">暂无行程数据</p>
+            <p class="text-gray-400 text-xs mt-1">在行程规划页面生成计划后将在此显示</p>
+            <button @click="router.push('/planner')" class="mt-4 px-4 py-2 text-sm text-primary font-medium border border-primary/30 rounded-lg hover:bg-primary/5">前往规划</button>
+          </div>
+          <div v-else-if="activePlanIdx < 0" class="rounded-xl bg-gray-50 px-4 py-8 text-center">
+            <p class="text-gray-500 text-sm">请选择一个行程方案</p>
           </div>
 
           <div v-else class="space-y-3">
@@ -430,9 +456,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useTrailmateCore } from '../composables/use-trailmate-core'
+import { loadSavedPlans } from '../composables/useItineraryPlanner'
 import TravelMap from '../components/TravelMap.vue'
 import type { LocationInfo } from '@trailmate/perception'
 
@@ -508,20 +535,68 @@ const ruleForm = reactive({
   priority: 1
 })
 
-const loadDemoTimeline = () => {
-  timeline.value = [
-    { id: 'demo_0_0', planId: 'demo-plan', dayIndex: 0, startTime: '09:00', endTime: '10:00', title: '天安门广场', description: '参观天安门广场', type: 'attraction', status: 'completed', address: '北京市东城区天安门广场', latitude: 39.9042, longitude: 116.3974 },
-    { id: 'demo_0_1', planId: 'demo-plan', dayIndex: 0, startTime: '10:30', endTime: '11:30', title: '故宫博物院', description: '参观故宫', type: 'attraction', status: 'in_progress', address: '北京市东城区景山前街4号', latitude: 39.9163, longitude: 116.3972 },
-    { id: 'demo_0_2', planId: 'demo-plan', dayIndex: 0, startTime: '12:00', endTime: '13:00', title: '四季民福烤鸭', description: '午餐', type: 'meal', status: 'not_started', address: '北京市东城区王府井大街', latitude: 39.9147, longitude: 116.4103 },
-    { id: 'demo_0_3', planId: 'demo-plan', dayIndex: 0, startTime: '14:00', endTime: '16:00', title: '颐和园', description: '游览颐和园', type: 'attraction', status: 'not_started', address: '北京市海淀区新建宫门路19号', latitude: 39.9999, longitude: 116.2755 },
-    { id: 'demo_0_4', planId: 'demo-plan', dayIndex: 0, startTime: '18:00', endTime: '20:00', title: '北京胡同酒店', description: '入住酒店', type: 'hotel', status: 'not_started', address: '北京市东城区南锣鼓巷', latitude: 39.9375, longitude: 116.4025 },
-  ]
+// Plan-based timeline
+const savedPlans = ref<any[]>([])
+const activePlanIdx = ref(-1)
+const timelineStatuses = ref<Record<string, string>>({})
+const STATUS_STORAGE_KEY = 'trailmate-timeline-statuses'
+
+const activePlan = computed(() => {
+  if (activePlanIdx.value < 0 || activePlanIdx.value >= savedPlans.value.length) return null
+  return savedPlans.value[activePlanIdx.value]
+})
+
+const completedCount = computed(() => timeline.value.filter(n => n.status === 'completed').length)
+const progressPercent = computed(() => {
+  if (timeline.value.length === 0) return 0
+  return Math.round((completedCount.value / timeline.value.length) * 100)
+})
+
+function loadTimelineFromPlan() {
+  const plan = activePlan.value
+  if (!plan || !plan.days) { timeline.value = []; return }
+  const statuses = loadStatuses()
+  const nodes: TimelineNode[] = []
+  for (const day of plan.days) {
+    for (const item of (day.items || [])) {
+      const id = `${plan.name}_day${day.day}_${item.name}`
+      nodes.push({
+        id,
+        planId: plan.name,
+        dayIndex: (day.day || 1) - 1,
+        startTime: item.startTime || '09:00',
+        endTime: item.endTime || '10:00',
+        title: item.name,
+        description: `${item.type || 'attraction'} · ${item.address || ''}`,
+        type: item.type || 'attraction',
+        status: statuses[id] || 'not_started',
+        address: item.address,
+      })
+    }
+  }
+  timeline.value = nodes
+}
+
+function loadStatuses(): Record<string, string> {
+  try {
+    return JSON.parse(localStorage.getItem(STATUS_STORAGE_KEY) || '{}')
+  } catch { return {} }
+}
+
+function saveStatuses() {
+  const s: Record<string, string> = {}
+  for (const n of timeline.value) s[n.id] = n.status
+  localStorage.setItem(STATUS_STORAGE_KEY, JSON.stringify(s))
 }
 
 onMounted(async () => {
   await initialize()
   await Promise.all([loadNotifications(), loadRules()])
-  loadDemoTimeline()
+  savedPlans.value = loadSavedPlans()
+  if (savedPlans.value.length > 0) {
+    activePlanIdx.value = 0
+    loadTimelineFromPlan()
+  }
 })
 
 const loadNotifications = async () => {
@@ -680,14 +755,10 @@ const handleStopWatching = async () => {
 }
 
 const handleNodeStatusChange = async (nodeId: string, status: string) => {
-  if (timeline.value.length === 0) return
-  const planId = timeline.value[0].planId
-  try {
-    await updateNodeStatus({ planId, nodeId, status })
-    const updated = await getTimeline(planId)
-    timeline.value = updated
-  } catch (e) {
-    console.error('更新节点状态失败:', e)
+  const node = timeline.value.find(n => n.id === nodeId)
+  if (node) {
+    node.status = status
+    saveStatuses()
   }
 }
 

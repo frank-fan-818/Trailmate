@@ -399,7 +399,6 @@ export function useItineraryChat() {
     const isChinese = settings.value.language === 'zh'
     const systemPrompt = isChinese
       ? `【重要】你必须用中文回复所有内容。你是伴旅智能旅行助手，擅长规划详细旅行行程。
-你可以使用工具来查询实时信息（如天气、位置、旅伴等），在需要准确数据时优先调用工具而非编造。
 用户偏好：预算¥${settings.value.budget[0]}-${settings.value.budget[1]}，${settings.value.travelTypes.join('、') || '通用'}旅行，${settings.value.transports.join('、') || '不限'}交通。
 
 【输出格式 - 必须严格遵守】：
@@ -427,10 +426,8 @@ export function useItineraryChat() {
 用 【提示内容】 格式列出交通/天气/预定/避坑建议
 
 ---
-最后必须附 JSON：
-\`\`\`json
-{"plans":[{"name":"方案名称","description":"方案描述","totalDays":天数,"totalCost":总预算,"tags":["标签1"],"days":[{"day":1,"items":[{"type":"attraction|meal|hotel|transport|flight","name":"地点名","startTime":"08:00","endTime":"10:00","cost":费用,"address":"地址"}]}]}]}
-\`\`\``
+在回复末尾附上结构化数据，不要用代码块包裹，直接输出纯 JSON：
+{"plans":[{"name":"方案名称","description":"方案描述","totalDays":天数,"totalCost":总预算,"tags":["标签1"],"days":[{"day":1,"items":[{"type":"attraction|meal|hotel|transport|flight","name":"地点名","startTime":"08:00","endTime":"10:00","cost":费用,"address":"地址"}]}]}]}`
       : `【Important】You must respond in English. You are TrailMate, an intelligent travel assistant.`
 
     // 行程规划不需要工具调用，直接 LLM 对话
@@ -439,7 +436,20 @@ export function useItineraryChat() {
       ...messagesHistory.map(m => ({ role: m.role as any, content: m.content }))
     ])
     const content = res.choices?.[0]?.message?.content || ''
-    return { content }
+
+    // 从回复末尾提取 JSON（可能不在代码块内），并从显示内容中移除
+    const jsonMatch = content.match(/\{[\s\S]*"plans"[\s\S]*\}/)
+    let plansJson: any = null
+    if (jsonMatch) {
+      try {
+        plansJson = JSON.parse(jsonMatch[0])
+      } catch {}
+    }
+
+    // 移除 JSON 部分，返回干净的文本内容
+    const cleanContent = jsonMatch ? content.slice(0, jsonMatch.index).trim() : content
+
+    return { content: cleanContent, plans: plansJson }
   }
 
   const handleGenerate = async (input: string) => {
@@ -455,11 +465,13 @@ export function useItineraryChat() {
 
       // Call LLM for travel planning
       let finalResponse = ''
+      let parsedPlans: any[] | null = null
       let retryCount = 0
       while (retryCount <= 2) {
         try {
           const msg = await callPlannerLLM(historyForApi)
           finalResponse = msg?.content || ''
+          parsedPlans = msg?.plans?.plans || null
           break
         } catch (apiError) {
           retryCount++
@@ -468,29 +480,17 @@ export function useItineraryChat() {
         }
       }
 
+      // 推入消息时使用已经去掉 JSON 的干净文本
       const aiMsg: ChatMessage = { id: `ai-${Date.now()}`, role: 'assistant', content: finalResponse, timestamp: new Date() }
       messages.value.push(aiMsg)
       aiResponse.value = finalResponse
       saveCurrentChat()
 
-      try {
-        let jsonStr = ''
-        const codeBlockMatch = finalResponse.match(/```json\s*([\s\S]*?)\s*```/)
-        if (codeBlockMatch) {
-          jsonStr = codeBlockMatch[1]
-        } else {
-          // 回退：从文本中匹配第一个完整 JSON 对象
-          const jsonMatch = response.match(/\{[\s\S]*\}/)
-          if (jsonMatch) jsonStr = jsonMatch[0]
-        }
-        if (jsonStr) {
-          const result = JSON.parse(jsonStr)
-          if (result.plans && Array.isArray(result.plans)) {
-            plans.value = result.plans
-            savePlansToStorage(result.plans)
-          }
-        }
-      } catch (_) { /* 解析失败就展示文本回复 */ }
+      // 结构化的计划数据（已由 callPlannerLLM 从回复末尾提取）
+      if (parsedPlans && Array.isArray(parsedPlans)) {
+        plans.value = parsedPlans
+        savePlansToStorage(parsedPlans)
+      }
     } catch (error) {
       const err = error as any
       const errorMsg = err.message || '生成行程失败，请稍后重试'

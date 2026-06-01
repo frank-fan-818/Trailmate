@@ -116,7 +116,7 @@ const loadChatHistory = () => {
   } catch { /* silent */ }
 }
 
-const viewTrip = (_trip: any) => router.push('/planner')
+const viewTrip = (trip: any) => router.push({ path: '/planner', query: { planName: trip.name } })
 
 const openChat = (chat: ChatSession) => {
   router.push({ path: '/planner', query: { chatId: chat.id } })
