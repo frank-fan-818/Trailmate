@@ -320,6 +320,58 @@ export interface ChatSession {
   messages: ChatMessage[]
 }
 
+/**
+ * 从 AI 回复文本中精准提取 JSON 行程数据并剥离。
+ * 优先匹配 [PLAN_DATA]...[/PLAN_DATA] 分隔符，
+ * 兼容旧格式：```json 代码块、行首松散 JSON。
+ */
+const PLAN_DATA_RE = /\[PLAN_DATA\]\s*([\s\S]*?)\s*\[\/PLAN_DATA\]/
+const JSON_FENCE_RE = /```json\s*([\s\S]*?)\s*```/
+const JSON_LOOSE_RE = /\{"plans"\s*:\s*\[/
+
+export function extractJsonFromText(content: string): { text: string; plans: any | null } {
+  let jsonStr = ''
+  let jsonStart = -1
+
+  // 策略1: [PLAN_DATA]...[/PLAN_DATA] 分隔符（新格式，最可靠）
+  const delimMatch = content.match(PLAN_DATA_RE)
+  if (delimMatch) {
+    jsonStr = delimMatch[1]
+    jsonStart = delimMatch.index!
+  }
+
+  // 策略2: ```json ... ``` 代码块
+  if (!jsonStr) {
+    const m = content.match(JSON_FENCE_RE)
+    if (m) { jsonStr = m[1]; jsonStart = m.index! }
+  }
+
+  // 策略3: 找到 {"plans" 开头的行（新行或行首）
+  if (!jsonStr) {
+    const m = content.match(JSON_LOOSE_RE)
+    if (m) {
+      const idx = m.index!
+      let depth = 0, end = idx
+      for (let i = idx; i < content.length; i++) {
+        if (content[i] === '{') depth++
+        else if (content[i] === '}') { depth--; if (depth === 0) { end = i + 1; break } }
+      }
+      if (depth === 0) { jsonStr = content.slice(idx, end); jsonStart = idx }
+    }
+  }
+
+  if (!jsonStr) return { text: content.trim(), plans: null }
+
+  try {
+    const parsed = JSON.parse(jsonStr)
+    const plans = parsed?.plans && Array.isArray(parsed.plans) ? parsed.plans : null
+    const cleanText = content.slice(0, jsonStart).trim()
+    return { text: cleanText, plans: plans ? { plans } : null }
+  } catch {
+    return { text: content.trim(), plans: null }
+  }
+}
+
 export function useItineraryChat() {
   const chatHistory = ref<ChatSession[]>([])
   const currentSessionId = ref<string>('')
@@ -393,58 +445,6 @@ export function useItineraryChat() {
       localStorage.setItem('trailmate-saved-plans', JSON.stringify(merged.slice(0, 10)))
     } catch { /* silent */ }
   }
-
-/**
- * 从 AI 回复文本中精准提取 JSON 行程数据并剥离。
- * 优先匹配 [PLAN_DATA]...[/PLAN_DATA] 分隔符，
- * 兼容旧格式：```json 代码块、行首松散 JSON。
- */
-const PLAN_DATA_RE = /\[PLAN_DATA\]\s*([\s\S]*?)\s*\[\/PLAN_DATA\]/
-const JSON_FENCE_RE = /```json\s*([\s\S]*?)\s*```/
-const JSON_LOOSE_RE = /\{"plans"\s*:\s*\[/
-
-export function extractJsonFromText(content: string): { text: string; plans: any | null } {
-  let jsonStr = ''
-  let jsonStart = -1
-
-  // 策略1: [PLAN_DATA]...[/PLAN_DATA] 分隔符（新格式，最可靠）
-  const delimMatch = content.match(PLAN_DATA_RE)
-  if (delimMatch) {
-    jsonStr = delimMatch[1]
-    jsonStart = delimMatch.index!
-  }
-
-  // 策略2: ```json ... ``` 代码块
-  if (!jsonStr) {
-    const m = content.match(JSON_FENCE_RE)
-    if (m) { jsonStr = m[1]; jsonStart = m.index! }
-  }
-
-  // 策略3: 找到 {"plans" 开头的行（新行或行首）
-  if (!jsonStr) {
-    const m = content.match(JSON_LOOSE_RE)
-    if (m) {
-      const idx = m.index!
-      let depth = 0, end = idx
-      for (let i = idx; i < content.length; i++) {
-        if (content[i] === '{') depth++
-        else if (content[i] === '}') { depth--; if (depth === 0) { end = i + 1; break } }
-      }
-      if (depth === 0) { jsonStr = content.slice(idx, end); jsonStart = idx }
-    }
-  }
-
-  if (!jsonStr) return { text: content.trim(), plans: null }
-
-  try {
-    const parsed = JSON.parse(jsonStr)
-    const plans = parsed?.plans && Array.isArray(parsed.plans) ? parsed.plans : null
-    const cleanText = content.slice(0, jsonStart).trim()
-    return { text: cleanText, plans: plans ? { plans } : null }
-  } catch {
-    return { text: content.trim(), plans: null }
-  }
-}
 
   const callPlannerLLM = async (messagesHistory: Array<{ role: string; content: string }>) => {
     const isChinese = settings.value.language === 'zh'
