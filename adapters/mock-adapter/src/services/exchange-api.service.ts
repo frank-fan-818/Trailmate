@@ -1,8 +1,10 @@
 import type { ExchangeRate, ExchangeResult } from '../../types'
 import { exchangeRateData } from '../data/exchange.data'
 
-// 新浪财经汇率接口 — 免费、无需密钥、国内服务器直接访问
-const SINA_API = 'https://hq.sinajs.cn/list='
+// 新浪财经汇率接口 — 通过代理中转（hq.sinajs.cn 无 CORS 头）
+// 本地开发: Vite proxy  /api/exchange-proxy/xxx → hq.sinajs.cn/list=xxx
+// 生产:     Vercel function /api/exchange-proxy/xxx → hq.sinajs.cn/list=xxx
+const SINA_API = '/api/exchange-proxy/'
 
 // 新浪支持的货币代码 → fx symbol
 function toSinaSymbol(code: string): string {
