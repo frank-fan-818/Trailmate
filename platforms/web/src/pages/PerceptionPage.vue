@@ -574,6 +574,7 @@ const STATUS_LABELS: Record<string, string> = {
 }
 const STATUS_STORAGE_KEY = 'trailmate-timeline-statuses'
 const geocodeCache = ref<Record<string, { lat: number; lng: number } | null>>({})
+let baiduBroken = false // Skip Baidu after first 500 — avoids wasting 1+ seconds per item
 
 const activePlan = computed(() => {
   if (activePlanIdx.value < 0 || activePlanIdx.value >= savedPlans.value.length) return null
@@ -673,9 +674,10 @@ function lookupIntlCity(cityHint: string): string | null {
 }
 
 async function callBaiduGeocoding(address: string): Promise<{ lat: number; lng: number } | null> {
+  if (baiduBroken) return null
   try {
     const ak = import.meta.env.VITE_BAIDU_MAP_AK as string
-    if (!ak) { console.warn('[Baidu] VITE_BAIDU_MAP_AK not set'); return null }
+    if (!ak) { baiduBroken = true; return null }
     const sp = new URLSearchParams({ path: 'geocoding/v3/', address, ak, output: 'json' })
     const res = await fetch(`/api/baidumap/geocoding/v3/?${sp.toString()}`)
     const data = await res.json()
@@ -683,9 +685,10 @@ async function callBaiduGeocoding(address: string): Promise<{ lat: number; lng: 
       console.log('[Baidu] geocode success:', address, '→', data.result.location)
       return { lat: data.result.location.lat, lng: data.result.location.lng }
     }
-    console.warn('[Baidu] geocode failed for:', address, 'status:', data.status, 'msg:', data.message)
-  } catch (e) {
-    console.warn('[Baidu] geocode exception for:', address, e)
+    baiduBroken = true
+    console.warn('[Baidu] disabled — status:', data.status, 'msg:', data.message)
+  } catch {
+    baiduBroken = true
   }
   return null
 }
@@ -780,6 +783,7 @@ async function loadTimelineFromPlan() {
   const plan = activePlan.value
   if (!plan || !plan.days) { timeline.value = []; return }
   timelineLoading.value = true
+  baiduBroken = false // Reset for each plan load
   const statuses = loadStatuses()
 
   // Extract city/country from plan metadata
@@ -803,9 +807,26 @@ async function loadTimelineFromPlan() {
       const id = `${plan.name}_day${day.day}_${item.name}`
       let latitude: number | undefined
       let longitude: number | undefined
-      if (item.address) {
+      if (item.address || item.name) {
         console.log('[loadTimeline] geocoding item:', item.name, 'address:', item.address)
-        const coords = await geocodeAddress(item.address, cityHint)
+
+        // Multi-strategy geocoding: try increasingly general queries
+        let coords: { lat: number; lng: number } | null = null
+
+        // Strategy 1: name + address + city (e.g. "广州塔, 海珠区阅江西路, 广州市")
+        const q1 = [item.name, item.address].filter(Boolean).join(', ')
+        coords = await geocodeAddress(q1, cityHint)
+
+        // Strategy 2: name + city (landmark names are more geocodable in Nominatim)
+        if (!coords && item.name) {
+          coords = await geocodeAddress(item.name, cityHint)
+        }
+
+        // Strategy 3: raw address alone (last resort before city fallback)
+        if (!coords && item.address) {
+          coords = await geocodeAddress(item.address)
+        }
+
         if (coords) {
           latitude = coords.lat
           longitude = coords.lng
