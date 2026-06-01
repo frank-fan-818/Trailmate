@@ -1,5 +1,6 @@
 import express from 'express'
 import { TravelOrchestrator } from '../../shared/multi-agent/orchestrator'
+import { authMiddleware } from './middleware/auth'
 
 const app = express()
 const PORT = parseInt(process.env.PORT || '3456', 10)
@@ -13,7 +14,7 @@ app.get('/health', (_req, res) => {
 })
 
 // ---- Orchestrate ----
-app.post('/api/orchestrate', async (req, res) => {
+app.post('/api/orchestrate', authMiddleware, async (req, res) => {
   const { userInput } = req.body
 
   if (!userInput || typeof userInput !== 'string') {

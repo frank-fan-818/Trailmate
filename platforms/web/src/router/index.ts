@@ -1,4 +1,10 @@
-import { createRouter, createWebHistory } from 'vue-router'
+import { createRouter, createWebHistory, type RouteLocationNormalized, type NavigationGuardNext } from 'vue-router'
+import { watch } from 'vue'
+import { useAuth } from '@/composables/useAuth'
+
+const auth = useAuth()
+
+const PUBLIC_ROUTES = ['/', '/login', '/help']
 
 const router = createRouter({
   history: createWebHistory(),
@@ -81,6 +87,39 @@ const router = createRouter({
       component: () => import('../pages/LoginPage.vue'),
     },
   ],
+})
+
+function guard(to: RouteLocationNormalized, _from: RouteLocationNormalized, next: NavigationGuardNext) {
+  // 已登录用户访问 /login → 重定向到 dashboard
+  if (to.path === '/login' && auth.isAuthenticated.value) {
+    const redirect = to.query.redirect as string | undefined
+    return next({ path: redirect || '/dashboard' })
+  }
+
+  // 公开路由直接放行
+  if (PUBLIC_ROUTES.includes(to.path)) {
+    return next()
+  }
+
+  // 需认证但未登录 → 重定向到 /login
+  if (!auth.isAuthenticated.value) {
+    return next({ path: '/login', query: { redirect: to.fullPath } })
+  }
+
+  next()
+}
+
+router.beforeEach((to, from, next) => {
+  if (!auth.isAuthReady.value) {
+    const unwatch = watch(auth.isAuthReady, (ready) => {
+      if (ready) {
+        unwatch()
+        guard(to, from, next)
+      }
+    })
+    return
+  }
+  guard(to, from, next)
 })
 
 export default router

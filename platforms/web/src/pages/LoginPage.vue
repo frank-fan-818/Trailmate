@@ -131,7 +131,7 @@
               <input
                 v-model="registerForm.password"
                 :type="showRegPwd ? 'text' : 'password'"
-                placeholder="至少6位密码"
+                placeholder="至少8位，包含字母和数字"
                 class="w-full pl-10 pr-10 py-3 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/15 transition-all"
               />
               <button type="button" @click="showRegPwd = !showRegPwd" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">

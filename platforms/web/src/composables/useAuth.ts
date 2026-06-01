@@ -9,32 +9,12 @@ export interface User {
   avatar?: string
 }
 
-const STORAGE_KEY = 'trailmate_user'
-
 const supabase = getSupabaseClientSafe()
 
 // ── 全局共享响应式状态 ──
 const currentUser = ref<User | null>(null)
 const isAuthReady = ref(false)
 const isAuthenticated = computed(() => currentUser.value !== null)
-
-// ── localStorage fallback ──
-function loadFromStorage(): User | null {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY)
-    return stored ? JSON.parse(stored) : null
-  } catch {
-    return null
-  }
-}
-
-function saveToStorage(user: User | null): void {
-  if (user) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(user))
-  } else {
-    localStorage.removeItem(STORAGE_KEY)
-  }
-}
 
 // ── Supabase: 获取 profile ──
 async function fetchProfile(userId: string): Promise<{ name: string; avatar?: string } | null> {
@@ -70,7 +50,7 @@ function buildUser(supabaseUser: { id: string; email?: string }, profile?: { nam
 // ── 初始化：恢复会话 + 监听变更 ──
 async function initAuth(): Promise<void> {
   if (!supabase) {
-    currentUser.value = loadFromStorage()
+    // Supabase 未配置，跳过认证恢复
     isAuthReady.value = true
     return
   }
@@ -108,22 +88,32 @@ export function useAuth() {
   const isLoading = ref(false)
   const error = ref<string | null>(null)
 
+  function validateCredentials(email: string, password: string, name?: string): string | null {
+    if (!email || !password) return '请输入邮箱和密码'
+    if (name !== undefined && !name) return '请填写用户名'
+
+    // Email format validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(email)) return '请输入有效的邮箱地址'
+
+    // Password strength: min 8 chars, at least 1 letter and 1 number
+    if (password.length < 8) return '密码长度不能少于8位'
+    if (!/[a-zA-Z]/.test(password)) return '密码必须包含至少一个字母'
+    if (!/[0-9]/.test(password)) return '密码必须包含至少一个数字'
+
+    return null // no error
+  }
+
   async function login(email: string, password: string): Promise<User> {
     isLoading.value = true
     error.value = null
 
     try {
-      if (!email || !password) throw new Error('请输入邮箱和密码')
-      if (password.length < 6) throw new Error('密码长度不能少于6位')
+      const loginError = validateCredentials(email, password)
+      if (loginError) throw new Error(loginError)
 
       if (!supabase) {
-        // ── 本地 fallback ──
-        await new Promise((r) => setTimeout(r, 800))
-        const user: User = { id: 'user-' + Date.now(), email, name: email.split('@')[0] }
-        currentUser.value = user
-        saveToStorage(user)
-        isLoading.value = false
-        return user
+        throw new Error('认证服务未配置，请联系管理员')
       }
 
       // ── Supabase 登录 ──
@@ -155,17 +145,11 @@ export function useAuth() {
     error.value = null
 
     try {
-      if (!email || !password || !name) throw new Error('请填写所有字段')
-      if (password.length < 6) throw new Error('密码长度不能少于6位')
+      const registerError = validateCredentials(email, password, name)
+      if (registerError) throw new Error(registerError)
 
       if (!supabase) {
-        // ── 本地 fallback ──
-        await new Promise((r) => setTimeout(r, 800))
-        const user: User = { id: 'user-' + Date.now(), email, name }
-        currentUser.value = user
-        saveToStorage(user)
-        isLoading.value = false
-        return user
+        throw new Error('认证服务未配置，请联系管理员')
       }
 
       // ── Supabase 注册 ──
@@ -207,7 +191,6 @@ export function useAuth() {
       await supabase.auth.signOut().catch(() => {})
     }
     currentUser.value = null
-    saveToStorage(null)
     await router.push('/')
   }
 
