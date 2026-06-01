@@ -746,21 +746,19 @@ async function geocodeAddress(address: string, cityHint?: string): Promise<{ lat
     if (!result) {
       console.log('[geocode] Baidu failed, falling back to Nominatim for:', query)
       result = await callNominatimGeocoding(query)
-      if (result) {
-        console.log('[geocode] Nominatim fallback succeeded for:', query)
-      } else {
-        console.warn('[geocode] Nominatim fallback also failed for:', query)
+      // If still failed and cityHint was appended, retry with address alone
+      if (!result && cityHint) {
+        console.log('[geocode] retrying without cityHint, just address:', address)
+        result = await callNominatimGeocoding(address)
       }
-    } else {
-      console.log('[geocode] Baidu succeeded for:', query)
     }
   } else {
     console.log('[geocode] PATH=nominatim_direct query is non-Chinese:', query)
     result = await callNominatimGeocoding(query)
-    if (result) {
-      console.log('[geocode] Nominatim direct succeeded for:', query)
-    } else {
-      console.warn('[geocode] Nominatim direct failed for:', query)
+    // If failed with cityHint, retry without it
+    if (!result && cityHint) {
+      console.log('[geocode] retrying without cityHint, just address:', address)
+      result = await callNominatimGeocoding(address)
     }
   }
 
@@ -852,26 +850,35 @@ function extractCityFromPlan(plan: any): string {
   const sources = [plan.name, plan.description, ...(plan.tags || [])].filter(Boolean)
   const combined = sources.join(' ')
 
-  // Common Chinese city patterns: XX市, XX省, XX国
+  // Pattern 1: "广州三日休闲文化之旅" → 广州
+  const planNameMatch = plan.name?.match(/^([\u4e00-\u9fa5]{2,3})(?:[0-9零一二三四五六七八九十两]|日|天|三日|五日|周末|深度|休闲|文化|美食|购物|自由|跟团|之旅|之|游|攻略|行程|方案|打卡|短期|长期|一日)/)
+  if (planNameMatch) {
+    const city = planNameMatch[1]
+    return city + '市'
+  }
+
+  // Pattern 2: XX市, XX省, XX国
   const cnCityMatch = combined.match(/([\u4e00-\u9fa5]{2,5})(?:市|省|国)/)
   if (cnCityMatch) return cnCityMatch[0]
 
-  // Common European city names (from the AI-generated content)
-  const knownCities = [
-    'Munich', 'Berlin', 'Paris', 'London', 'Rome', 'Barcelona', 'Amsterdam',
-    'Vienna', 'Prague', 'Budapest', 'Milan', 'Venice', 'Florence',
-    'Tokyo', 'Kyoto', 'Osaka', 'Seoul', 'Bangkok', 'Singapore',
-    'New York', 'Los Angeles', 'San Francisco', 'Chicago', 'Sydney',
-    '慕尼黑', '柏林', '巴黎', '伦敦', '罗马', '巴塞罗那', '阿姆斯特丹',
-    '维也纳', '布拉格', '布达佩斯', '米兰', '威尼斯', '佛罗伦萨',
-    '东京', '京都', '大阪', '首尔', '曼谷', '新加坡',
-    '纽约', '洛杉矶', '旧金山', '芝加哥', '悉尼',
+  // Pattern 3: Major Chinese cities without 市 suffix
+  const majorCities = [
+    '广州', '深圳', '杭州', '苏州', '南京', '成都', '武汉', '西安', '重庆', '天津',
+    '长沙', '郑州', '青岛', '大连', '厦门', '昆明', '贵阳', '南宁', '拉萨',
+    '乌鲁木齐', '哈尔滨', '沈阳', '济南', '太原', '福州', '合肥', '南昌',
+    '兰州', '银川', '西宁', '海口', '三亚', '珠海', '佛山', '东莞', '无锡',
+    '宁波', '温州', '绍兴', '桂林', '丽江', '大理', '张家界', '黄山', '洛阳', '开封',
   ]
-  for (const city of knownCities) {
-    if (combined.includes(city)) return city
+  for (const city of majorCities) {
+    if (combined.includes(city)) return city + '市'
   }
 
-  // Fallback: return first address from first day
+  // Pattern 4: International cities (Chinese + English names)
+  for (const cn of Object.keys(CN_INTL_CITIES)) {
+    if (combined.includes(cn)) return cn
+  }
+
+  // Fallback: first address — strip to just the district/city part if possible
   const firstAddr = plan.days?.[0]?.items?.[0]?.address
   return firstAddr || ''
 }
