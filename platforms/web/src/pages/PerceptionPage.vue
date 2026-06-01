@@ -602,46 +602,78 @@ const mapZoom = computed(() => {
   return spread < 0.1 ? 14 : spread < 1 ? 10 : 5
 })
 
-// Geocode address using free Nominatim API (OpenStreetMap, global coverage)
+// Geocode address: Chinese → Baidu first (best coverage), others → Nominatim
+function isChinese(text: string): boolean {
+  return /[\u4e00-\u9fa5]/.test(text)
+}
+
+async function callBaiduGeocoding(address: string): Promise<{ lat: number; lng: number } | null> {
+  try {
+    const ak = import.meta.env.VITE_BAIDU_MAP_AK as string
+    const sp = new URLSearchParams({ path: 'geocoding/v3/', address, ak, output: 'json' })
+    const res = await fetch(`/api/baidumap/geocoding/v3/?${sp.toString()}`)
+    const data = await res.json()
+    if (data.status === 0 && data.result?.location) {
+      return { lat: data.result.location.lat, lng: data.result.location.lng }
+    }
+  } catch {}
+  return null
+}
+
+async function callNominatimGeocoding(address: string): Promise<{ lat: number; lng: number } | null> {
+  try {
+    await new Promise(r => setTimeout(r, 1100)) // Nominatim rate limit: 1 req/sec
+    const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1`
+    const res = await fetch(url, { headers: { 'User-Agent': 'Trailmate/1.0' } })
+    const data = await res.json()
+    if (data.length > 0) {
+      return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) }
+    }
+  } catch {}
+  return null
+}
+
 async function geocodeAddress(address: string, cityHint?: string): Promise<{ lat: number; lng: number } | null> {
   if (!address) return null
   const key = address.toLowerCase().trim()
-  if (geocodeCache.value[key] !== undefined) return geocodeCache.value[key]
+  // Only serve successful cache hits — null = not tried yet (or previously failed, retry)
+  if (geocodeCache.value[key]) return geocodeCache.value[key]
 
-  // Try localStorage cache first
+  // Try localStorage cache (only stores successful results)
   try {
     const raw = localStorage.getItem('trailmate-geocode-cache')
     if (raw) {
       const cached = JSON.parse(raw)
-      if (cached[key] !== undefined) {
+      if (cached[key]) {
         geocodeCache.value[key] = cached[key]
         return cached[key]
       }
     }
   } catch {}
 
-  // Nominatim geocoding (free, global, 1 req/sec limit)
   const query = cityHint ? `${address}, ${cityHint}` : address
-  try {
-    await new Promise(r => setTimeout(r, 1100)) // rate limit
-    const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`
-    const res = await fetch(url, { headers: { 'User-Agent': 'Trailmate/1.0' } })
-    const data = await res.json()
-    if (data.length > 0) {
-      const result = { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) }
-      geocodeCache.value[key] = result
-      // Persist to localStorage
-      try {
-        const existing = JSON.parse(localStorage.getItem('trailmate-geocode-cache') || '{}')
-        existing[key] = result
-        localStorage.setItem('trailmate-geocode-cache', JSON.stringify(existing))
-      } catch {}
-      return result
-    }
-  } catch {}
+  let result: { lat: number; lng: number } | null = null
 
-  geocodeCache.value[key] = null
-  return null
+  if (isChinese(query)) {
+    result = await callBaiduGeocoding(query)
+  }
+
+  // Fallback to Nominatim for non-Chinese or if Baidu failed
+  if (!result) {
+    result = await callNominatimGeocoding(query)
+  }
+
+  // Only persist successful results (don't cache null → allows retry with different provider)
+  if (result) {
+    geocodeCache.value[key] = result
+    try {
+      const existing = JSON.parse(localStorage.getItem('trailmate-geocode-cache') || '{}')
+      existing[key] = result
+      localStorage.setItem('trailmate-geocode-cache', JSON.stringify(existing))
+    } catch {}
+  }
+
+  return result
 }
 
 async function loadTimelineFromPlan() {
