@@ -35,11 +35,6 @@ export default defineConfig({
         changeOrigin: true,
         secure: true,
         rewrite: (path) => path.replace(/^\/api\/baidumap/, '')
-      },
-      '/api/exchange-proxy': {
-        target: 'https://api.frankfurter.app',
-        changeOrigin: true,
-        rewrite: (path) => path.replace('/api/exchange-proxy', '/latest')
       }
     }
   }

@@ -1,9 +1,8 @@
 import type { ExchangeRate, ExchangeResult } from '../../types'
 import { exchangeRateData } from '../data/exchange.data'
 
-// Frankfurter API — 免费、无需密钥、全球可用
-// 国内浏览器 → Vercel 代理 → Frankfurter (绕过墙)
-const PROXY_API = '/api/exchange-proxy'
+// Frankfurter API — 免费、无需密钥、自带CORS头、全球可用
+const FRANKFURTER_API = 'https://api.frankfurter.app/latest'
 
 async function fetchWithTimeout(url: string, timeoutMs = 5000): Promise<Response> {
   const controller = new AbortController()
@@ -27,7 +26,7 @@ export async function queryExchangeRateReal(params: {
 
   // Step 1: Frankfurter 实时汇率
   try {
-    const url = `${PROXY_API}?from=${from}&to=${to}`
+    const url = `${FRANKFURTER_API}?from=${from}&to=${to}`
     const res = await fetchWithTimeout(url)
     if (res.ok) {
       const data = await res.json()
@@ -56,7 +55,7 @@ export async function queryExchangeRateReal(params: {
 export async function getAllRatesReal(base: string): Promise<ExchangeRate> {
   // Step 1: Frankfurter 实时汇率
   try {
-    const url = `${PROXY_API}?from=${base}`
+    const url = `${FRANKFURTER_API}?from=${base}`
     const res = await fetchWithTimeout(url)
     if (res.ok) {
       const data = await res.json()

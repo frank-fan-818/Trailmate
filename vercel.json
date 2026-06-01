@@ -6,10 +6,6 @@
     "api/baidumap-proxy.js": {
       "memory": 128,
       "maxDuration": 10
-    },
-    "api/exchange-proxy.js": {
-      "memory": 128,
-      "maxDuration": 10
     }
   },
   "rewrites": [
