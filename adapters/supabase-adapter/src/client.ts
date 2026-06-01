@@ -14,16 +14,10 @@ function createSupabaseClient(url: string, anonKey: string): ReturnType<typeof c
 }
 
 function readEnvConfig(): { url: string; anonKey: string } | null {
-  let env: Record<string, any> = {}
-
-  if (typeof import.meta !== 'undefined' && 'env' in import.meta) {
-    env = (import.meta as any).env as Record<string, any>
-  } else if (typeof (globalThis as any).process !== 'undefined' && (globalThis as any).process?.env) {
-    env = (globalThis as any).process.env
-  }
-
-  const url = env.VITE_SUPABASE_URL as string | undefined
-  const anonKey = env.VITE_SUPABASE_ANON_KEY as string | undefined
+  // 必须使用 import.meta.env.VITE_X 直接访问，
+  // 否则 Vite 生产构建时无法静态内联环境变量
+  const url = import.meta.env.VITE_SUPABASE_URL as string | undefined
+  const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined
 
   if (!url || !anonKey) return null
   return { url, anonKey }
