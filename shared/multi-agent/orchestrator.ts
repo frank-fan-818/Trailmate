@@ -2,11 +2,14 @@ import { createLogger, generateTraceId } from '../utils/logger'
 import { FlightWorker } from './workers/flight-worker'
 import { HotelWorker } from './workers/hotel-worker'
 import { AttractionWorker } from './workers/attraction-worker'
+import { ExchangeWorker } from './workers/exchange-worker'
 import type {
   ParsedIntent,
   FlightQueryInput,
   HotelQueryInput,
   AttractionQueryInput,
+  ExchangeQueryInput,
+  ExchangeQueryOutput,
   FlightQueryOutput,
   HotelQueryOutput,
   AttractionQueryOutput,
@@ -18,6 +21,7 @@ export class TravelOrchestrator {
   private flightWorker = new FlightWorker()
   private hotelWorker = new HotelWorker()
   private attractionWorker = new AttractionWorker()
+  private exchangeWorker = new ExchangeWorker()
 
   async orchestrate(userInput: string): Promise<OrchestratorOutput> {
     const traceId = generateTraceId()
@@ -50,28 +54,39 @@ export class TravelOrchestrator {
       tags: intent.tags
     }
 
+    // 检测是否需要查询汇率（用户提及外币相关关键词时）
+    const hasExchangeIntent = /汇率|外币|美元|欧元|英镑|日元|韩元|泰铢|港币|exchange|currency|usd|eur|jpy|gbp/i.test(userInput)
+    const exchangeInput: ExchangeQueryInput = {
+      fromCurrency: 'CNY',
+      toCurrency: hasExchangeIntent ? this.detectTargetCurrency(userInput) : 'USD',
+      amount: intent.budget
+    }
+
     log.step('dispatching', 'dispatching tasks to workers', {
-      workers: ['flight-worker', 'hotel-worker', 'attraction-worker']
+      workers: ['flight-worker', 'hotel-worker', 'attraction-worker', 'exchange-worker']
     })
 
-    const [flightSettled, hotelSettled, attractionSettled] = await Promise.allSettled([
+    const [flightSettled, hotelSettled, attractionSettled, exchangeSettled] = await Promise.allSettled([
       this.flightWorker.run(flightInput, traceId),
       this.hotelWorker.run(hotelInput, traceId),
-      this.attractionWorker.run(attractionInput, traceId)
+      this.attractionWorker.run(attractionInput, traceId),
+      this.exchangeWorker.run(exchangeInput, traceId)
     ])
 
     // ---- Step 3: 汇总结果 ----
     const flights = this.unwrapResult<FlightQueryOutput>(flightSettled, errors)
     const hotels = this.unwrapResult<HotelQueryOutput>(hotelSettled, errors)
     const attractions = this.unwrapResult<AttractionQueryOutput>(attractionSettled, errors)
+    const exchange = this.unwrapResult<ExchangeQueryOutput>(exchangeSettled, errors)
 
-    const summary = this.buildSummary(intent, flights, hotels, attractions)
+    const summary = this.buildSummary(intent, flights, hotels, attractions, exchange)
 
     const durationMs = Date.now() - startTime
     log.exit('orchestration completed', durationMs, {
       flights: flights?.totalCount ?? 0,
       hotels: hotels?.totalCount ?? 0,
       attractions: attractions?.totalCount ?? 0,
+      exchangeRate: exchange ? `${exchange.fromCurrency}→${exchange.toCurrency}: ${exchange.rate}` : null,
       errors: errors.length
     })
 
@@ -81,6 +96,7 @@ export class TravelOrchestrator {
       flights,
       hotels,
       attractions,
+      exchange,
       summary,
       durationMs,
       errors
@@ -139,7 +155,8 @@ export class TravelOrchestrator {
     intent: ParsedIntent,
     flights: FlightQueryOutput | null,
     hotels: HotelQueryOutput | null,
-    attractions: AttractionQueryOutput | null
+    attractions: AttractionQueryOutput | null,
+    exchange: ExchangeQueryOutput | null
   ): string {
     const parts: string[] = []
 
@@ -168,6 +185,22 @@ export class TravelOrchestrator {
 
     parts.push(`预估总预算 ¥${intent.budget}。`)
 
+    if (exchange) {
+      parts.push(`当前汇率参考：1 ${exchange.fromCurrency} ≈ ${exchange.rate} ${exchange.toCurrency}，${exchange.amount} ${exchange.fromCurrency} 约合 ${exchange.result.toFixed(2)} ${exchange.toCurrency}。`)
+    }
+
     return parts.join('')
+  }
+
+  /** 从用户输入中检测用户关心的目标货币 */
+  private detectTargetCurrency(userInput: string): string {
+    if (/美元|usd/i.test(userInput)) return 'USD'
+    if (/欧元|eur/i.test(userInput)) return 'EUR'
+    if (/英镑|gbp/i.test(userInput)) return 'GBP'
+    if (/日元|jpy/i.test(userInput)) return 'JPY'
+    if (/韩元|krw/i.test(userInput)) return 'KRW'
+    if (/泰铢|thb/i.test(userInput)) return 'THB'
+    if (/港币|hkd/i.test(userInput)) return 'HKD'
+    return 'USD'
   }
 }

@@ -4,6 +4,7 @@ import { queryFlights } from './src/services/flight.service'
 import { queryHotels } from './src/services/hotel.service'
 import { queryAttractions } from './src/services/attraction.service'
 import { queryWeather } from './src/services/weather.service'
+import { queryExchangeRate, getAllRates } from './src/services/exchange.service'
 import {
   createWorkflowTask,
   updateWorkflowTask,
@@ -30,6 +31,8 @@ export default class SupabaseAdapterModule implements IPlugin {
     core.service.register('hotel.query', queryHotels)
     core.service.register('attraction.query', queryAttractions)
     core.service.register('weather.query', queryWeather)
+    core.service.register('exchange.query', queryExchangeRate)
+    core.service.register('exchange.getAllRates', getAllRates)
 
     core.service.register('workflow.task.create', createWorkflowTask)
     core.service.register('workflow.task.update', updateWorkflowTask)

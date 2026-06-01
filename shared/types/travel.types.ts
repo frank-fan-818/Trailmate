@@ -9,6 +9,7 @@ export interface Flight {
   price: number
   discount: number
   remainingSeats: number
+  depDate?: string  // 出发日期 YYYY-MM-DD, optional
 }
 
 export interface Hotel {

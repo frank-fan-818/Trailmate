@@ -106,7 +106,7 @@
               <span class="text-2xl">💱</span>
             </div>
             <h3 class="text-xl font-bold text-gray-900 mb-3">汇率换算</h3>
-            <p class="text-gray-600 mb-6">实时汇率查询，支持 30+ 主流货币</p>
+            <p class="text-gray-600 mb-6">支持30+主流货币实时汇率</p>
             <button @click="router.push('/exchange')" class="w-full py-3 bg-primary text-white rounded-md font-semibold hover:bg-primary/90 transition-colors">
               查看汇率
             </button>

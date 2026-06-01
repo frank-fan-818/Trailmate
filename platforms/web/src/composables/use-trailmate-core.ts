@@ -69,6 +69,9 @@ export interface UseTrailmateCoreReturn {
   getPendingTeamRequests: (userId: string) => Promise<TeamRequest[]>
   updateTeamRequestStatus: (requestId: string, status: 'accepted' | 'rejected') => Promise<TeamRequest | undefined>
   queryFlights: (depCity: string, arrCity: string, date?: string) => Promise<any[]>
+  queryFlightsReal: (depCity: string, arrCity: string, date?: string) => Promise<any[]>
+  queryExchangeRate: (from: string, to: string, amount?: number) => Promise<any>
+  getAllExchangeRates: (base: string) => Promise<any>
 }
 
 const DEMO_USER_ID = 'demo-user'
@@ -214,6 +217,21 @@ export function useTrailmateCore(options: UseTrailmateCoreOptions = {}): UseTrai
     return await initializedCore.service.call<any[]>('flight.query', { depCity, arrCity, date })
   }
 
+  const queryFlightsReal = async (depCity: string, arrCity: string, date?: string): Promise<any[]> => {
+    if (!initializedCore) throw new Error('Core未初始化')
+    return await initializedCore.service.call<any[]>('flight.queryReal', { depCity, arrCity, date })
+  }
+
+  const queryExchangeRate = async (from: string, to: string, amount?: number): Promise<any> => {
+    if (!initializedCore) throw new Error('Core未初始化')
+    return await initializedCore.service.call<any>('exchange.query', { from, to, amount })
+  }
+
+  const getAllExchangeRates = async (base: string): Promise<any> => {
+    if (!initializedCore) throw new Error('Core未初始化')
+    return await initializedCore.service.call<any>('exchange.getAllRates', base)
+  }
+
   const getNotifications = async (params?: {
     planId?: string
     unreadOnly?: boolean
@@ -331,7 +349,10 @@ export function useTrailmateCore(options: UseTrailmateCoreOptions = {}): UseTrai
     getTeamRequests,
     getPendingTeamRequests,
     updateTeamRequestStatus,
-    queryFlights
+    queryFlights,
+    queryFlightsReal,
+    queryExchangeRate,
+    getAllExchangeRates
   }
 }
 

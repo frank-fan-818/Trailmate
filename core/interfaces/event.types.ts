@@ -7,6 +7,8 @@ export enum GlobalEvent {
   FLIGHT_QUERY_RESULT = 'flight.query.result',
   HOTEL_QUERY_REQUEST = 'hotel.query.request',
   HOTEL_QUERY_RESULT = 'hotel.query.result',
+  EXCHANGE_QUERY_REQUEST = 'exchange.query.request',
+  EXCHANGE_QUERY_RESULT = 'exchange.query.result',
 
   // 情境感知类事件
   LOCATION_CHANGED = 'perception.location_changed',

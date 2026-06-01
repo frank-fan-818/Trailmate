@@ -57,6 +57,21 @@ export interface ParsedIntent {
   checkIn?: string
 }
 
+// ====== Exchange Worker ======
+export interface ExchangeQueryInput {
+  fromCurrency: string
+  toCurrency: string
+  amount: number
+}
+
+export interface ExchangeQueryOutput {
+  rate: number
+  result: number
+  fromCurrency: string
+  toCurrency: string
+  date: string
+}
+
 // ====== Orchestrator 汇总输出 ======
 export interface OrchestratorOutput {
   traceId: string
@@ -64,6 +79,7 @@ export interface OrchestratorOutput {
   flights: FlightQueryOutput | null
   hotels: HotelQueryOutput | null
   attractions: AttractionQueryOutput | null
+  exchange: ExchangeQueryOutput | null
   summary: string
   durationMs: number
   errors: string[]
