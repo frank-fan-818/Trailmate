@@ -260,11 +260,19 @@
           </div>
 
           <div v-else class="space-y-3">
+            <p v-if="timeline.length > 1" class="text-xs text-gray-400 flex items-center gap-1 mb-1">
+              <span class="inline-block w-3 h-3">⠿</span> 拖拽卡片调整顺序（同一天内）
+            </p>
             <div
-              v-for="node in timeline"
+              v-for="(node, idx) in timeline"
               :key="node.id"
-              class="grid gap-3 rounded-xl border border-gray-200 px-4 py-4 md:grid-cols-[80px_100px_1fr_auto]"
-              :class="getNodeClass(node.status)"
+              :draggable="true"
+              @dragstart="onTimelineDragStart(idx)"
+              @dragover.prevent="onTimelineDragOver(idx)"
+              @dragend="onTimelineDragEnd"
+              @drop.prevent="onTimelineDrop(idx)"
+              class="grid gap-3 rounded-xl border px-4 py-4 md:grid-cols-[80px_100px_1fr_auto] cursor-grab active:cursor-grabbing transition-all"
+              :class="[getNodeClass(node.status), timelineDragIdx === idx ? 'opacity-50 border-dashed border-primary' : 'border-gray-200']"
             >
               <div class="text-sm font-semibold text-primary">Day {{ node.dayIndex + 1 }}</div>
               <div class="text-sm text-gray-600">{{ node.startTime }} - {{ node.endTime }}</div>
@@ -278,7 +286,7 @@
                     class="px-2 py-0.5 text-xs rounded-full"
                     :class="getStatusBadgeClass(node.status)"
                   >
-                    {{ node.status }}
+                    {{ STATUS_LABELS[node.status] || node.status }}
                   </span>
                 </div>
                 <p v-if="node.description" class="mt-1 text-sm text-gray-600">{{ node.description }}</p>
@@ -557,7 +565,13 @@ const ruleForm = reactive({
 const savedPlans = ref<any[]>([])
 const activePlanIdx = ref(-1)
 const timelineLoading = ref(false)
+const timelineDragIdx = ref<number | null>(null)
 const timelineStatuses = ref<Record<string, string>>({})
+
+const STATUS_LABELS: Record<string, string> = {
+  not_started: '未开始', in_progress: '进行中', completed: '已完成',
+  delayed: '已延迟', cancelled: '已取消',
+}
 const STATUS_STORAGE_KEY = 'trailmate-timeline-statuses'
 const geocodeCache = ref<Record<string, { lat: number; lng: number } | null>>({})
 
@@ -897,6 +911,41 @@ const handleNodeStatusChange = async (nodeId: string, status: string) => {
     node.status = status
     saveStatuses()
   }
+}
+
+// ── Timeline drag & drop ──
+function onTimelineDragStart(idx: number) { timelineDragIdx.value = idx }
+function onTimelineDragOver(_idx: number) {}
+function onTimelineDragEnd() { timelineDragIdx.value = null }
+function onTimelineDrop(toIdx: number) {
+  if (timelineDragIdx.value === null || timelineDragIdx.value === toIdx) return
+  const from = timelineDragIdx.value
+  const fromNode = timeline.value[from]
+  const toNode = timeline.value[toIdx]
+  // Only allow reordering within the same day
+  if (fromNode.dayIndex !== toNode.dayIndex) return
+
+  // Reorder timeline array
+  const [moved] = timeline.value.splice(from, 1)
+  timeline.value.splice(toIdx, 0, moved)
+  timelineDragIdx.value = null
+
+  // Sync reorder back to the saved plan in localStorage
+  const plan = activePlan.value
+  if (!plan?.days) return
+  const day = plan.days.find((d: any) => d.day === fromNode.dayIndex + 1)
+  if (!day?.items) return
+  const dayItems = timeline.value.filter(n => n.dayIndex === fromNode.dayIndex)
+  day.items = dayItems.map(n => ({
+    type: n.type, name: n.title,
+    startTime: n.startTime, endTime: n.endTime,
+    address: n.address, cost: undefined,
+  }))
+  // Persist
+  const allPlans = loadSavedPlans()
+  const pi = allPlans.findIndex((p: any) => p.name === plan.name)
+  if (pi >= 0) { allPlans[pi] = { ...plan, savedAt: Date.now() } }
+  localStorage.setItem('trailmate-saved-plans', JSON.stringify(allPlans))
 }
 
 const formatTime = (timestamp: number) => {
