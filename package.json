@@ -7,7 +7,11 @@
         "dev:web": "node -e \"process.chdir('platforms/web');require('child_process').spawn('npx',['vite'],{stdio:'inherit',shell:true})\"",
         "build": "npm run build:web",
         "build:web": "node -e \"process.chdir('platforms/web');require('child_process').spawn('npx',['vite','build'],{stdio:'inherit',shell:true})\"",
-        "build:core": "tsc -p core/tsconfig.json"
+        "build:core": "tsc -p core/tsconfig.json",
+        "test": "vitest run",
+        "test:watch": "vitest",
+        "evals": "node evals/run-itinerary-eval.mjs",
+        "evals:test": "vitest run evals/"
     },
     "dependencies": {
         "@supabase/supabase-js": "^2.99.2",

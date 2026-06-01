@@ -1,6 +1,7 @@
 import { ref } from 'vue'
 import { runWithTools } from './useOpenRouter'
 import { TOOL_DISPLAY_NAMES } from './useToolRegistry'
+import { createLogger, generateTraceId } from '@trailmate/shared'
 
 // ---- Types ----
 export interface ToolCallState {
@@ -63,15 +64,30 @@ export function useAiConcierge() {
   async function sendMessage(text: string) {
     if (!text.trim() || isProcessing.value) return
 
+    const traceId = generateTraceId()
+    const log = createLogger(traceId)
+    const startTime = Date.now()
+
     const userMsg: ConciergeMessage = { id: `u-${Date.now()}`, role: 'user', content: text, timestamp: Date.now() }
     messages.value.push(userMsg)
+
+    log.entry('用户消息接收', {
+      msgLength: text.length,
+      msgPreview: text.slice(0, 100),
+      historyCount: messages.value.length
+    })
+
     isProcessing.value = true
     currentToolCalls.value = []
 
     try {
+      log.step('send-message', '构建 API 消息并调用 runWithTools', {
+        apiMsgCount: Math.min(messages.value.length, 20)
+      })
+
       const apiMessages = messages.value.slice(-20).map(m => ({ role: m.role, content: m.content }))
 
-      const { content, toolCalls } = await runWithTools(apiMessages, buildSystemPrompt())
+      const { content, toolCalls } = await runWithTools(apiMessages, buildSystemPrompt(), traceId)
 
       // Build tool call states for UI
       const toolStates: ToolCallState[] = (toolCalls || []).map((tc, i) => ({
@@ -89,11 +105,22 @@ export function useAiConcierge() {
       }
       messages.value.push(assistantMsg)
       saveHistory()
+
+      log.exit('助手消息已添加到对话', Date.now() - startTime, {
+        responseLength: content?.length || 0,
+        toolCallCount: toolStates.length,
+        isFallback: content === '抱歉，AI 服务暂时不可用。请稍后重试或检查网络连接。您仍然可以浏览已有的行程和旅伴信息。'
+      })
     } catch (e: any) {
+      const errorMsg = `抱歉，我遇到了问题：${e.message || '未知错误'}。请稍后重试。`
       messages.value.push({
         id: `a-${Date.now()}`, role: 'assistant',
-        content: `抱歉，我遇到了问题：${e.message || '未知错误'}。请稍后重试。`,
+        content: errorMsg,
         timestamp: Date.now()
+      })
+
+      log.error('send-message', 'AI 管家消息处理失败', e, {
+        totalDurationMs: Date.now() - startTime
       })
     } finally {
       isProcessing.value = false

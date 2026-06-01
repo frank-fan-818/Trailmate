@@ -16,7 +16,8 @@ export default defineConfig({
       '@trailmate/perception': path.resolve(__dirname, '../../modules/perception'),
       '@trailmate/companion-matching': path.resolve(__dirname, '../../modules/companion-matching'),
       '@trailmate/modules': path.resolve(__dirname, '../../modules'),
-      '@trailmate/adapters': path.resolve(__dirname, '../../adapters')
+      '@trailmate/adapters': path.resolve(__dirname, '../../adapters'),
+      '@trailmate/shared': path.resolve(__dirname, '../../shared')
     }
   },
   appType: 'spa',

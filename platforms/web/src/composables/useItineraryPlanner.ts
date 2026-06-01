@@ -3,6 +3,7 @@ import { marked } from 'marked'
 import { useSettings } from '../stores/settings'
 import { CONCIERGE_TOOLS } from './useToolRegistry'
 import { callLLM, runWithTools } from './useOpenRouter'
+import { generateTraceId } from '@trailmate/shared'
 
 // Baidu API proxy: Vercel rewrites /api/baidumap/* → /api/baidumap-proxy
 // But rewrite strips path, so we encode path+params into query string
@@ -437,7 +438,7 @@ export function useItineraryChat() {
       : `【Important】You must respond in English. You are TrailMate, an intelligent travel assistant.`
 
     // Use shared runWithTools for automatic tool calling loop
-    const result = await runWithTools(messagesHistory, systemPrompt)
+    const result = await runWithTools(messagesHistory, systemPrompt, generateTraceId())
     return { content: result.content }
   }
 

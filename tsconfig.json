@@ -11,6 +11,7 @@
     "types": ["vite/client"],
     "paths": {
       "@trailmate/core": ["./core/index.ts"],
+      "@trailmate/shared": ["./shared/index.ts"],
       "@trailmate/shared/*": ["./shared/*"]
     }
   },
