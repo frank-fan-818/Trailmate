@@ -33,26 +33,27 @@ export class ConfigCenter {
    * 核心层不处理dotenv加载，由外层调用方负责加载.env文件
    */
   private loadEnv(): Partial<AppConfig> {
-    let env: Record<string, any> = {}
+    // Vite statically inlines import.meta.env.VITE_* at build time.
+    // Must use direct access — no dynamic property access.
+    const env: Partial<AppConfig> = {}
 
-    if (typeof import.meta !== 'undefined' && 'env' in import.meta) {
-      env = (import.meta as any).env as Record<string, any>
-    } else if (typeof (globalThis as any).process !== 'undefined' && (globalThis as any).process?.env) {
-      env = (globalThis as any).process.env
-    }
+    const _nodeEnv = import.meta.env.VITE_NODE_ENV
+    const _useMock = import.meta.env.VITE_USE_MOCK
+    const _apiBaseUrl = import.meta.env.VITE_API_BASE_URL
+    const _mapKey = import.meta.env.VITE_MAP_KEY
+    const _aiApiKey = import.meta.env.VITE_AI_API_KEY
+    const _supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+    const _supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
-    // 统一去除VITE_前缀，自动转换类型
-    return Object.entries(env).reduce((acc, [key, value]) => {
-      const cleanKey = key.replace(/^VITE_/, '') as keyof AppConfig
+    if (_nodeEnv !== undefined) env.NODE_ENV = _nodeEnv as any
+    if (_useMock !== undefined) env.USE_MOCK = _useMock === 'true'
+    if (_apiBaseUrl !== undefined) env.API_BASE_URL = _apiBaseUrl
+    if (_mapKey !== undefined) env.MAP_KEY = _mapKey
+    if (_aiApiKey !== undefined) env.AI_API_KEY = _aiApiKey
+    if (_supabaseUrl !== undefined) env.SUPABASE_URL = _supabaseUrl
+    if (_supabaseAnonKey !== undefined) env.SUPABASE_ANON_KEY = _supabaseAnonKey
 
-      // 仅对已知布尔字段进行类型转换
-      if (cleanKey === 'USE_MOCK' && typeof value === 'string') {
-        value = value === 'true'
-      }
-
-      acc[cleanKey] = value
-      return acc
-    }, {} as Partial<AppConfig>)
+    return env
   }
 
   /**

@@ -36,8 +36,8 @@ export async function callLLM(
   messages: Array<{ role: string; content: string | null; tool_calls?: any[]; tool_call_id?: string; name?: string }>,
   options?: { model?: string; tools?: ToolDef[]; log?: StructuredLogger }
 ): Promise<any> {
-  const apiKey = (import.meta as any).env.VITE_OPENROUTER_API_KEY as string
-  const apiUrl = (import.meta as any).env.VITE_OPENROUTER_API_URL as string || 'https://openrouter.ai/api/v1/chat/completions'
+  const apiKey = import.meta.env.VITE_OPENROUTER_API_KEY as string
+  const apiUrl = import.meta.env.VITE_OPENROUTER_API_URL as string || 'https://openrouter.ai/api/v1/chat/completions'
   const model = options?.model || 'minimax/minimax-m2.5:free'
 
   const body: any = {

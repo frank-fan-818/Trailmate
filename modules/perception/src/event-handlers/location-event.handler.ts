@@ -12,7 +12,7 @@ async function fetchWeather(
   _lng: number
 ): Promise<{ condition: string; temperature: number } | null> {
   try {
-    const BAIDU_MAP_AK = (import.meta as any).env?.VITE_BAIDU_MAP_AK as string | undefined
+    const BAIDU_MAP_AK = import.meta.env.VITE_BAIDU_MAP_AK as string | undefined
     if (!BAIDU_MAP_AK) {
       // No API key — return a safe fallback for dev / test
       return null

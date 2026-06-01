@@ -59,7 +59,7 @@ export function usePlaceDrawer() {
   const loadNearbyFoods = async (city?: string) => {
     foodsLoading.value = true
     try {
-      const ak = (import.meta as any).env.VITE_BAIDU_MAP_AK as string
+      const ak = import.meta.env.VITE_BAIDU_MAP_AK as string
       const region = city || '北京'
       const res = await fetchBaiduApi('place/v2/search', { query:'美食', region, ak, output:'json', page_size:'6', scope:'2' })
       const data = await res.json()
@@ -79,7 +79,7 @@ export function usePlaceDrawer() {
   const loadNearbyHotels = async (city?: string) => {
     hotelsLoading.value = true
     try {
-      const ak = (import.meta as any).env.VITE_BAIDU_MAP_AK as string
+      const ak = import.meta.env.VITE_BAIDU_MAP_AK as string
       const region = city || '北京'
       const res = await fetchBaiduApi('place/v2/search', { query:'酒店', region, ak, output:'json', page_size:'6', scope:'2' })
       const data = await res.json()
@@ -133,7 +133,7 @@ export function usePlaceDrawer() {
       loadNearbyFoods()
       loadNearbyHotels()
 
-      const ak = (import.meta as any).env.VITE_BAIDU_MAP_AK as string
+      const ak = import.meta.env.VITE_BAIDU_MAP_AK as string
       const response = await fetchBaiduApi('place/v2/search', { query: placeName, region: '全国', ak, output: 'json', scope: '2', page_size: '1' })
       const data = await response.json()
 
@@ -263,7 +263,7 @@ export function usePlaceDrawer() {
       // Fallback: Baidu Weather API for Chinese cities
       const cityName = city || displayCity || '北京市'
       const districtId = getDistrictId(cityName)
-      const ak = (import.meta as any).env.VITE_BAIDU_MAP_AK as string
+      const ak = import.meta.env.VITE_BAIDU_MAP_AK as string
       const bdRes = await fetchBaiduApi('weather/v1/', { district_id: districtId, data_type: 'all', ak })
       const bdData = await bdRes.json()
       if (bdData.status === 0 && bdData.result) {
@@ -397,7 +397,7 @@ export function useItineraryChat() {
   }
 
   const callPlannerLLM = async (messagesHistory: Array<{ role: string; content: string }>) => {
-    const apiKey = (import.meta as any).env.VITE_OPENROUTER_API_KEY as string
+    const apiKey = import.meta.env.VITE_OPENROUTER_API_KEY as string
     if (!apiKey) throw new Error('OpenRouter API Key 未配置')
 
     const isChinese = settings.value.language === 'zh'

@@ -5,13 +5,7 @@ import { flightData } from '../data/flight.data'
 const FLIGHT_API_BASE = 'https://api.aviationstack.com/v1'
 
 function getApiKey(): string {
-  if (typeof import.meta !== 'undefined' && 'env' in import.meta) {
-    return (import.meta as any).env.VITE_AVIATIONSTACK_API_KEY || ''
-  }
-  if (typeof (globalThis as any).process?.env !== 'undefined') {
-    return (globalThis as any).process.env.VITE_AVIATIONSTACK_API_KEY || ''
-  }
-  return ''
+  return import.meta.env.VITE_AVIATIONSTACK_API_KEY || ''
 }
 
 // City name to IATA code mapping for real API usage

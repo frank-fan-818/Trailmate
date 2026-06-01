@@ -5,13 +5,7 @@ import { exchangeRateData } from '../data/exchange.data'
 const FRANKFURTER_API = 'https://api.frankfurter.app'
 
 function getApiUrl(): string {
-  if (typeof import.meta !== 'undefined' && 'env' in import.meta) {
-    return (import.meta as any).env.VITE_EXCHANGE_API_URL || FRANKFURTER_API
-  }
-  if (typeof (globalThis as any).process?.env !== 'undefined') {
-    return (globalThis as any).process.env.VITE_EXCHANGE_API_URL || FRANKFURTER_API
-  }
-  return FRANKFURTER_API
+  return import.meta.env.VITE_EXCHANGE_API_URL || FRANKFURTER_API
 }
 
 async function fetchWithTimeout(url: string, timeoutMs = 5000): Promise<Response> {
