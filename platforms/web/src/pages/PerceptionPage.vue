@@ -744,10 +744,6 @@ onMounted(async () => {
   await initialize()
   await Promise.all([loadNotifications(), loadRules()])
   savedPlans.value = loadSavedPlans()
-  if (savedPlans.value.length > 0) {
-    activePlanIdx.value = 0
-    loadTimelineFromPlan()
-  }
 })
 
 const loadNotifications = async () => {

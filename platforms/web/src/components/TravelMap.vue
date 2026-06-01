@@ -55,6 +55,11 @@ const sortedNodes = computed(() => {
   })
 })
 
+// Structural fingerprint: only changes when nodes/order/coords change, not on status changes
+const timelineStructureKey = computed(() => {
+  return sortedNodes.value.map(n => `${n.id}:${n.latitude}:${n.longitude}`).join('|')
+})
+
 // ---- pulsing user icon ----
 function createUserIcon(): L.DivIcon {
   return L.divIcon({
@@ -156,10 +161,10 @@ watch(() => props.center, (c) => {
   if (map && c) map.setView(c, props.zoom || 13)
 })
 
-watch(() => props.timelineNodes, () => {
+watch(timelineStructureKey, () => {
   buildPOIMarkers()
   buildRouteLine()
-}, { deep: true })
+})
 
 // ---- lifecycle ----
 onMounted(() => {
@@ -168,7 +173,8 @@ onMounted(() => {
   map = L.map(mapContainer.value, {
     center: props.center,
     zoom: props.zoom,
-    zoomControl: true
+    zoomControl: true,
+    scrollWheelZoom: false
   })
 
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
