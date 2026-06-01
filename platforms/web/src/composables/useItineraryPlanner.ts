@@ -2,8 +2,7 @@ import { ref, watch } from 'vue'
 import { marked } from 'marked'
 import { useSettings } from '../stores/settings'
 import { CONCIERGE_TOOLS } from './useToolRegistry'
-import { callLLM, runWithTools } from './useOpenRouter'
-import { generateTraceId } from '@trailmate/shared'
+import { callLLM } from './useOpenRouter'
 
 // Baidu API proxy: Vercel rewrites /api/baidumap/* → /api/baidumap-proxy
 // But rewrite strips path, so we encode path+params into query string
@@ -434,9 +433,13 @@ export function useItineraryChat() {
 \`\`\``
       : `【Important】You must respond in English. You are TrailMate, an intelligent travel assistant.`
 
-    // Use shared runWithTools for automatic tool calling loop
-    const result = await runWithTools(messagesHistory, systemPrompt, generateTraceId())
-    return { content: result.content }
+    // 行程规划不需要工具调用，直接 LLM 对话
+    const res = await callLLM([
+      { role: 'system', content: systemPrompt },
+      ...messagesHistory.map(m => ({ role: m.role as any, content: m.content }))
+    ])
+    const content = res.choices?.[0]?.message?.content || ''
+    return { content }
   }
 
   const handleGenerate = async (input: string) => {
@@ -450,7 +453,7 @@ export function useItineraryChat() {
 
       const historyForApi = messages.value.map(msg => ({ role: msg.role, content: msg.content }))
 
-      // Call LLM (runWithTools handles tool calling loop automatically)
+      // Call LLM for travel planning
       let finalResponse = ''
       let retryCount = 0
       while (retryCount <= 2) {
