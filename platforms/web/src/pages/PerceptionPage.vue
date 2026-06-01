@@ -604,14 +604,58 @@ const mapZoom = computed(() => {
 
 // Chinese-written international city names → English (Baidu can't geocode these)
 const CN_INTL_CITIES: Record<string, string> = {
-  '慕尼黑': 'Munich', '柏林': 'Berlin', '巴黎': 'Paris', '伦敦': 'London',
-  '罗马': 'Rome', '巴塞罗那': 'Barcelona', '阿姆斯特丹': 'Amsterdam',
-  '维也纳': 'Vienna', '布拉格': 'Prague', '布达佩斯': 'Budapest',
-  '米兰': 'Milan', '威尼斯': 'Venice', '佛罗伦萨': 'Florence',
-  '东京': 'Tokyo', '京都': 'Kyoto', '大阪': 'Osaka', '首尔': 'Seoul',
-  '曼谷': 'Bangkok', '新加坡': 'Singapore',
+  // --- Western Europe ---
+  '巴黎': 'Paris', '伦敦': 'London', '罗马': 'Rome', '巴塞罗那': 'Barcelona',
+  '阿姆斯特丹': 'Amsterdam', '维也纳': 'Vienna', '布拉格': 'Prague',
+  '布达佩斯': 'Budapest', '米兰': 'Milan', '威尼斯': 'Venice',
+  '佛罗伦萨': 'Florence', '慕尼黑': 'Munich', '柏林': 'Berlin',
+  '马德里': 'Madrid', '布鲁塞尔': 'Brussels', '里斯本': 'Lisbon',
+  '日内瓦': 'Geneva', '苏黎世': 'Zurich', '法兰克福': 'Frankfurt',
+  '汉堡': 'Hamburg', '科隆': 'Cologne', '杜塞尔多夫': 'Dusseldorf',
+  '爱丁堡': 'Edinburgh', '曼彻斯特': 'Manchester', '利物浦': 'Liverpool',
+  '都柏林': 'Dublin', '尼斯': 'Nice', '马赛': 'Marseille', '里昂': 'Lyon',
+  '那不勒斯': 'Naples', '都灵': 'Turin', '比萨': 'Pisa',
+  '雅典': 'Athens', '圣托里尼': 'Santorini',
+  // --- Nordic / Baltic ---
+  '哥本哈根': 'Copenhagen', '斯德哥尔摩': 'Stockholm', '奥斯陆': 'Oslo',
+  '赫尔辛基': 'Helsinki', '雷克雅未克': 'Reykjavik',
+  '冰岛': 'Iceland', '挪威': 'Norway', '瑞典': 'Sweden',
+  '丹麦': 'Denmark', '芬兰': 'Finland',
+  // --- Eastern Europe ---
+  '华沙': 'Warsaw', '莫斯科': 'Moscow',
+  // --- Middle East ---
+  '迪拜': 'Dubai', '多哈': 'Doha', '阿布扎比': 'Abu Dhabi',
+  '伊斯坦布尔': 'Istanbul',
+  // --- Africa ---
+  '开罗': 'Cairo', '开普敦': 'Cape Town', '约翰内斯堡': 'Johannesburg',
+  '内罗毕': 'Nairobi', '摩洛哥': 'Morocco', '南非': 'South Africa',
+  // --- Oceania ---
+  '悉尼': 'Sydney', '墨尔本': 'Melbourne', '布里斯班': 'Brisbane',
+  '奥克兰': 'Auckland', '惠灵顿': 'Wellington', '新西兰': 'New Zealand',
+  '斐济': 'Fiji', '大溪地': 'Tahiti',
+  // --- North America ---
   '纽约': 'New York', '洛杉矶': 'Los Angeles', '旧金山': 'San Francisco',
-  '芝加哥': 'Chicago', '悉尼': 'Sydney',
+  '芝加哥': 'Chicago', '波士顿': 'Boston', '华盛顿': 'Washington DC',
+  '西雅图': 'Seattle', '拉斯维加斯': 'Las Vegas', '迈阿密': 'Miami',
+  '檀香山': 'Honolulu', '夏威夷': 'Hawaii', '关岛': 'Guam', '塞班': 'Saipan',
+  '温哥华': 'Vancouver', '多伦多': 'Toronto', '蒙特利尔': 'Montreal',
+  '加拿大': 'Canada', '墨西哥城': 'Mexico City', '墨西哥': 'Mexico',
+  // --- South America ---
+  '圣保罗': 'Sao Paulo', '里约热内卢': 'Rio de Janeiro',
+  '布宜诺斯艾利斯': 'Buenos Aires', '圣地亚哥': 'Santiago',
+  '利马': 'Lima', '波哥大': 'Bogota', '巴西': 'Brazil',
+  '阿根廷': 'Argentina', '秘鲁': 'Peru', '智利': 'Chile', '哥伦比亚': 'Colombia',
+  // --- East Asia (outside mainland China) ---
+  '东京': 'Tokyo', '京都': 'Kyoto', '大阪': 'Osaka', '札幌': 'Sapporo',
+  '福冈': 'Fukuoka', '名古屋': 'Nagoya', '神户': 'Kobe',
+  '首尔': 'Seoul', '釜山': 'Busan', '济州': 'Jeju',
+  '台北': 'Taipei', '香港': 'Hong Kong', '澳门': 'Macau',
+  // --- Southeast Asia ---
+  '曼谷': 'Bangkok', '新加坡': 'Singapore', '清迈': 'Chiang Mai',
+  '普吉': 'Phuket', '巴厘': 'Bali', '马尔代夫': 'Maldives',
+  // --- Southern Europe / Mediterranean ---
+  '葡萄牙': 'Portugal', '西班牙': 'Spain', '希腊': 'Greece',
+  '土耳其': 'Turkey', '瑞士': 'Switzerland',
 }
 
 function isChinese(text: string): boolean {
@@ -636,9 +680,13 @@ async function callBaiduGeocoding(address: string): Promise<{ lat: number; lng: 
     const res = await fetch(`/api/baidumap/geocoding/v3/?${sp.toString()}`)
     const data = await res.json()
     if (data.status === 0 && data.result?.location) {
+      console.log('[Baidu] geocode success:', address, '→', data.result.location)
       return { lat: data.result.location.lat, lng: data.result.location.lng }
     }
-  } catch {}
+    console.warn('[Baidu] geocode failed for:', address, 'status:', data.status, 'msg:', data.message)
+  } catch (e) {
+    console.warn('[Baidu] geocode exception for:', address, e)
+  }
   return null
 }
 
@@ -646,25 +694,36 @@ async function callNominatimGeocoding(address: string): Promise<{ lat: number; l
   try {
     await new Promise(r => setTimeout(r, 1100)) // Nominatim rate limit: 1 req/sec
     const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1`
+    console.log('[Nominatim] requesting:', address)
     const res = await fetch(url, { headers: { 'User-Agent': 'Trailmate/1.0' } })
     const data = await res.json()
     if (data.length > 0) {
+      console.log('[Nominatim] success:', address, '→', { lat: data[0].lat, lng: data[0].lon })
       return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) }
     }
-  } catch {}
+    console.warn('[Nominatim] no results for:', address)
+  } catch (e) {
+    console.warn('[Nominatim] exception for:', address, e)
+  }
   return null
 }
 
 async function geocodeAddress(address: string, cityHint?: string): Promise<{ lat: number; lng: number } | null> {
   if (!address) return null
   const key = address.toLowerCase().trim()
-  if (geocodeCache.value[key]) return geocodeCache.value[key]
+  console.log('[geocode] called with address:', address, 'cityHint:', cityHint)
+
+  if (geocodeCache.value[key]) {
+    console.log('[geocode] cache hit (memory):', key)
+    return geocodeCache.value[key]
+  }
 
   try {
     const raw = localStorage.getItem('trailmate-geocode-cache')
     if (raw) {
       const cached = JSON.parse(raw)
       if (cached[key]) {
+        console.log('[geocode] cache hit (localStorage):', key)
         geocodeCache.value[key] = cached[key]
         return cached[key]
       }
@@ -679,18 +738,30 @@ async function geocodeAddress(address: string, cityHint?: string): Promise<{ lat
   const enCity = cityHint ? lookupIntlCity(cityHint) : null
   if (enCity) {
     const enQuery = cityHint ? query.replace(cityHint, enCity) : query
-    console.log('[geocode] intl city detected, using Nominatim:', enQuery)
+    console.log('[geocode] PATH=intl_city cityHint:', cityHint, '→ English:', enCity, 'enQuery:', enQuery)
     result = await callNominatimGeocoding(enQuery)
   } else if (isChinese(query)) {
-    // Domestic Chinese address → Baidu first
+    console.log('[geocode] PATH=baidu_then_nominatim query contains Chinese, trying Baidu first:', query)
     result = await callBaiduGeocoding(query)
     if (!result) {
-      // Baidu failed, try Nominatim as fallback
+      console.log('[geocode] Baidu failed, falling back to Nominatim for:', query)
       result = await callNominatimGeocoding(query)
+      if (result) {
+        console.log('[geocode] Nominatim fallback succeeded for:', query)
+      } else {
+        console.warn('[geocode] Nominatim fallback also failed for:', query)
+      }
+    } else {
+      console.log('[geocode] Baidu succeeded for:', query)
     }
   } else {
-    // Non-Chinese address → Nominatim directly
+    console.log('[geocode] PATH=nominatim_direct query is non-Chinese:', query)
     result = await callNominatimGeocoding(query)
+    if (result) {
+      console.log('[geocode] Nominatim direct succeeded for:', query)
+    } else {
+      console.warn('[geocode] Nominatim direct failed for:', query)
+    }
   }
 
   if (result) {
@@ -700,6 +771,8 @@ async function geocodeAddress(address: string, cityHint?: string): Promise<{ lat
       existing[key] = result
       localStorage.setItem('trailmate-geocode-cache', JSON.stringify(existing))
     } catch {}
+  } else {
+    console.warn('[geocode] ALL geocoding paths failed for:', query, 'cityHint:', cityHint)
   }
 
   return result
@@ -725,6 +798,7 @@ async function loadTimelineFromPlan() {
   const nodes: TimelineNode[] = []
   let geocodedCount = 0
   let totalItems = 0
+  let failedItems = 0
   for (const day of plan.days) {
     for (const item of (day.items || [])) {
       totalItems++
@@ -732,11 +806,16 @@ async function loadTimelineFromPlan() {
       let latitude: number | undefined
       let longitude: number | undefined
       if (item.address) {
+        console.log('[loadTimeline] geocoding item:', item.name, 'address:', item.address)
         const coords = await geocodeAddress(item.address, cityHint)
         if (coords) {
           latitude = coords.lat
           longitude = coords.lng
           geocodedCount++
+          console.log('[loadTimeline] geocode OK for:', item.name, '→', coords)
+        } else {
+          failedItems++
+          console.warn('[loadTimeline] geocode FAILED for:', item.name, 'address:', item.address)
         }
       }
       // Fallback: use city coords for items without address
@@ -762,7 +841,10 @@ async function loadTimelineFromPlan() {
   }
   timeline.value = nodes
   timelineLoading.value = false
-  console.log('[loadTimeline] done: total', totalItems, 'geocoded', geocodedCount, 'cityFallback', nodes.filter(n => n.latitude != null).length)
+  const withCoords = nodes.filter(n => n.latitude != null).length
+  console.log('[loadTimeline] done: plan:', plan.name, 'totalItems:', totalItems,
+    'geocodedOK:', geocodedCount, 'geocodeFailed:', failedItems,
+    'cityFallback:', withCoords - geocodedCount, 'totalWithCoords:', withCoords)
 }
 
 // Extract city/country from plan name, description, and tags
