@@ -140,7 +140,7 @@ export function useAuth() {
     }
   }
 
-  async function register(email: string, password: string, name: string): Promise<User> {
+  async function register(email: string, password: string, name: string): Promise<User | null> {
     isLoading.value = true
     error.value = null
 
@@ -153,28 +153,26 @@ export function useAuth() {
       }
 
       // ── Supabase 注册 ──
-      const { data, error: signUpError } = await supabase.auth.signUp({ email, password })
+      // 将 name 写入 user_metadata，数据库触发器会自动创建 profiles 记录
+      const { data, error: signUpError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: { data: { name } },
+      })
       if (signUpError) throw new Error(signUpError.message)
 
+      // 开启了邮箱确认：用户已创建（auth.users + profiles 由触发器自动写入），
+      // 但无 session，用户需去邮箱点击确认链接
       if (!data.session) {
-        throw new Error('注册成功！请检查邮箱并点击确认链接完成验证。')
+        error.value = '注册成功！请检查邮箱并点击确认链接完成验证。'
+        isLoading.value = false
+        return null
       }
 
+      // 无需邮箱确认：直接登录
       const supabaseUser = data.user!
-
-      // 写入 profile 表
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .insert({ id: supabaseUser.id, name })
-
-      if (profileError) {
-        // 42P01: profiles 表不存在（迁移未执行）
-        if (profileError.code !== '42P01') {
-          console.warn('[Trailmate] 创建用户档案失败:', profileError.message)
-        }
-      }
-
-      const user: User = { id: supabaseUser.id, email: supabaseUser.email!, name }
+      const profile = await fetchProfile(supabaseUser.id)
+      const user = buildUser(supabaseUser, profile)
 
       currentUser.value = user
       isLoading.value = false

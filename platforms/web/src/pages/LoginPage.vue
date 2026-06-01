@@ -49,10 +49,11 @@
           </button>
         </div>
 
-        <!-- 错误提示 -->
+        <!-- 提示消息 -->
         <div
           v-if="auth.error.value"
-          class="mb-6 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm flex items-start gap-2"
+          class="mb-6 p-3 rounded-lg text-sm flex items-start gap-2"
+          :class="auth.error.value.includes('注册成功') ? 'bg-green-50 border border-green-200 text-green-600' : 'bg-red-50 border border-red-200 text-red-600'"
         >
           <AlertCircle :size="16" class="flex-shrink-0 mt-0.5" />
           <span>{{ auth.error.value }}</span>
@@ -214,9 +215,12 @@ async function handleLogin() {
 
 async function handleRegister() {
   try {
-    await auth.register(registerForm.email, registerForm.password, registerForm.name)
-    // 新用户引导：进入 dashboard
-    router.replace('/dashboard')
+    const user = await auth.register(registerForm.email, registerForm.password, registerForm.name)
+    if (user) {
+      // 无需邮箱确认，直接登录
+      router.replace('/dashboard')
+    }
+    // user 为 null 时：邮箱确认已开启，提示信息已由 useAuth 设置
   } catch {
     // 错误已由 useAuth 处理
   }
