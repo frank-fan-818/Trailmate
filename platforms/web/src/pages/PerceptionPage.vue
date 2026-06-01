@@ -673,20 +673,23 @@ function lookupIntlCity(cityHint: string): string | null {
   return null
 }
 
-async function callBaiduGeocoding(address: string): Promise<{ lat: number; lng: number } | null> {
+// Use Baidu Place Search (working) instead of broken geocoding API
+async function callBaiduPlaceSearch(name: string, cityHint?: string): Promise<{ lat: number; lng: number } | null> {
   if (baiduBroken) return null
   try {
     const ak = import.meta.env.VITE_BAIDU_MAP_AK as string
     if (!ak) { baiduBroken = true; return null }
-    const sp = new URLSearchParams({ path: 'geocoding/v3/', address, ak, output: 'json' })
-    const res = await fetch(`/api/baidumap/geocoding/v3/?${sp.toString()}`)
+    const region = cityHint || '全国'
+    const sp = new URLSearchParams({ path: 'place/v2/search', query: name, region, ak, output: 'json', scope: '2', page_size: '1' })
+    const res = await fetch(`/api/baidumap/place/v2/search?${sp.toString()}`)
     const data = await res.json()
-    if (data.status === 0 && data.result?.location) {
-      console.log('[Baidu] geocode success:', address, '→', data.result.location)
-      return { lat: data.result.location.lat, lng: data.result.location.lng }
+    if (data.status === 0 && data.results?.[0]?.location) {
+      const loc = data.results[0].location
+      console.log('[Baidu] place found:', name, '→', loc)
+      return { lat: loc.lat, lng: loc.lng }
     }
-    baiduBroken = true
-    console.warn('[Baidu] disabled — status:', data.status, 'msg:', data.message)
+    console.warn('[Baidu] place not found:', name, 'status:', data.status)
+    // Don't set baiduBroken — place search might work for some queries and not others
   } catch {
     baiduBroken = true
   }
@@ -744,8 +747,9 @@ async function geocodeAddress(address: string, cityHint?: string): Promise<{ lat
     console.log('[geocode] PATH=intl_city cityHint:', cityHint, '→ English:', enCity, 'enQuery:', enQuery)
     result = await callNominatimGeocoding(enQuery)
   } else if (isChinese(query)) {
-    console.log('[geocode] PATH=baidu_then_nominatim query contains Chinese, trying Baidu first:', query)
-    result = await callBaiduGeocoding(query)
+    // Use Baidu Place Search (more accurate coords than geocoding, and it actually works)
+    console.log('[geocode] PATH=baidu_place_search trying:', address, 'region:', cityHint)
+    result = await callBaiduPlaceSearch(address, cityHint)
     if (!result) {
       console.log('[geocode] Baidu failed, falling back to Nominatim for:', query)
       result = await callNominatimGeocoding(query)
