@@ -45,6 +45,7 @@ let map: L.Map | null = null
 let userMarker: L.Marker | null = null
 let poiLayer: L.LayerGroup | null = null
 let routePolyline: L.Polyline | null = null
+let resizeObserver: ResizeObserver | null = null
 
 const sortedNodes = computed(() => {
   const nodes = (props.timelineNodes || [])
@@ -174,7 +175,7 @@ onMounted(() => {
     center: props.center,
     zoom: props.zoom,
     zoomControl: true,
-    scrollWheelZoom: false
+    scrollWheelZoom: true
   })
 
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -194,9 +195,19 @@ onMounted(() => {
   } else if (props.userPosition) {
     updateUserMarker(props.userPosition)
   }
+
+  // Keep map size in sync with container to prevent tile offset
+  resizeObserver = new ResizeObserver(() => {
+    map?.invalidateSize()
+  })
+  resizeObserver.observe(mapContainer.value)
 })
 
 onBeforeUnmount(() => {
+  if (resizeObserver) {
+    resizeObserver.disconnect()
+    resizeObserver = null
+  }
   if (map) {
     map.remove()
     map = null
@@ -216,6 +227,7 @@ onBeforeUnmount(() => {
 .map-container {
   width: 100%;
   height: 100%;
+  position: relative;
 }
 
 /* ---- User pulse dot ---- */
