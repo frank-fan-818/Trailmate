@@ -139,6 +139,11 @@ export function usePlaceDrawer() {
     return '📍'
   }
 
+  // 判断是否为国内地点（包含中文字符）
+  function isChineseLocation(name: string): boolean {
+    return /[\u4e00-\u9fa5]/.test(name)
+  }
+
   const openPlaceDrawer = async (placeName: string) => {
     try {
       selectedPlace.value = {
@@ -149,13 +154,62 @@ export function usePlaceDrawer() {
       }
       showPlaceDrawer.value = true
       activePlaceTab.value = 'detail'
-      // Preload nearby foods & hotels in background
+
+      // 国际地点直接走 Nominatim，跳过百度（避免 500）
+      if (!isChineseLocation(placeName)) {
+        const nomCoords = await geocodeNominatim(placeName)
+        if (nomCoords) {
+          selectedPlace.value = {
+            name: placeName,
+            icon: getPlaceIcon('景点'),
+            category: '景点',
+            rating: '暂无评分',
+            distance: nomCoords.displayName || '海外',
+            description: nomCoords.displayName || placeName,
+            address: nomCoords.displayName || placeName,
+            openTime: '请查询当地信息',
+            ticket: '请查询当地信息',
+            city: nomCoords.city || '',
+            latitude: nomCoords.lat,
+            longitude: nomCoords.lng,
+          }
+          return
+        }
+      }
+
+      // 中国地点走百度地图
       loadNearbyFoods()
       loadNearbyHotels()
 
       const ak = import.meta.env.VITE_BAIDU_MAP_AK as string
-      const response = await fetchBaiduApi('place/v2/search', { query: placeName, region: '全国', ak, output: 'json', scope: '2', page_size: '1' })
-      const data = await response.json()
+      let data: any = {}
+      try {
+        const response = await fetchBaiduApi('place/v2/search', { query: placeName, region: '全国', ak, output: 'json', scope: '2', page_size: '1' })
+        data = await response.json()
+      } catch {
+        // 百度代理挂了，降级到 Nominatim
+        const nomCoords = await geocodeNominatim(placeName)
+        if (nomCoords) {
+          selectedPlace.value = {
+            name: placeName,
+            icon: getPlaceIcon('景点'),
+            category: '景点',
+            rating: '暂无评分',
+            distance: nomCoords.displayName || '',
+            description: nomCoords.displayName || placeName,
+            address: nomCoords.displayName || placeName,
+            openTime: '请查询当地信息',
+            ticket: '请查询当地信息',
+            city: nomCoords.city || '',
+            latitude: nomCoords.lat,
+            longitude: nomCoords.lng,
+          }
+        } else {
+          const mockPlace = getMockPlaceInfo(placeName)
+          selectedPlace.value = { name: placeName, ...mockPlace }
+        }
+        return
+      }
 
       if (data.status === 0 && data.results && data.results.length > 0) {
         const poi = data.results[0]
