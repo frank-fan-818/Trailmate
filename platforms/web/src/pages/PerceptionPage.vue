@@ -602,9 +602,30 @@ const mapZoom = computed(() => {
   return spread < 0.1 ? 14 : spread < 1 ? 10 : 5
 })
 
-// Geocode address: Chinese → Baidu first (best coverage), others → Nominatim
+// Chinese-written international city names → English (Baidu can't geocode these)
+const CN_INTL_CITIES: Record<string, string> = {
+  '慕尼黑': 'Munich', '柏林': 'Berlin', '巴黎': 'Paris', '伦敦': 'London',
+  '罗马': 'Rome', '巴塞罗那': 'Barcelona', '阿姆斯特丹': 'Amsterdam',
+  '维也纳': 'Vienna', '布拉格': 'Prague', '布达佩斯': 'Budapest',
+  '米兰': 'Milan', '威尼斯': 'Venice', '佛罗伦萨': 'Florence',
+  '东京': 'Tokyo', '京都': 'Kyoto', '大阪': 'Osaka', '首尔': 'Seoul',
+  '曼谷': 'Bangkok', '新加坡': 'Singapore',
+  '纽约': 'New York', '洛杉矶': 'Los Angeles', '旧金山': 'San Francisco',
+  '芝加哥': 'Chicago', '悉尼': 'Sydney',
+}
+
 function isChinese(text: string): boolean {
   return /[\u4e00-\u9fa5]/.test(text)
+}
+
+function lookupIntlCity(cityHint: string): string | null {
+  // Direct match
+  if (CN_INTL_CITIES[cityHint]) return CN_INTL_CITIES[cityHint]
+  // Check if any intl city name appears inside cityHint
+  for (const [cn, en] of Object.entries(CN_INTL_CITIES)) {
+    if (cityHint.includes(cn)) return en
+  }
+  return null
 }
 
 async function callBaiduGeocoding(address: string): Promise<{ lat: number; lng: number } | null> {
@@ -614,15 +635,10 @@ async function callBaiduGeocoding(address: string): Promise<{ lat: number; lng: 
     const sp = new URLSearchParams({ path: 'geocoding/v3/', address, ak, output: 'json' })
     const res = await fetch(`/api/baidumap/geocoding/v3/?${sp.toString()}`)
     const data = await res.json()
-    console.log('[Baidu] geocode:', address, '→ status:', data.status, 'hasResult:', !!data.result?.location)
     if (data.status === 0 && data.result?.location) {
       return { lat: data.result.location.lat, lng: data.result.location.lng }
-    } else {
-      console.warn('[Baidu] geocode failed:', address, 'status:', data.status, 'msg:', data.message)
     }
-  } catch (e) {
-    console.warn('[Baidu] geocode error:', address, e)
-  }
+  } catch {}
   return null
 }
 
@@ -642,10 +658,8 @@ async function callNominatimGeocoding(address: string): Promise<{ lat: number; l
 async function geocodeAddress(address: string, cityHint?: string): Promise<{ lat: number; lng: number } | null> {
   if (!address) return null
   const key = address.toLowerCase().trim()
-  // Only serve successful cache hits — null = not tried yet (or previously failed, retry)
   if (geocodeCache.value[key]) return geocodeCache.value[key]
 
-  // Try localStorage cache (only stores successful results)
   try {
     const raw = localStorage.getItem('trailmate-geocode-cache')
     if (raw) {
@@ -660,16 +674,25 @@ async function geocodeAddress(address: string, cityHint?: string): Promise<{ lat
   const query = cityHint ? `${address}, ${cityHint}` : address
   let result: { lat: number; lng: number } | null = null
 
-  if (isChinese(query)) {
+  // Check if this is a Chinese-written international city (e.g. 慕尼黑, 巴黎)
+  // → skip Baidu entirely, use Nominatim with English city name for better results
+  const enCity = cityHint ? lookupIntlCity(cityHint) : null
+  if (enCity) {
+    const enQuery = cityHint ? query.replace(cityHint, enCity) : query
+    console.log('[geocode] intl city detected, using Nominatim:', enQuery)
+    result = await callNominatimGeocoding(enQuery)
+  } else if (isChinese(query)) {
+    // Domestic Chinese address → Baidu first
     result = await callBaiduGeocoding(query)
-  }
-
-  // Fallback to Nominatim for non-Chinese or if Baidu failed
-  if (!result) {
+    if (!result) {
+      // Baidu failed, try Nominatim as fallback
+      result = await callNominatimGeocoding(query)
+    }
+  } else {
+    // Non-Chinese address → Nominatim directly
     result = await callNominatimGeocoding(query)
   }
 
-  // Only persist successful results (don't cache null → allows retry with different provider)
   if (result) {
     geocodeCache.value[key] = result
     try {
@@ -709,9 +732,7 @@ async function loadTimelineFromPlan() {
       let latitude: number | undefined
       let longitude: number | undefined
       if (item.address) {
-        // Use full context: "Street, City, Country"
-        const fullQuery = cityHint ? `${item.address}, ${cityHint}` : item.address
-        const coords = await geocodeAddress(fullQuery)
+        const coords = await geocodeAddress(item.address, cityHint)
         if (coords) {
           latitude = coords.lat
           longitude = coords.lng
