@@ -408,6 +408,22 @@
           </div>
         </div>
 
+        <!-- 空状态：有对话但无计划 -->
+        <div
+          v-else-if="!isLoading && messages.length > 0"
+          class="bg-white rounded-2xl shadow-lg p-16 text-center border border-gray-200"
+        >
+          <div class="text-6xl mb-6">📋</div>
+          <h3 class="text-2xl font-bold text-gray-900 mb-4">从对话中提取行程</h3>
+          <p class="text-gray-600 leading-relaxed max-w-md mx-auto mb-6">
+            这段对话可能包含未提取的行程计划。点击下方按钮自动解析。
+          </p>
+          <button @click="extractPlanFromChat"
+            class="px-8 py-3 bg-primary text-white font-semibold rounded-xl hover:bg-primary/90 transition-colors">
+            📤 提取为行程计划
+          </button>
+        </div>
+
         <!-- 空状态 -->
         <div
           v-else-if="!isLoading"
@@ -479,7 +495,11 @@ onMounted(() => {
   const chatId = route.query.chatId as string
   if (chatId) {
     const chat = chatHistory.value.find(c => c.id === chatId)
-    if (chat) loadChat(chat)
+    if (chat) {
+      loadChat(chat)
+      // 自动尝试从对话中提取行程计划
+      setTimeout(() => extractPlanFromChat(), 500)
+    }
   }
   const planName = route.query.planName as string
   if (planName) {
@@ -497,6 +517,31 @@ const handleGenerate = () => {
   if (!input) return
   doGenerate(input)
   userInput.value = ''
+}
+
+// 从对话历史中提取行程计划
+function extractPlanFromChat() {
+  for (const msg of messages.value) {
+    if (msg.role !== 'assistant') continue
+    const jsonMatch = msg.content.match(/\{[\s\S]*"plans"[\s\S]*\}/)
+    if (!jsonMatch) continue
+    try {
+      const result = JSON.parse(jsonMatch[0])
+      if (result.plans && Array.isArray(result.plans)) {
+        plans.value = result.plans
+        expandedPlanIdx.value = 0
+        // 同步保存到 localStorage
+        const allPlans = loadSavedPlans()
+        for (const plan of result.plans) {
+          const idx = allPlans.findIndex((p: any) => p.name === plan.name)
+          if (idx >= 0) allPlans[idx] = { ...plan, savedAt: Date.now() }
+          else allPlans.unshift({ ...plan, savedAt: Date.now() })
+        }
+        localStorage.setItem('trailmate-saved-plans', JSON.stringify(allPlans.slice(0, 10)))
+        return
+      }
+    } catch {}
+  }
 }
 
 // 包装 openPlaceDrawer 以便 place-click handler 调用
