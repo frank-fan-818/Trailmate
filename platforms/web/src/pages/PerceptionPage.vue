@@ -610,13 +610,19 @@ function isChinese(text: string): boolean {
 async function callBaiduGeocoding(address: string): Promise<{ lat: number; lng: number } | null> {
   try {
     const ak = import.meta.env.VITE_BAIDU_MAP_AK as string
+    if (!ak) { console.warn('[Baidu] VITE_BAIDU_MAP_AK not set'); return null }
     const sp = new URLSearchParams({ path: 'geocoding/v3/', address, ak, output: 'json' })
     const res = await fetch(`/api/baidumap/geocoding/v3/?${sp.toString()}`)
     const data = await res.json()
+    console.log('[Baidu] geocode:', address, '→ status:', data.status, 'hasResult:', !!data.result?.location)
     if (data.status === 0 && data.result?.location) {
       return { lat: data.result.location.lat, lng: data.result.location.lng }
+    } else {
+      console.warn('[Baidu] geocode failed:', address, 'status:', data.status, 'msg:', data.message)
     }
-  } catch {}
+  } catch (e) {
+    console.warn('[Baidu] geocode error:', address, e)
+  }
   return null
 }
 
@@ -684,16 +690,21 @@ async function loadTimelineFromPlan() {
 
   // Extract city/country from plan metadata
   const cityHint = extractCityFromPlan(plan)
+  console.log('[loadTimeline] plan:', plan.name, 'cityHint:', cityHint, 'days:', plan.days.length)
 
   // Geocode the city first for accurate map center
   let cityCoords: { lat: number; lng: number } | null = null
   if (cityHint) {
     cityCoords = await geocodeAddress(cityHint)
+    console.log('[loadTimeline] cityCoords for', cityHint, ':', cityCoords)
   }
 
   const nodes: TimelineNode[] = []
+  let geocodedCount = 0
+  let totalItems = 0
   for (const day of plan.days) {
     for (const item of (day.items || [])) {
+      totalItems++
       const id = `${plan.name}_day${day.day}_${item.name}`
       let latitude: number | undefined
       let longitude: number | undefined
@@ -704,6 +715,7 @@ async function loadTimelineFromPlan() {
         if (coords) {
           latitude = coords.lat
           longitude = coords.lng
+          geocodedCount++
         }
       }
       // Fallback: use city coords for items without address
@@ -729,6 +741,7 @@ async function loadTimelineFromPlan() {
   }
   timeline.value = nodes
   timelineLoading.value = false
+  console.log('[loadTimeline] done: total', totalItems, 'geocoded', geocodedCount, 'cityFallback', nodes.filter(n => n.latitude != null).length)
 }
 
 // Extract city/country from plan name, description, and tags
