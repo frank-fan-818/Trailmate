@@ -34,6 +34,28 @@ interface PlaceInfo {
   longitude?: number
 }
 
+// Nominatim global geocoding (free, no key, OpenStreetMap)
+async function geocodeNominatim(query: string): Promise<{
+  lat: number; lng: number; displayName: string; type: string; city: string
+} | null> {
+  try {
+    const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`
+    const res = await fetch(url, { headers: { 'User-Agent': 'Trailmate/1.0' } })
+    const data = await res.json()
+    if (data.length > 0) {
+      const r = data[0]
+      return {
+        lat: parseFloat(r.lat),
+        lng: parseFloat(r.lon),
+        displayName: r.display_name,
+        type: r.type || r.category,
+        city: r.address?.city || r.address?.town || r.address?.state || '',
+      }
+    }
+  } catch {}
+  return null
+}
+
 export function usePlaceDrawer() {
   const showPlaceDrawer = ref(false)
   const selectedPlace = ref<PlaceInfo | null>(null)
@@ -174,8 +196,27 @@ export function usePlaceDrawer() {
           loadNearbyHotels(city)
         }
       } else {
-        const mockPlace = getMockPlaceInfo(placeName)
-        selectedPlace.value = { name: placeName, ...mockPlace }
+        // Baidu 搜不到，用 Nominatim 做全球 geocoding（国际景点）
+        const nomCoords = await geocodeNominatim(placeName)
+        if (nomCoords) {
+          selectedPlace.value = {
+            name: placeName,
+            icon: getPlaceIcon(nomCoords.type || '景点'),
+            category: nomCoords.type || '景点',
+            rating: '暂无评分',
+            distance: nomCoords.displayName || '海外',
+            description: nomCoords.displayName || placeName,
+            address: nomCoords.displayName || placeName,
+            openTime: '请查询当地信息',
+            ticket: '请查询当地信息',
+            city: nomCoords.city || '',
+            latitude: nomCoords.lat,
+            longitude: nomCoords.lng,
+          }
+        } else {
+          const mockPlace = getMockPlaceInfo(placeName)
+          selectedPlace.value = { name: placeName, ...mockPlace }
+        }
       }
     } catch (error) {
       console.error('获取景点信息失败:', error)
