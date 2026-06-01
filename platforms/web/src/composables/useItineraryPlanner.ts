@@ -532,6 +532,31 @@ export function useItineraryChat() {
     aiResponse.value = ''
   }
 
+  // Batch geocode plan items using Baidu place search (runs async, doesn't block UI)
+  const enrichPlanWithCoords = async (plan: any) => {
+    const ak = import.meta.env.VITE_BAIDU_MAP_AK as string
+    if (!ak) return
+    let enriched = 0
+    for (const day of plan.days || []) {
+      for (const item of day.items || []) {
+        if (item.position) continue
+        try {
+          const sp = new URLSearchParams({ path: 'place/v2/search', query: item.name, region: '全国', ak, output: 'json', scope: '2', page_size: '1' })
+          const res = await fetch(`/api/baidumap/place/v2/search?${sp.toString()}`)
+          const data = await res.json()
+          if (data.status === 0 && data.results?.[0]?.location) {
+            item.position = { lat: data.results[0].location.lat, lng: data.results[0].location.lng }
+            enriched++
+          }
+        } catch {}
+      }
+    }
+    if (enriched > 0) {
+      savePlansToStorage([plan])
+      console.log('[enrichPlan] saved coordinates for', enriched, 'items in plan:', plan.name)
+    }
+  }
+
   const savePlansToStorage = (p: any[]) => {
     try {
       const existing = loadSavedPlans()
@@ -629,6 +654,8 @@ export function useItineraryChat() {
       if (parsedPlans && Array.isArray(parsedPlans)) {
         plans.value = parsedPlans
         savePlansToStorage(parsedPlans)
+        // Enrich with coordinates from Baidu asynchronously (non-blocking)
+        for (const plan of parsedPlans) { enrichPlanWithCoords(plan) }
       }
     } catch (error) {
       const err = error as any
@@ -669,7 +696,7 @@ export function useItineraryChat() {
     chatHistory, currentSessionId,
     loadChat, clearHistory, startNewChat, saveCurrentChat,
     handleGenerate, renderAIResponse, handlePlaceClick,
-    saveHistoryToStorage
+    saveHistoryToStorage, enrichPlanWithCoords
   }
 }
 

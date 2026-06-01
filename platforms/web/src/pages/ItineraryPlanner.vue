@@ -462,7 +462,8 @@ const {
   messages, isLoading, plans, userInput,
   chatHistory, currentSessionId,
   loadChat, clearHistory, startNewChat,
-  handleGenerate: doGenerate, renderAIResponse, handlePlaceClick
+  handleGenerate: doGenerate, renderAIResponse, handlePlaceClick,
+  enrichPlanWithCoords
 } = useItineraryChat()
 
 const showHistorySidebar = ref(false)
@@ -534,6 +535,8 @@ function extractPlanFromChat() {
         else allPlans.unshift({ ...plan, savedAt: Date.now() })
       }
       localStorage.setItem('trailmate-saved-plans', JSON.stringify(allPlans.slice(0, 10)))
+      // Enrich with coordinates from Baidu asynchronously
+      for (const plan of result.plans) { enrichPlanWithCoords(plan) }
       return
     }
   }

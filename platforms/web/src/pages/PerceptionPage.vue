@@ -811,7 +811,13 @@ async function loadTimelineFromPlan() {
       const id = `${plan.name}_day${day.day}_${item.name}`
       let latitude: number | undefined
       let longitude: number | undefined
-      if (item.address || item.name) {
+      // Use saved position from plan generation (Baidu place search already ran)
+      if ((item as any).position) {
+        latitude = (item as any).position.lat
+        longitude = (item as any).position.lng
+        geocodedCount++
+        console.log('[loadTimeline] using saved coords for:', item.name, '→', (item as any).position)
+      } else if (item.address || item.name) {
         console.log('[loadTimeline] geocoding item:', item.name, 'address:', item.address)
 
         // Multi-strategy geocoding: try increasingly general queries
