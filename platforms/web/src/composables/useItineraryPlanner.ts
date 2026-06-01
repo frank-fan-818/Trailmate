@@ -397,9 +397,6 @@ export function useItineraryChat() {
   }
 
   const callPlannerLLM = async (messagesHistory: Array<{ role: string; content: string }>) => {
-    const apiKey = import.meta.env.VITE_OPENROUTER_API_KEY as string
-    if (!apiKey) throw new Error('OpenRouter API Key 未配置')
-
     const isChinese = settings.value.language === 'zh'
     const systemPrompt = isChinese
       ? `【重要】你必须用中文回复所有内容。你是伴旅智能旅行助手，擅长规划详细旅行行程。

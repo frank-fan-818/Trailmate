@@ -4,13 +4,8 @@ import { createLogger, generateTraceId, type StructuredLogger } from '@trailmate
 // ====== Config ======
 
 /** LLM 调用超时时间（毫秒）
- *  选择依据：
- *  - OpenRouter minimax 模型典型响应时间：2-8 秒
- *  - 包含 3 次重试（间隔 2s/4s），最坏情况 ≈ 30s + 6s = 36s
- *  - 30s 为行业常用 LLM API 超时值（OpenAI 默认 600s 但非流式通常 30-60s）
- *  - 低于 30s：高峰期容易误超时
- *  - 高于 60s：用户体验下降，用户不会等那么久
- *  - 30s 为平衡点：给正常调用+一次重试留足余量，同时尽快失败让用户手动重试
+ *  DeepSeek API 典型响应时间：3-15 秒
+ *  包含 3 次重试，30s 为平衡点
  */
 const LLM_TIMEOUT_MS = 30000
 
@@ -38,12 +33,12 @@ export async function callLLM(
   messages: Array<{ role: string; content: string | null; tool_calls?: any[]; tool_call_id?: string; name?: string }>,
   options?: { model?: string; tools?: ToolDef[]; log?: StructuredLogger }
 ): Promise<any> {
-  const apiKey = import.meta.env.VITE_OPENROUTER_API_KEY as string
-  const apiUrl = import.meta.env.VITE_OPENROUTER_API_URL as string || 'https://openrouter.ai/api/v1/chat/completions'
-  const model = options?.model || 'minimax/minimax-m2.5:free'
+  const apiKey = import.meta.env.VITE_DEEPSEEK_API_KEY as string
+  const apiUrl = import.meta.env.VITE_DEEPSEEK_API_URL as string || 'https://api.deepseek.com/v1/chat/completions'
+  const model = options?.model || 'deepseek-chat'
 
-  if (!apiKey || apiKey === 'OPENROUTER_KEY_PLACEHOLDER') {
-    throw new Error('OpenRouter API Key 未配置，请在 Vercel 环境变量中设置 VITE_OPENROUTER_API_KEY')
+  if (!apiKey) {
+    throw new Error('DeepSeek API Key 未配置，请在 Vercel 环境变量中设置 VITE_DEEPSEEK_API_KEY')
   }
 
   const body: any = {
