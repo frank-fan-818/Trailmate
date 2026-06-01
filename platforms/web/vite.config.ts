@@ -37,9 +37,9 @@ export default defineConfig({
         rewrite: (path) => path.replace(/^\/api\/baidumap/, '')
       },
       '/api/exchange-proxy': {
-        target: 'https://hq.sinajs.cn',
+        target: 'https://api.frankfurter.app',
         changeOrigin: true,
-        rewrite: (path) => `/list=${path.replace('/api/exchange-proxy/', '')}`
+        rewrite: (path) => path.replace('/api/exchange-proxy', '')
       }
     }
   }

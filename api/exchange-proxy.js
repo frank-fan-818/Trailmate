@@ -1,27 +1,25 @@
-// Vercel Serverless Function — 新浪汇率 API 代理
-// Rewrite rule maps /api/exchange-proxy/fx_susdcny → /api/exchange-proxy?s=fx_susdcny
-// Forwards to: https://hq.sinajs.cn/list=fx_susdcny
+// Vercel Serverless Function — 汇率 API 代理
+// Forwards: /api/exchange-proxy/latest?from=CNY → api.frankfurter.app/latest?from=CNY
+// Frankfurter 从国内浏览器直连可能被墙，通过 Vercel US 服务器中转
 
 module.exports = async function handler(req, res) {
   const url = new URL(req.url, 'http://localhost')
-  const symbols = url.searchParams.get('s') || ''
+  const params = url.searchParams
 
-  if (!symbols) {
+  if (!params.has('from')) {
     res.setHeader('Access-Control-Allow-Origin', '*')
-    return res.status(400).json({ error: 'Missing symbols' })
+    return res.status(400).json({ error: 'Missing from parameter' })
   }
 
-  const sinaUrl = `https://hq.sinajs.cn/list=${symbols}`
+  const target = new URL('https://api.frankfurter.app/latest')
+  for (const [k, v] of params) target.searchParams.set(k, v)
 
   try {
-    const response = await fetch(sinaUrl, {
-      headers: {
-        'User-Agent': 'Trailmate/1.0',
-        'Referer': 'https://finance.sina.com.cn',
-      }
+    const response = await fetch(target.toString(), {
+      headers: { 'User-Agent': 'Trailmate/1.0', 'Accept': 'application/json' }
     })
     const body = await response.text()
-    res.setHeader('Content-Type', response.headers.get('content-type') || 'text/plain; charset=gb2312')
+    res.setHeader('Content-Type', 'application/json; charset=utf-8')
     res.setHeader('Access-Control-Allow-Origin', '*')
     res.status(response.status).send(body)
   } catch (e) {
