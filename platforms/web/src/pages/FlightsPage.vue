@@ -148,7 +148,7 @@ import { useTrailmateCore } from '../composables/use-trailmate-core'
 const router = useRouter()
 const { queryFlights, queryFlightsReal } = useTrailmateCore()
 
-const useRealApi = ref(false)
+const useRealApi = ref(true)
 const depCity = ref('')
 const arrCity = ref('')
 const depDate = ref('')
