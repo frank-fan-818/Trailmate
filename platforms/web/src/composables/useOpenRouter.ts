@@ -15,7 +15,9 @@ import { createLogger, generateTraceId, type StructuredLogger } from '@trailmate
 const LLM_TIMEOUT_MS = 30000
 
 /** 降级回复：当 LLM 服务完全不可用时使用 */
-const FALLBACK_RESPONSE = '抱歉，AI 服务暂时不可用。请稍后重试或检查网络连接。您仍然可以浏览已有的行程和旅伴信息。'
+function fallbackResponse(reason?: string): string {
+  return `抱歉，AI 服务暂时不可用。${reason ? `(${reason})` : ''}请稍后重试或检查网络连接。您仍然可以浏览已有的行程和旅伴信息。`
+}
 
 // ====== Helpers ======
 
@@ -39,6 +41,10 @@ export async function callLLM(
   const apiKey = import.meta.env.VITE_OPENROUTER_API_KEY as string
   const apiUrl = import.meta.env.VITE_OPENROUTER_API_URL as string || 'https://openrouter.ai/api/v1/chat/completions'
   const model = options?.model || 'minimax/minimax-m2.5:free'
+
+  if (!apiKey || apiKey === 'OPENROUTER_KEY_PLACEHOLDER') {
+    throw new Error('OpenRouter API Key 未配置，请在 Vercel 环境变量中设置 VITE_OPENROUTER_API_KEY')
+  }
 
   const body: any = {
     model,
@@ -303,7 +309,7 @@ export async function runWithTools(
       totalDurationMs: durationMs
     })
 
-    // 降级方案：返回友好提示，不阻断用户操作
-    return { content: FALLBACK_RESPONSE, toolCalls: [] }
+    // 降级方案：返回友好提示（附带真实错误原因便于排查），不阻断用户操作
+    return { content: fallbackResponse(e?.message), toolCalls: [] }
   }
 }
