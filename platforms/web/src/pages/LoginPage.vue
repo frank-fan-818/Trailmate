@@ -140,6 +140,28 @@
                 <EyeOff v-else :size="18" />
               </button>
             </div>
+            <!-- 密码强度 -->
+            <div v-if="registerForm.password" class="mt-2 space-y-2">
+              <div class="flex gap-1">
+                <div
+                  v-for="i in 3" :key="i"
+                  class="h-1 flex-1 rounded-full transition-all duration-300"
+                  :class="strengthBarClass(i)"
+                />
+              </div>
+              <p class="text-xs font-medium" :class="strengthLabelClass">{{ strengthLabel }}</p>
+              <div class="space-y-0.5">
+                <p class="text-xs flex items-center gap-1" :class="passwordChecks.length ? 'text-green-600' : 'text-gray-400'">
+                  <span>{{ passwordChecks.length ? '✓' : '○' }}</span> 至少 8 位字符
+                </p>
+                <p class="text-xs flex items-center gap-1" :class="passwordChecks.hasLetter ? 'text-green-600' : 'text-gray-400'">
+                  <span>{{ passwordChecks.hasLetter ? '✓' : '○' }}</span> 包含字母
+                </p>
+                <p class="text-xs flex items-center gap-1" :class="passwordChecks.hasNumber ? 'text-green-600' : 'text-gray-400'">
+                  <span>{{ passwordChecks.hasNumber ? '✓' : '○' }}</span> 包含数字
+                </p>
+              </div>
+            </div>
           </div>
           <button
             type="submit"
@@ -181,7 +203,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Mail, Lock, Eye, EyeOff, User, AlertCircle, Loader2 } from 'lucide-vue-next'
 import { useAuth } from '@/composables/useAuth'
@@ -228,6 +250,39 @@ async function handleRegister() {
 
 function continueAsGuest() {
   redirectAfterLogin()
+}
+
+// ── 密码强度计算 ──
+const passwordChecks = computed(() => {
+  const pwd = registerForm.password
+  return {
+    length: pwd.length >= 8,
+    hasLetter: /[a-zA-Z]/.test(pwd),
+    hasNumber: /[0-9]/.test(pwd),
+  }
+})
+
+const strengthScore = computed(() => {
+  const c = passwordChecks.value
+  return (c.length ? 1 : 0) + (c.hasLetter ? 1 : 0) + (c.hasNumber ? 1 : 0)
+})
+
+const strengthLabel = computed(() => {
+  if (strengthScore.value <= 1) return '弱'
+  if (strengthScore.value === 2) return '中'
+  return '强'
+})
+
+const strengthLabelClass = computed(() => {
+  if (strengthScore.value <= 1) return 'text-red-500'
+  if (strengthScore.value === 2) return 'text-orange-500'
+  return 'text-green-600'
+})
+
+function strengthBarClass(i: number) {
+  if (strengthScore.value <= 1) return i === 1 ? 'bg-red-400' : 'bg-gray-200'
+  if (strengthScore.value === 2) return i <= 2 ? 'bg-orange-400' : 'bg-gray-200'
+  return 'bg-green-500'
 }
 
 function redirectAfterLogin() {
