@@ -152,6 +152,10 @@ watch(() => props.userPosition, (pos) => {
   if (pos && map) updateUserMarker(pos)
 })
 
+watch(() => props.center, (c) => {
+  if (map && c) map.setView(c, map.getZoom())
+})
+
 watch(() => props.timelineNodes, () => {
   buildPOIMarkers()
   buildRouteLine()

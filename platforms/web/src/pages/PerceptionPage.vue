@@ -160,6 +160,7 @@
             <TravelMap
               :user-position="currentLocation"
               :timeline-nodes="timeline"
+              :center="mapCenter"
               height="450px"
             />
           </div>
@@ -540,6 +541,7 @@ const savedPlans = ref<any[]>([])
 const activePlanIdx = ref(-1)
 const timelineStatuses = ref<Record<string, string>>({})
 const STATUS_STORAGE_KEY = 'trailmate-timeline-statuses'
+const geocodeCache = ref<Record<string, { lat: number; lng: number } | null>>({})
 
 const activePlan = computed(() => {
   if (activePlanIdx.value < 0 || activePlanIdx.value >= savedPlans.value.length) return null
@@ -551,15 +553,77 @@ const progressPercent = computed(() => {
   if (timeline.value.length === 0) return 0
   return Math.round((completedCount.value / timeline.value.length) * 100)
 })
+const mapCenter = computed<[number, number]>(() => {
+  const first = timeline.value.find(n => n.latitude != null)
+  if (first) return [first.latitude!, first.longitude!]
+  if (currentLocation.value) return [currentLocation.value.latitude, currentLocation.value.longitude]
+  return [39.9042, 116.4074] // default Beijing
+})
 
-function loadTimelineFromPlan() {
+// Geocode address using free Nominatim API (OpenStreetMap, global coverage)
+async function geocodeAddress(address: string, cityHint?: string): Promise<{ lat: number; lng: number } | null> {
+  if (!address) return null
+  const key = address.toLowerCase().trim()
+  if (geocodeCache.value[key] !== undefined) return geocodeCache.value[key]
+
+  // Try localStorage cache first
+  try {
+    const raw = localStorage.getItem('trailmate-geocode-cache')
+    if (raw) {
+      const cached = JSON.parse(raw)
+      if (cached[key] !== undefined) {
+        geocodeCache.value[key] = cached[key]
+        return cached[key]
+      }
+    }
+  } catch {}
+
+  // Nominatim geocoding (free, global, 1 req/sec limit)
+  const query = cityHint ? `${address}, ${cityHint}` : address
+  try {
+    await new Promise(r => setTimeout(r, 1100)) // rate limit
+    const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`
+    const res = await fetch(url, { headers: { 'User-Agent': 'Trailmate/1.0' } })
+    const data = await res.json()
+    if (data.length > 0) {
+      const result = { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) }
+      geocodeCache.value[key] = result
+      // Persist to localStorage
+      try {
+        const existing = JSON.parse(localStorage.getItem('trailmate-geocode-cache') || '{}')
+        existing[key] = result
+        localStorage.setItem('trailmate-geocode-cache', JSON.stringify(existing))
+      } catch {}
+      return result
+    }
+  } catch {}
+
+  geocodeCache.value[key] = null
+  return null
+}
+
+async function loadTimelineFromPlan() {
   const plan = activePlan.value
   if (!plan || !plan.days) { timeline.value = []; return }
   const statuses = loadStatuses()
+
+  // Extract city from plan tags or description for geocoding hint
+  const cityHint = plan.tags?.join(' ') || ''
+
   const nodes: TimelineNode[] = []
   for (const day of plan.days) {
     for (const item of (day.items || [])) {
       const id = `${plan.name}_day${day.day}_${item.name}`
+      // Try to geocode the address
+      let latitude: number | undefined
+      let longitude: number | undefined
+      if (item.address) {
+        const coords = await geocodeAddress(item.address, cityHint)
+        if (coords) {
+          latitude = coords.lat
+          longitude = coords.lng
+        }
+      }
       nodes.push({
         id,
         planId: plan.name,
@@ -567,10 +631,12 @@ function loadTimelineFromPlan() {
         startTime: item.startTime || '09:00',
         endTime: item.endTime || '10:00',
         title: item.name,
-        description: `${item.type || 'attraction'} · ${item.address || ''}`,
+        description: item.address || '',
         type: item.type || 'attraction',
         status: statuses[id] || 'not_started',
         address: item.address,
+        latitude,
+        longitude,
       })
     }
   }
