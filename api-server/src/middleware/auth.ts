@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express'
-import { createClient } from '@supabase/supabase-js'
+import { getSupabaseAnonClient } from '../lib/supabase-client'
 
 // Extend Express Request
 declare global {
@@ -9,25 +9,6 @@ declare global {
       userEmail?: string
     }
   }
-}
-
-function getEnvConfig() {
-  const url = process.env.VITE_SUPABASE_URL
-  const anonKey = process.env.VITE_SUPABASE_ANON_KEY
-  if (!url || !anonKey) {
-    throw new Error('Missing SUPABASE env vars: VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY')
-  }
-  return { url, anonKey }
-}
-
-let supabaseForAuth: ReturnType<typeof createClient> | null = null
-
-function getAuthClient() {
-  if (!supabaseForAuth) {
-    const { url, anonKey } = getEnvConfig()
-    supabaseForAuth = createClient(url, anonKey)
-  }
-  return supabaseForAuth
 }
 
 export async function authMiddleware(req: Request, res: Response, next: NextFunction) {
@@ -41,7 +22,7 @@ export async function authMiddleware(req: Request, res: Response, next: NextFunc
   const token = authHeader.slice(7)
 
   try {
-    const supabase = getAuthClient()
+    const supabase = getSupabaseAnonClient()
     const { data: { user }, error } = await supabase.auth.getUser(token)
 
     if (error || !user) {

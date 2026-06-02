@@ -220,6 +220,32 @@
               <AppleToggle v-model="settings.privacy.visibleInMatching" />
             </div>
 
+            <div class="p-6 flex items-center justify-between">
+              <div>
+                <div class="text-base font-medium text-gray-600">旅伴档案</div>
+                <div class="text-sm text-gray-400 mt-0.5">编辑你的旅伴匹配资料，展示给其他旅行者</div>
+              </div>
+              <button
+                @click="router.push('/companion-profile/edit')"
+                class="bg-primary text-white rounded-lg font-medium transition-colors hover:bg-primary-hover active:bg-primary-active text-sm py-2.5 px-5"
+              >
+                编辑档案
+              </button>
+            </div>
+
+            <div class="p-6 flex items-center justify-between">
+              <div>
+                <div class="text-base font-medium text-gray-600">实名认证</div>
+                <div class="text-sm text-gray-400 mt-0.5">完成实名认证，提高匹配置信度</div>
+              </div>
+              <button
+                @click="router.push('/verification')"
+                class="bg-white text-primary rounded-lg font-medium border border-primary hover:bg-primary/5 transition-colors text-sm py-2.5 px-5"
+              >
+                去认证
+              </button>
+            </div>
+
             <div class="p-6">
               <button class="bg-white text-neutral-700 rounded-lg font-medium border border-neutral-200 hover:bg-neutral-50 transition-colors w-full text-sm py-2.5 px-5">
                 导出我的数据

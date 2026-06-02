@@ -86,6 +86,21 @@ const router = createRouter({
       name: 'login',
       component: () => import('../pages/LoginPage.vue'),
     },
+    {
+      path: '/companion-profile/edit',
+      name: 'companionProfileEdit',
+      component: () => import('../pages/CompanionProfileEdit.vue'),
+    },
+    {
+      path: '/verification',
+      name: 'realNameVerification',
+      component: () => import('../pages/RealNameVerification.vue'),
+    },
+    {
+      path: '/admin/verifications',
+      name: 'adminVerifications',
+      component: () => import('../pages/AdminVerifications.vue'),
+    },
   ],
 })
 

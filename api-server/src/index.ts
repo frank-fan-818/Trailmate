@@ -1,6 +1,8 @@
 import express from 'express'
 import { TravelOrchestrator } from '../../shared/multi-agent/orchestrator'
 import { authMiddleware } from './middleware/auth'
+import companionProfilesRouter from './routes/companion-profiles'
+import realNameVerificationsRouter from './routes/real-name-verifications'
 
 const app = express()
 const PORT = parseInt(process.env.PORT || '3456', 10)
@@ -37,6 +39,9 @@ app.post('/api/orchestrate', authMiddleware, async (req, res) => {
     })
   }
 })
+
+app.use('/api/companion-profiles', authMiddleware, companionProfilesRouter)
+app.use('/api/real-name-verifications', authMiddleware, realNameVerificationsRouter)
 
 app.listen(PORT, () => {
   console.log(`[api-server] Trailmate Multi-Agent API running on http://localhost:${PORT}`)

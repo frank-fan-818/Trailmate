@@ -25,6 +25,7 @@ export interface CompanionProfile {
   sleepTime: string
   gender: '男' | '女' | '保密'
   age: number
+  isVerified?: boolean
 }
 
 export interface UserProfile {
@@ -72,4 +73,46 @@ export interface MatchResult {
     travelTypeOverlap: number
     scheduleCompatibility: number
   }
+}
+
+// 实名认证
+export interface RealNameVerification {
+  id: string
+  userId: string
+  realName: string
+  idNumber: string
+  idCardFrontUrl?: string
+  idCardBackUrl?: string
+  status: 'pending' | 'approved' | 'rejected'
+  adminId?: string
+  adminRemark?: string
+  submittedAt: string
+  reviewedAt?: string
+}
+
+// 旅伴档案更新参数（所有字段可选，用于 upsert）
+export interface CompanionProfileUpdate {
+  name?: string
+  avatar?: string
+  bio?: string
+  destination?: string
+  travelDays?: number
+  departureInfo?: string
+  departureDate?: string
+  budget?: string
+  budgetType?: 'budget' | 'medium' | 'luxury'
+  personality?: string
+  personalityType?: 'planner' | 'spontaneous'
+  travelTypes?: string[]
+  wakeTime?: string
+  sleepTime?: string
+  gender?: '男' | '女' | '保密'
+  age?: number
+  isVisible?: boolean
+  isVerified?: boolean
+  creditScore?: string
+  creditLevel?: '钻石' | '黄金' | '白银'
+  creditBadge?: 'diamond' | 'gold' | 'silver'
+  totalTrips?: number
+  rating?: number
 }
