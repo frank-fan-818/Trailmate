@@ -44,15 +44,41 @@
           </div>
 
           <div class="p-6 space-y-6">
-            <!-- 头像 -->
+            <!-- 头像上传 -->
             <div class="space-y-2">
-              <label class="block text-sm font-medium text-gray-600">头像 (可选)</label>
-              <input
-                v-model="form.avatar"
-                type="text"
-                class="w-full px-4 py-3 border border-gray-300 rounded-lg text-base focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
-                placeholder="输入头像图片 URL"
-              />
+              <label class="block text-sm font-medium text-gray-600">头像</label>
+              <div class="flex items-center gap-4">
+                <!-- 预览 -->
+                <div
+                  class="w-20 h-20 rounded-2xl border-2 border-dashed border-gray-300 flex items-center justify-center overflow-hidden bg-gray-50 flex-shrink-0"
+                  :class="{ 'border-primary bg-primary/5': form.avatar }"
+                >
+                  <img v-if="form.avatar" :src="form.avatar" class="w-full h-full object-cover" />
+                  <Image v-else :size="28" class="text-gray-300" />
+                </div>
+                <div class="flex-1">
+                  <input
+                    ref="avatarInputRef"
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    class="hidden"
+                    @change="handleAvatarFile"
+                  />
+                  <button
+                    @click="avatarInputRef?.click()"
+                    :disabled="avatarUploading"
+                    class="bg-white text-primary rounded-lg font-medium border border-primary hover:bg-primary/5 transition-colors text-sm py-2.5 px-5 disabled:opacity-50"
+                  >
+                    <span v-if="avatarUploading" class="inline-flex items-center gap-2">
+                      <div class="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+                      上传中...
+                    </span>
+                    <span v-else>{{ form.avatar ? '更换头像' : '选择图片' }}</span>
+                  </button>
+                  <p class="text-xs text-gray-400 mt-1">支持 JPG、PNG、WebP，最大 5MB</p>
+                  <p v-if="avatarError" class="text-xs text-red-500 mt-1">{{ avatarError }}</p>
+                </div>
+              </div>
             </div>
 
             <!-- 姓名 -->
@@ -272,7 +298,10 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { Image } from 'lucide-vue-next'
 import { useCompanionProfile } from '../composables/useCompanionProfile'
+import { useSupabaseUpload } from '../composables/useSupabaseUpload'
+import { useAuth } from '../composables/useAuth'
 
 const router = useRouter()
 
@@ -311,6 +340,42 @@ const form = reactive<CompanionProfileForm>({
 })
 
 const travelTypeOptions = ['休闲', '文化', '冒险', '美食', '购物', '自然', '摄影', '徒步', '夜生活']
+
+const { uploadFile } = useSupabaseUpload()
+const { currentUser } = useAuth()
+const avatarInputRef = ref<HTMLInputElement | null>(null)
+const avatarUploading = ref(false)
+const avatarError = ref('')
+
+async function handleAvatarFile(e: Event) {
+  const input = e.target as HTMLInputElement
+  const file = input.files?.[0]
+  if (!file) return
+
+  // Validate
+  if (file.size > 5 * 1024 * 1024) {
+    avatarError.value = '文件大小不能超过 5MB'
+    return
+  }
+  if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+    avatarError.value = '仅支持 JPG、PNG、WebP 格式'
+    return
+  }
+
+  avatarError.value = ''
+  avatarUploading.value = true
+  const userId = currentUser.value?.id || 'anonymous'
+  const url = await uploadFile(file, 'avatars', userId)
+  avatarUploading.value = false
+
+  if (url) {
+    form.avatar = url
+  } else {
+    avatarError.value = '上传失败，请重试'
+  }
+  // Reset input so same file can be re-selected
+  input.value = ''
+}
 
 const isFetching = ref(true)
 const isSaving = ref(false)

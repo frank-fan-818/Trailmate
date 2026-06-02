@@ -149,28 +149,67 @@
 
               <!-- 身份证正面照 -->
               <div class="space-y-2">
-                <label class="block text-sm font-medium text-gray-600">身份证正面照 URL</label>
+                <label class="block text-sm font-medium text-gray-600">身份证正面照</label>
                 <input
-                  v-model="form.idCardFrontUrl"
-                  type="text"
-                  class="w-full px-4 py-3 border border-gray-300 rounded-lg text-base focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
-                  placeholder="粘贴身份证正面图片URL"
+                  ref="frontInputRef"
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  class="hidden"
+                  @change="(e) => handleIdCardFile(e, 'front')"
                 />
+                <div
+                  v-if="form.idCardFrontUrl"
+                  class="relative rounded-xl overflow-hidden border border-gray-200 bg-gray-50"
+                >
+                  <img :src="form.idCardFrontUrl" class="w-full h-48 object-contain" />
+                  <button
+                    @click="form.idCardFrontUrl = ''"
+                    class="absolute top-2 right-2 bg-red-500 text-white rounded-full w-7 h-7 flex items-center justify-center text-sm hover:bg-red-600"
+                  >&times;</button>
+                </div>
+                <button
+                  v-else
+                  @click="frontInputRef?.click()"
+                  :disabled="uploadingFront"
+                  class="w-full px-4 py-8 border-2 border-dashed border-gray-300 rounded-xl text-gray-400 hover:border-primary hover:text-primary transition-colors text-sm flex flex-col items-center gap-2 disabled:opacity-50"
+                >
+                  <div v-if="uploadingFront" class="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+                  <Upload v-else :size="28" />
+                  <span>{{ uploadingFront ? '上传中...' : '点击上传身份证正面' }}</span>
+                </button>
+                <p v-if="uploadError" class="text-xs text-red-500">{{ uploadError }}</p>
               </div>
 
               <!-- 身份证背面照 -->
               <div class="space-y-2">
-                <label class="block text-sm font-medium text-gray-600">身份证背面照 URL</label>
+                <label class="block text-sm font-medium text-gray-600">身份证背面照</label>
                 <input
-                  v-model="form.idCardBackUrl"
-                  type="text"
-                  class="w-full px-4 py-3 border border-gray-300 rounded-lg text-base focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary"
-                  placeholder="粘贴身份证背面图片URL"
+                  ref="backInputRef"
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  class="hidden"
+                  @change="(e) => handleIdCardFile(e, 'back')"
                 />
-              </div>
-
-              <div class="bg-gray-50 rounded-xl px-4 py-3 text-xs text-gray-400">
-                请先将身份证照片上传至图床或云存储，然后粘贴URL
+                <div
+                  v-if="form.idCardBackUrl"
+                  class="relative rounded-xl overflow-hidden border border-gray-200 bg-gray-50"
+                >
+                  <img :src="form.idCardBackUrl" class="w-full h-48 object-contain" />
+                  <button
+                    @click="form.idCardBackUrl = ''"
+                    class="absolute top-2 right-2 bg-red-500 text-white rounded-full w-7 h-7 flex items-center justify-center text-sm hover:bg-red-600"
+                  >&times;</button>
+                </div>
+                <button
+                  v-else
+                  @click="backInputRef?.click()"
+                  :disabled="uploadingBack"
+                  class="w-full px-4 py-8 border-2 border-dashed border-gray-300 rounded-xl text-gray-400 hover:border-primary hover:text-primary transition-colors text-sm flex flex-col items-center gap-2 disabled:opacity-50"
+                >
+                  <div v-if="uploadingBack" class="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+                  <Upload v-else :size="28" />
+                  <span>{{ uploadingBack ? '上传中...' : '点击上传身份证背面' }}</span>
+                </button>
               </div>
             </div>
           </section>
@@ -198,9 +237,11 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { Clock, Check, X } from 'lucide-vue-next'
+import { Clock, Check, X, Upload } from 'lucide-vue-next'
 import VerificationBadge from '../components/VerificationBadge.vue'
 import { useRealNameVerification } from '../composables/useRealNameVerification'
+import { useSupabaseUpload } from '../composables/useSupabaseUpload'
+import { useAuth } from '../composables/useAuth'
 import type { RealNameVerification } from '@trailmate/companion-matching'
 
 const router = useRouter()
@@ -221,6 +262,45 @@ const form = reactive({
 })
 
 const validationErrors = reactive<Record<string, string>>({})
+
+// 文件上传
+const { uploadFile } = useSupabaseUpload()
+const { currentUser } = useAuth()
+const uploadError = ref('')
+const uploadingFront = ref(false)
+const uploadingBack = ref(false)
+const frontInputRef = ref<HTMLInputElement | null>(null)
+const backInputRef = ref<HTMLInputElement | null>(null)
+
+async function handleIdCardFile(e: Event, side: 'front' | 'back') {
+  const input = e.target as HTMLInputElement
+  const file = input.files?.[0]
+  if (!file) return
+
+  if (file.size > 5 * 1024 * 1024) {
+    uploadError.value = '文件大小不能超过 5MB'
+    return
+  }
+
+  uploadError.value = ''
+  if (side === 'front') uploadingFront.value = true
+  else uploadingBack.value = true
+
+  const userId = currentUser.value?.id || 'anonymous'
+  const url = await uploadFile(file, 'id-cards', `${userId}/verification`)
+
+  if (side === 'front') {
+    uploadingFront.value = false
+    if (url) form.idCardFrontUrl = url
+    else uploadError.value = '上传失败，请重试'
+  } else {
+    uploadingBack.value = false
+    if (url) form.idCardBackUrl = url
+    else uploadError.value = '上传失败，请重试'
+  }
+
+  input.value = ''
+}
 
 const maskedIdNumber = computed(() => {
   if (!verification.value?.idNumber) return ''
